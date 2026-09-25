@@ -108,6 +108,12 @@ def _norm_header(v):
     return re.sub(r"\s+", " ", str(v or "")).strip().upper()
 
 
+CABECALHOS_ORIGEM = {
+    "LINHA", "TAG", "TAG LINHA", "TAG DA LINHA", "LINE", "LINE NUMBER",
+    "Nº DA LINHA", "N° DA LINHA", "NO DA LINHA", "N DA LINHA",
+}
+
+
 def localizar_colunas(ws, max_linhas=30):
     """Encontra a coluna TAG PADRONIZADA, a coluna de origem e a 1ª linha de dados."""
     destino = origem = None
@@ -117,7 +123,7 @@ def localizar_colunas(ws, max_linhas=30):
             h = _norm_header(c.value)
             if h == "TAG PADRONIZADA":
                 destino, linha_hdr = c.column, max(linha_hdr, c.row)
-            elif origem is None and h in ("LINHA", "TAG", "TAG LINHA", "TAG DA LINHA", "LINE", "LINE NUMBER"):
+            elif origem is None and re.sub(r"\d+$", "", h) in CABECALHOS_ORIGEM:
                 origem, linha_hdr = c.column, max(linha_hdr, c.row)
     return destino, origem, linha_hdr + 1
 
