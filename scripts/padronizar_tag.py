@@ -31,6 +31,7 @@ DASHES = "‐‑‒–—―−"
 # DN 1.1/2" digitado/lido por OCR de formas diferentes (somente no 1º bloco)
 _OCR_1_1_2 = re.compile(r'^1(?:[-.]1/2|[-.]12)"?(?=-|$)')
 _FRACAO_HIFEN = re.compile(r'^(\d+)-(\d+/\d+)"?(?=-|$)')
+_DN_VALIDO = re.compile(r'^\d+(?:\.\d+/\d+|/\d+)?"(?=-|$)')
 _DN_SEM_POL = re.compile(r'^(\d+(?:\.\d+/\d+|/\d+)?)(?=-|$)')
 
 
@@ -73,12 +74,16 @@ def padronizar_tag(tag, line_list=None):
     s = _quatro_blocos(s)
     if s.count("-") < 3:
         obs = (obs + "; " if obs else "") + "TAG COM MENOS DE 4 BLOCOS"
+    if not _DN_VALIDO.match(s):
+        obs = (obs + "; " if obs else "") + "1º BLOCO NÃO É DIÂMETRO"
     return s, obs
 
 
 def _quatro_blocos(s):
-    blocos = [b for b in s.split("-") if b != ""]
-    return "-".join(blocos[:4])
+    blocos = [b for b in s.split("-") if b != ""][:4]
+    # símbolo de polegada só faz sentido no DN (1º bloco)
+    blocos[1:] = [b.replace('"', "") for b in blocos[1:]]
+    return "-".join(blocos)
 
 
 def carregar_line_list(caminho):
@@ -121,7 +126,7 @@ def localizar_colunas(ws, max_linhas=30):
     for row in ws.iter_rows(min_row=1, max_row=max_linhas):
         for c in row:
             h = _norm_header(c.value)
-            if h == "TAG PADRONIZADA":
+            if h in ("TAG PADRONIZADA", "PADRONIZAR TAG"):
                 destino, linha_hdr = c.column, max(linha_hdr, c.row)
             elif origem is None and re.sub(r"\d+$", "", h) in CABECALHOS_ORIGEM:
                 origem, linha_hdr = c.column, max(linha_hdr, c.row)
@@ -182,7 +187,7 @@ def processar(entrada, saida, aba=None, line_list=None):
     ws = wb[aba] if aba else wb.worksheets[0]
     destino, origem, primeira = localizar_colunas(ws)
     if not destino or not origem:
-        raise SystemExit("Colunas 'TAG PADRONIZADA' e/ou 'Linha' não encontradas na aba %r" % ws.title)
+        raise SystemExit("Colunas 'TAG PADRONIZADA'/'PADRONIZAR TAG' e/ou 'Linha' não encontradas na aba %r" % ws.title)
 
     resultados = {}
     pendencias = []
