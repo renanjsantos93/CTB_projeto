@@ -72,6 +72,12 @@ def padronizar_tag(tag, line_list=None):
     s = _DN_SEM_POL.sub(r'\1"', s)
 
     s = _quatro_blocos(s)
+    if _DN_VALIDO.match(s) and "/" in s.split("-", 3)[-1]:
+        # "12" trocado por "1/2" no número da linha (ex.: 51/27A -> 5127A)
+        blocos = s.split("-")
+        blocos[3] = blocos[3].replace("1/2", "12")
+        s = "-".join(blocos)
+        obs = (obs + "; " if obs else "") + "Nº DA LINHA CORRIGIDO (1/2 -> 12), CONFERIR"
     if s.count("-") < 3:
         obs = (obs + "; " if obs else "") + "TAG COM MENOS DE 4 BLOCOS"
     if not _DN_VALIDO.match(s):
@@ -80,7 +86,11 @@ def padronizar_tag(tag, line_list=None):
 
 
 def _quatro_blocos(s):
-    blocos = [b for b in s.split("-") if b != ""][:4]
+    blocos = [b for b in s.split("-") if b != ""]
+    # prefixo sem dígitos no nº da linha (ex.: LIT-7301A -> LIT7301A)
+    if len(blocos) > 4 and not re.search(r"\d", blocos[3]) and re.match(r"\d", blocos[4]):
+        blocos[3:5] = [blocos[3] + blocos[4]]
+    blocos = blocos[:4]
     # símbolo de polegada só faz sentido no DN (1º bloco)
     blocos[1:] = [b.replace('"', "") for b in blocos[1:]]
     return "-".join(blocos)
