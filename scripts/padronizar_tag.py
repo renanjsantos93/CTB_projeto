@@ -37,11 +37,16 @@ _DN_SEM_POL = re.compile(r'^(\d+(?:\.\d+/\d+|/\d+)?)(?=-|$)')
 
 def _limpar(tag):
     s = str(tag).upper()
+    # indicação de folha ("FL 1-4", "- FL 1/2") não faz parte da TAG
+    s = re.sub(r"\s+-?\s*FL\s*\d.*$", "", s.strip())
     s = re.sub(r"\s+", "", s)
     for ch in DASHES:
         s = s.replace(ch, "-")
     s = re.sub("[" + re.escape(INCH_CHARS) + "]+", '"', s)
     s = re.sub(r'"{2,}', '"', s)
+    # ponto solto antes da polegada (2.") e hífen faltando após o DN (2"D1E)
+    s = re.sub(r'^(\d+)\."', r'\1"', s)
+    s = re.sub(r'^([\d./]+")(?=[A-Z])', r'\1-', s)
     return s
 
 
