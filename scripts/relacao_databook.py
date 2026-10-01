@@ -20,7 +20,7 @@ sys.path.insert(0, __file__.rsplit("/", 1)[0])
 from padronizar_tag import padronizar_tag  # noqa: E402
 
 # Spools e observações escritas no croqui. Spool vazio = croqui sem
-# identificação de spool (considerado spool único 01).
+# identificação de spool (considerado spool único 001).
 OBS_CROQUI = {
     1: ("01, 02", "Divisão entre spools na junta 8; juntas 4 e 15 solda de campo; spool 02 com sobremetal"),
     2: ("01 a 04", "Spools divididos nas juntas 13, 11 e 09"),
@@ -106,7 +106,7 @@ def obs_relatorio(r, rels):
     if not r["tag"]:
         obs.append("TAG não consta no relatório (referência é o isométrico)")
     if not OBS_CROQUI[pag][0]:
-        obs.append("Spool não identificado no croqui – considerado spool único 01")
+        obs.append("Spool não identificado no croqui – considerado spool único 001")
     if pag in CROQUI_IGUAL:
         obs.append(f"Croqui idêntico ao do relatório {CROQUI_IGUAL[pag]:03d}")
     if OBS_CROQUI[pag][1]:
@@ -118,7 +118,7 @@ def spools(r):
     txt = OBS_CROQUI[r["pagina"]][0] or "01"
     m = re.fullmatch(r"(\d+) a (\d+)", txt)
     nums = range(int(m.group(1)), int(m.group(2)) + 1) if m else map(int, txt.split(","))
-    return [f"{n:02d}" for n in nums]
+    return [f"{n:03d}" for n in nums]
 
 
 def id_spool(r, n):
