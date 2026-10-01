@@ -71,11 +71,20 @@ def extrair_paginas(pdf):
 
 
 def tag_do_desenho(desenho):
+    """TAG PADRONIZADA (DN-CLASS-SERVICE-LINE_NUMBER) e observação."""
     s = re.sub(r"\s*[-/]?\s*FOLHA.*$", "", desenho, flags=re.I).strip()
     if s.upper().startswith("I-IS-"):
-        return ""  # isométrico, não traz a TAG da linha
-    s = re.sub(r"^MO\d+-", "", s, flags=re.I)
-    return padronizar_tag(s)[0]
+        return "", "TAG não consta no relatório (referência é o isométrico)"
+    obs = []
+    m = re.match(r"^(MO\d+)-", s, flags=re.I)
+    if m:
+        # prefixo do módulo antes do DN não faz parte da TAG
+        s = s[m.end():]
+        obs.append(f"Prefixo de módulo {m.group(1).upper()} removido")
+    tag, obs_tag = padronizar_tag(s)
+    if obs_tag:
+        obs.append(obs_tag)
+    return tag, "; ".join(obs)
 
 
 def ler_relatorio(pag, p):
@@ -90,7 +99,8 @@ def ler_relatorio(pag, p):
         "pagina": pag, "numero": num, "tipo": tipo.title(),
         "data": datetime.strptime(data, "%d/%m/%Y").date(),
         "desenho": desenho, "rev_desenho": rev_des, "procedimento": campos[1],
-        "tag": tag_do_desenho(desenho), "cotas": cotas,
+        "tag": tag_do_desenho(desenho)[0], "obs_tag": tag_do_desenho(desenho)[1],
+        "cotas": cotas,
         # caixa de seleção é imagem; todos os croquis conferidos estão "APROVADO"
         "laudo": "Aprovado",
     }
@@ -103,8 +113,8 @@ def obs_relatorio(r, rels):
               if o["desenho"] == r["desenho"] and o["pagina"] != pag]
     if outros:
         obs.append("Mesmo desenho dos relatórios " + ", ".join(outros))
-    if not r["tag"]:
-        obs.append("TAG não consta no relatório (referência é o isométrico)")
+    if r["obs_tag"]:
+        obs.append(r["obs_tag"])
     if not OBS_CROQUI[pag][0]:
         obs.append("Spool não identificado no croqui – considerado spool único 001")
     if pag in CROQUI_IGUAL:
@@ -119,12 +129,6 @@ def spools(r):
     m = re.fullmatch(r"(\d+) a (\d+)", txt)
     nums = range(int(m.group(1)), int(m.group(2)) + 1) if m else map(int, txt.split(","))
     return [f"{n:03d}" for n in nums]
-
-
-def id_spool(r, n):
-    des = re.sub(r"\s*[-/]?\s*FOLHA.*$", "", r["desenho"], flags=re.I).strip()
-    des = re.sub("[`´]+", '"', des)
-    return f"{des} / {n}"
 
 
 HDR_FILL = PatternFill("solid", fgColor="1F4E78")
@@ -165,14 +169,14 @@ def main(pdf, saida):
         for n in spools(r):
             item += 1
             linhas.append([item, r["numero"], r["tipo"], r["data"], r["desenho"],
-                           id_spool(r, n), r["tag"], r["laudo"], r["pagina"],
+                           n, r["tag"], r["laudo"], r["pagina"],
                            obs_relatorio(r, rels)])
     ws = wb.active
     ws.title = "Relação por spool"
     escrever_aba(ws, ["Item", "Nº do relatório", "Tipo de relatório", "Data do relatório",
-                      "Documento (desenho de referência)", "Spool", "TAG da linha",
+                      "Documento (desenho de referência)", "Spool", "TAG PADRONIZADA",
                       "Laudo", "Página no databook", "Observação"],
-                 linhas, [6, 11, 20, 12, 40, 40, 22, 10, 10, 70], alerta_col=9)
+                 linhas, [6, 11, 20, 12, 40, 9, 22, 10, 10, 70], alerta_col=9)
 
     # 2) Uma linha por relatório
     linhas = []
@@ -183,7 +187,7 @@ def main(pdf, saida):
                        len(r["cotas"]), r["laudo"], r["pagina"], obs_relatorio(r, rels)])
     ws = wb.create_sheet("Resumo por relatório")
     escrever_aba(ws, ["Nº do relatório", "Tipo de relatório", "Data do relatório",
-                      "Documento (desenho de referência)", "Rev. desenho", "TAG da linha",
+                      "Documento (desenho de referência)", "Rev. desenho", "TAG PADRONIZADA",
                       "Spools", "Qtd. spools", "Procedimento", "Qtd. cotas", "Laudo",
                       "Página no databook", "Observação"],
                  linhas, [11, 20, 12, 40, 8, 22, 18, 8, 14, 8, 10, 10, 70],
@@ -207,7 +211,7 @@ def main(pdf, saida):
             linhas.append([r["numero"], r["desenho"], r["tag"], it, int(esp), int(enc), d,
                            av, r["pagina"]])
     ws = wb.create_sheet("Divergências de cota")
-    escrever_aba(ws, ["Nº do relatório", "Documento (desenho de referência)", "TAG da linha",
+    escrever_aba(ws, ["Nº do relatório", "Documento (desenho de referência)", "TAG PADRONIZADA",
                       "Item da cota", "Especificado (mm)", "Encontrado (mm)",
                       "Diferença (mm)", "Avaliação", "Página no databook"],
                  linhas, [11, 40, 22, 9, 13, 13, 12, 42, 10])
