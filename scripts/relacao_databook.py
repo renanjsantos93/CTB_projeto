@@ -1,9 +1,8 @@
 """Relação de relatórios do databook BRASNAVAL (relatórios dimensionais Master).
 
 Extrai do PDF (camada de texto) o nº, tipo e data de cada relatório, o desenho
-de referência e as cotas medidas; as juntas vêm da leitura dos balões do
-croqui de cada relatório (tabela JUNTAS_CROQUI abaixo), pois só existem como
-imagem no PDF.
+de referência e as cotas medidas; os spools vêm da leitura do croqui de cada
+relatório (tabela OBS_CROQUI abaixo), pois só existem como imagem no PDF.
 
 Uso:
     python scripts/relacao_databook.py DATABOOK.pdf SAIDA.xlsx
@@ -20,48 +19,8 @@ from openpyxl.utils import get_column_letter
 sys.path.insert(0, __file__.rsplit("/", 1)[0])
 from padronizar_tag import padronizar_tag  # noqa: E402
 
-# Juntas lidas nos balões do croqui, por nº de página do databook.
-# None = balões ilegíveis (imagem de baixa resolução no PDF).
-JUNTAS_CROQUI = {
-    1: list(range(4, 16)),
-    2: list(range(5, 16)) + [17],
-    3: [1, 2, 3],
-    4: None,
-    5: [14, 15, 16, 17],
-    6: list(range(16, 25)),
-    7: list(range(15, 21)),
-    8: [6, 7, 8, 9],
-    9: list(range(1, 8)),
-    10: list(range(38, 51)),
-    11: list(range(5, 14)),
-    12: None,
-    13: None,
-    14: [1, 2, 3, 4],
-    15: [5, 6, 7, 8],
-    16: list(range(15, 21)),
-    17: [14, 15, 16, 17],
-    18: [2, 3, 4, 5],
-    19: [6, 7, 8, 9],
-    20: list(range(1, 8)),
-    21: list(range(5, 16)) + [17],
-    22: None,
-    23: list(range(1, 12)),
-    24: None,
-    25: None,
-    26: None,
-    27: None,
-    28: list(range(1, 9)),
-    29: list(range(16, 25)),
-    30: None,
-    31: list(range(5, 13)),
-    32: list(range(21, 29)),
-    33: None,
-    34: list(range(4, 16)),
-    35: list(range(13, 21)),
-    36: list(range(5, 16)) + [17],
-}
-
-# Spools e observações escritas no croqui.
+# Spools e observações escritas no croqui. Spool vazio = croqui sem
+# identificação de spool (considerado spool único 01).
 OBS_CROQUI = {
     1: ("01, 02", "Divisão entre spools na junta 8; juntas 4 e 15 solda de campo; spool 02 com sobremetal"),
     2: ("01 a 04", "Spools divididos nas juntas 13, 11 e 09"),
@@ -146,13 +105,26 @@ def obs_relatorio(r, rels):
         obs.append("Mesmo desenho dos relatórios " + ", ".join(outros))
     if not r["tag"]:
         obs.append("TAG não consta no relatório (referência é o isométrico)")
-    if JUNTAS_CROQUI[pag] is None:
-        obs.append("Nº das juntas ilegível no croqui – conferir no isométrico")
+    if not OBS_CROQUI[pag][0]:
+        obs.append("Spool não identificado no croqui – considerado spool único 01")
     if pag in CROQUI_IGUAL:
         obs.append(f"Croqui idêntico ao do relatório {CROQUI_IGUAL[pag]:03d}")
     if OBS_CROQUI[pag][1]:
         obs.append("Croqui: " + OBS_CROQUI[pag][1])
     return "; ".join(obs)
+
+
+def spools(r):
+    txt = OBS_CROQUI[r["pagina"]][0] or "01"
+    m = re.fullmatch(r"(\d+) a (\d+)", txt)
+    nums = range(int(m.group(1)), int(m.group(2)) + 1) if m else map(int, txt.split(","))
+    return [f"{n:02d}" for n in nums]
+
+
+def id_spool(r, n):
+    des = re.sub(r"\s*[-/]?\s*FOLHA.*$", "", r["desenho"], flags=re.I).strip()
+    des = re.sub("[`´]+", '"', des)
+    return f"{des} / {n}"
 
 
 HDR_FILL = PatternFill("solid", fgColor="1F4E78")
@@ -187,39 +159,35 @@ def main(pdf, saida):
     rels = [ler_relatorio(i, p) for i, p in enumerate(extrair_paginas(pdf), 1)]
     wb = Workbook()
 
-    # 1) Uma linha por junta
+    # 1) Uma linha por spool
     linhas, item = [], 0
     for r in rels:
-        juntas = JUNTAS_CROQUI[r["pagina"]] or [""]
-        for j in juntas:
+        for n in spools(r):
             item += 1
             linhas.append([item, r["numero"], r["tipo"], r["data"], r["desenho"],
-                           r["tag"], f"{j:02d}" if j != "" else "",
-                           OBS_CROQUI[r["pagina"]][0], r["laudo"], r["pagina"],
+                           id_spool(r, n), r["tag"], r["laudo"], r["pagina"],
                            obs_relatorio(r, rels)])
     ws = wb.active
-    ws.title = "Relação por junta"
+    ws.title = "Relação por spool"
     escrever_aba(ws, ["Item", "Nº do relatório", "Tipo de relatório", "Data do relatório",
-                      "Documento (desenho de referência)", "TAG da linha", "Nº da junta",
-                      "Spool(s)", "Laudo", "Página no databook", "Observação"],
-                 linhas, [6, 11, 20, 12, 40, 22, 9, 10, 10, 10, 70], alerta_col=10)
+                      "Documento (desenho de referência)", "Spool", "TAG da linha",
+                      "Laudo", "Página no databook", "Observação"],
+                 linhas, [6, 11, 20, 12, 40, 40, 22, 10, 10, 70], alerta_col=9)
 
     # 2) Uma linha por relatório
     linhas = []
     for r in rels:
-        js = JUNTAS_CROQUI[r["pagina"]]
+        sp = spools(r)
         linhas.append([r["numero"], r["tipo"], r["data"], r["desenho"], r["rev_desenho"],
-                       r["tag"], ", ".join(f"{j:02d}" for j in js) if js else "ILEGÍVEL",
-                       len(js) if js else "", OBS_CROQUI[r["pagina"]][0],
-                       r["procedimento"], len(r["cotas"]), r["laudo"], r["pagina"],
-                       obs_relatorio(r, rels)])
+                       r["tag"], ", ".join(sp), len(sp), r["procedimento"],
+                       len(r["cotas"]), r["laudo"], r["pagina"], obs_relatorio(r, rels)])
     ws = wb.create_sheet("Resumo por relatório")
     escrever_aba(ws, ["Nº do relatório", "Tipo de relatório", "Data do relatório",
                       "Documento (desenho de referência)", "Rev. desenho", "TAG da linha",
-                      "Juntas no croqui", "Qtd. juntas", "Spool(s)", "Procedimento",
-                      "Qtd. cotas", "Laudo", "Página no databook", "Observação"],
-                 linhas, [11, 20, 12, 40, 8, 22, 40, 8, 10, 14, 8, 10, 10, 70],
-                 alerta_col=13)
+                      "Spools", "Qtd. spools", "Procedimento", "Qtd. cotas", "Laudo",
+                      "Página no databook", "Observação"],
+                 linhas, [11, 20, 12, 40, 8, 22, 18, 8, 14, 8, 10, 10, 70],
+                 alerta_col=12)
 
     # 3) Cotas com valor encontrado diferente do especificado
     linhas = []
