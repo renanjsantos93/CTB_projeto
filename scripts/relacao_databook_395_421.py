@@ -1,8 +1,8 @@
-"""Relação de relatórios do databook 395-421 (versão escaneada, 27 relatórios).
+"""Relação de relatórios dos PDFs escaneados 395-421 (001-027) e 422-430 (028-036).
 
-O PDF é escaneado (sem camada de texto): nº, data e desenho de cada relatório
-foram transcritos da imagem na tabela RELATORIOS abaixo. Os croquis são os
-mesmos dos relatórios 001-027 do databook BRASNAVAL, então spools e
+Os PDFs são escaneados (sem camada de texto): nº, data e desenho de cada
+relatório foram transcritos da imagem na tabela RELATORIOS abaixo. Os croquis
+são os mesmos dos relatórios 001-036 do databook BRASNAVAL, então spools e
 observações vêm de relacao_databook.OBS_CROQUI.
 
 Uso:
@@ -17,7 +17,7 @@ sys.path.insert(0, __file__.rsplit("/", 1)[0])
 from relacao_databook import (CROQUI_IGUAL, OBS_CROQUI, escrever_aba,  # noqa: E402
                               spools, tag_do_desenho)
 
-# (nº do relatório, data, desenho de referência) — página = nº do relatório
+# (nº do relatório, data, desenho de referência)
 RELATORIOS = [
     ("001", date(2026, 8, 25), "24``-B1E-MR-4012-Z02"),
     ("002", date(2026, 8, 25), "24``-B1E-MR-5003A-Z03"),
@@ -46,7 +46,24 @@ RELATORIOS = [
     ("025", date(2026, 9, 1), "MO5-4´´-B3B-MR-5113A-PP-2"),
     ("026", date(2026, 9, 1), "MO8-6´´-B3B-MR-5405B-PP-2"),
     ("027", date(2026, 9, 1), "MO5-10´´-B3B-LO-5103A-2"),
+    ("028", date(2026, 8, 31), "I-IS-025-421-510-46-9067"),
+    ("029", date(2026, 8, 26), "I-IS-025-421-510-46-9141"),
+    ("030", date(2026, 9, 1), "MO8-6´´-B3B-MR-5407B-PP-2 FL 2/2"),
+    ("031", date(2026, 8, 31), "I-IS-025-421-510-46-9048"),
+    ("032", date(2026, 8, 31), "I-IS-025-421-510-46-9049"),
+    ("033", date(2026, 9, 1), "6´´-B3B-MR-5407A-PP-2"),
+    ("034", date(2026, 8, 25), "I-IS-025-421-510-46-9137"),
+    ("035", date(2026, 8, 31), "I-IS-025-421-510-46-9066"),
+    ("036", date(2026, 8, 25), "I-IS-025-421-510-46-9138"),
 ]
+
+# PDF de origem: (arquivo, 1º relatório do arquivo)
+ARQUIVOS = [("395-421.pdf", 1), ("422-430.pdf", 28)]
+
+
+def origem(num):
+    arq, ini = [a for a in ARQUIVOS if a[1] <= num][-1]
+    return arq, num - ini + 1
 
 
 def observacao(r, rels):
@@ -80,25 +97,26 @@ def main(saida):
         for n in spools(r):
             item += 1
             linhas.append([item, r["numero"], r["tipo"], r["data"], r["desenho"], n,
-                           r["tag"], r["laudo"], r["pagina"], observacao(r, rels)])
+                           r["tag"], r["laudo"], *origem(r["pagina"]),
+                           observacao(r, rels)])
     ws = wb.active
     ws.title = "Relação por spool"
     escrever_aba(ws, ["Item", "Nº do relatório", "Tipo de relatório", "Data do relatório",
                       "Documento (desenho de referência)", "Spool", "TAG PADRONIZADA",
-                      "Laudo", "Página no databook", "Observação"],
-                 linhas, [6, 11, 20, 12, 40, 9, 22, 10, 10, 70], alerta_col=9)
+                      "Laudo", "Arquivo PDF", "Página no PDF", "Observação"],
+                 linhas, [6, 11, 20, 12, 40, 9, 22, 10, 13, 9, 70], alerta_col=10)
 
     linhas = []
     for r in rels:
         sp = spools(r)
         linhas.append([r["numero"], r["tipo"], r["data"], r["desenho"], r["tag"],
-                       ", ".join(sp), len(sp), r["laudo"], r["pagina"],
+                       ", ".join(sp), len(sp), r["laudo"], *origem(r["pagina"]),
                        observacao(r, rels)])
     ws = wb.create_sheet("Resumo por relatório")
     escrever_aba(ws, ["Nº do relatório", "Tipo de relatório", "Data do relatório",
                       "Documento (desenho de referência)", "TAG PADRONIZADA", "Spools",
-                      "Qtd. spools", "Laudo", "Página no databook", "Observação"],
-                 linhas, [11, 20, 12, 40, 22, 18, 8, 10, 10, 70], alerta_col=9)
+                      "Qtd. spools", "Laudo", "Arquivo PDF", "Página no PDF", "Observação"],
+                 linhas, [11, 20, 12, 40, 22, 18, 8, 10, 13, 9, 70], alerta_col=10)
 
     wb.save(saida)
     print(f"{len(rels)} relatórios -> {saida}")
