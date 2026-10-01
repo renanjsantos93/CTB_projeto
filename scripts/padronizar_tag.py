@@ -167,7 +167,7 @@ def _caminho_aba(zf, nome_aba):
     return t if t.startswith("xl/") else "xl/" + t
 
 
-def _gravar_celula(xml, ref, texto):
+def _gravar_celula(xml, ref, texto, estilo=None):
     val = '<is><t>%s</t></is>' % escape(texto)
     # célula já existente (vazia ou com valor)
     pad = re.compile(r'<c r="%s"((?:\s+[a-zA-Z:]+="[^"]*")*)\s*(?:/>|>(?:(?!<c[ >]).)*?</c>)' % ref, re.S)
@@ -179,7 +179,7 @@ def _gravar_celula(xml, ref, texto):
     # célula inexistente: insere na linha, respeitando a ordem das colunas
     lin = re.match(r"[A-Z]+(\d+)", ref).group(1)
     col = re.match(r"([A-Z]+)", ref).group(1)
-    nova = '<c r="%s" t="inlineStr">%s</c>' % (ref, val)
+    nova = '<c r="%s"%s t="inlineStr">%s</c>' % (ref, ' s="%s"' % estilo if estilo else "", val)
     mrow = re.search(r'(<row r="%s"[^>]*?)(/>|>(.*?)</row>)' % lin, xml, re.S)
     if not mrow:
         raise RuntimeError("linha %s não encontrada no XML" % lin)
@@ -197,12 +197,68 @@ def _gravar_celula(xml, ref, texto):
     return xml[:ini] + corpo + xml[mrow.end(3):]
 
 
+def _estilo(xml, ref):
+    m = re.search(r'<c r="%s"[^>]*?\ss="(\d+)"' % ref, xml)
+    return m.group(1) if m else None
+
+
+def _col_num(letras):
+    n = 0
+    for ch in letras:
+        n = n * 26 + ord(ch) - 64
+    return n
+
+
+def _ampliar_aba(xml, ncol):
+    """Ajusta <dimension> e spans das linhas para incluir a nova coluna."""
+    def dim(m):
+        fim_col, fim_lin = m.group(2), m.group(3)
+        if _col_num(fim_col) < ncol:
+            fim_col = _col_letra(ncol)
+        return '<dimension ref="%s:%s%s"' % (m.group(1), fim_col, fim_lin)
+    xml = re.sub(r'<dimension ref="([A-Z]+\d+):([A-Z]+)(\d+)"', dim, xml, count=1)
+    return re.sub(r'spans="(\d+):(\d+)"',
+                  lambda m: 'spans="%s:%d"' % (m.group(1), max(int(m.group(2)), ncol)), xml)
+
+
+def _ampliar_tabela(zin, caminho_aba, linha_hdr, ncol):
+    """Se o cabeçalho pertence a uma Tabela do Excel, inclui a nova coluna nela."""
+    import posixpath
+    import uuid
+    rels_path = posixpath.join(posixpath.dirname(caminho_aba), "_rels", posixpath.basename(caminho_aba) + ".rels")
+    if rels_path not in zin.namelist():
+        return {}
+    rels = zin.read(rels_path).decode("utf-8")
+    saida = {}
+    for alvo in re.findall(r'Target="([^"]*tables/[^"]+)"', rels):
+        tpath = posixpath.normpath(posixpath.join(posixpath.dirname(caminho_aba), alvo)).lstrip("/")
+        txml = zin.read(tpath).decode("utf-8")
+        m = re.search(r'<table [^>]*\sref="([A-Z]+)(\d+):([A-Z]+)(\d+)"', txml)
+        if not m or int(m.group(2)) != linha_hdr or _col_num(m.group(3)) != ncol - 1:
+            continue
+        nova_ref = "%s%s:%s%s" % (m.group(1), m.group(2), _col_letra(ncol), m.group(4))
+        txml = re.sub(r'(<(?:table|autoFilter)\b[^>]*?\sref=")[^"]+"', lambda x: x.group(1) + nova_ref + '"', txml)
+        prox_id = max(int(i) for i in re.findall(r'<tableColumn id="(\d+)"', txml)) + 1
+        n = int(re.search(r'<tableColumns count="(\d+)"', txml).group(1)) + 1
+        txml = re.sub(r'<tableColumns count="\d+"', '<tableColumns count="%d"' % n, txml)
+        uid = ' xr3:uid="{%s}"' % str(uuid.uuid4()).upper() if "xmlns:xr3" in txml else ""
+        txml = txml.replace("</tableColumns>",
+                            '<tableColumn id="%d"%s name="TAG PADRONIZADA"/></tableColumns>' % (prox_id, uid))
+        saida[tpath] = txml
+    return saida
+
+
 def processar(entrada, saida, aba=None, line_list=None):
     wb = openpyxl.load_workbook(entrada, read_only=False, data_only=False)
     ws = wb[aba] if aba else wb.worksheets[0]
     destino, origem, primeira = localizar_colunas(ws)
-    if not destino or not origem:
-        raise SystemExit("Colunas 'TAG PADRONIZADA'/'PADRONIZAR TAG' e/ou 'Linha' não encontradas na aba %r" % ws.title)
+    if not origem:
+        raise SystemExit("Coluna de origem ('Linha', 'Nº DA LINHA'...) não encontrada na aba %r" % ws.title)
+    nova_coluna = destino is None
+    if nova_coluna:
+        # sem coluna de destino: cria "TAG PADRONIZADA" logo após a última coluna do cabeçalho
+        linha_hdr = primeira - 1
+        destino = max(c.column for c in ws[linha_hdr] if c.value not in (None, "")) + 1
 
     resultados = {}
     pendencias = []
@@ -218,11 +274,21 @@ def processar(entrada, saida, aba=None, line_list=None):
     with zipfile.ZipFile(entrada) as zin:
         caminho = _caminho_aba(zin, ws.title)
         xml = zin.read(caminho).decode("utf-8")
+        alterados = {}
+        estilo = None
+        if nova_coluna:
+            letra, ant = _col_letra(destino), _col_letra(destino - 1)
+            estilo_hdr = _estilo(xml, "%s%d" % (ant, linha_hdr))
+            estilo = _estilo(xml, "%s%d" % (ant, primeira))
+            xml = _gravar_celula(xml, "%s%d" % (letra, linha_hdr), "TAG PADRONIZADA", estilo_hdr)
+            xml = _ampliar_aba(xml, destino)
+            alterados.update(_ampliar_tabela(zin, caminho, linha_hdr, destino))
         for ref, tag in resultados.items():
-            xml = _gravar_celula(xml, ref, tag)
+            xml = _gravar_celula(xml, ref, tag, estilo)
+        alterados[caminho] = xml
         with zipfile.ZipFile(saida, "w", zipfile.ZIP_DEFLATED) as zout:
             for item in zin.infolist():
-                dados = xml.encode("utf-8") if item.filename == caminho else zin.read(item.filename)
+                dados = alterados[item.filename].encode("utf-8") if item.filename in alterados else zin.read(item.filename)
                 zout.writestr(item, dados)
 
     return ws.title, resultados, pendencias
