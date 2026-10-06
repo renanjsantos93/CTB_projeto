@@ -248,7 +248,7 @@ def _ampliar_tabela(zin, caminho_aba, linha_hdr, ncol):
     return saida
 
 
-def processar(entrada, saida, aba=None, line_list=None):
+def processar(entrada, saida, aba=None, line_list=None, somente_vazias=False):
     wb = openpyxl.load_workbook(entrada, read_only=False, data_only=False)
     ws = wb[aba] if aba else wb.worksheets[0]
     destino, origem, primeira = localizar_colunas(ws)
@@ -265,6 +265,8 @@ def processar(entrada, saida, aba=None, line_list=None):
     for r in range(primeira, ws.max_row + 1):
         bruto = ws.cell(r, origem).value
         if bruto is None or str(bruto).strip() == "":
+            continue
+        if somente_vazias and not nova_coluna and ws.cell(r, destino).value not in (None, ""):
             continue
         tag, obs = padronizar_tag(bruto, line_list)
         resultados["%s%d" % (_col_letra(destino), r)] = tag
@@ -300,9 +302,11 @@ def main(argv=None):
     ap.add_argument("saida")
     ap.add_argument("--aba", help="nome da aba (padrão: primeira)")
     ap.add_argument("--line-list", help="Line List (.xlsx ou .txt, uma TAG por linha) para validar 4-1/2\"")
+    ap.add_argument("--somente-vazias", action="store_true",
+                    help="preenche só as células vazias da coluna de destino")
     a = ap.parse_args(argv)
 
-    titulo, res, pend = processar(a.entrada, a.saida, a.aba, carregar_line_list(a.line_list))
+    titulo, res, pend = processar(a.entrada, a.saida, a.aba, carregar_line_list(a.line_list), a.somente_vazias)
     print("Aba %s: %d TAGs padronizadas, %d únicas" % (titulo, len(res), len(set(res.values()))))
     for r, bruto, tag, obs in pend:
         print("  linha %d: %r -> %r  [%s]" % (r, bruto, tag, obs))
