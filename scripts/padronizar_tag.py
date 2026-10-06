@@ -77,7 +77,12 @@ def padronizar_tag(tag, line_list=None):
     s = _DN_SEM_POL.sub(r'\1"', s)
 
     s = _quatro_blocos(s)
-    if _DN_VALIDO.match(s) and "/" in s.split("-", 3)[-1]:
+    if _DN_VALIDO.match(s) and s.count("-") >= 3:
+        # zona separada por barra no nº da linha (ex.: 5002A/Z03, 5511B/03)
+        blocos = s.split("-")
+        blocos[3] = re.sub(r"(?<=[0-9A-Z])/Z?\d{1,2}$", "", blocos[3])
+        s = "-".join(blocos)
+    if _DN_VALIDO.match(s) and "1/2" in s.split("-", 3)[-1]:
         # "12" trocado por "1/2" no número da linha (ex.: 51/27A -> 5127A)
         blocos = s.split("-")
         blocos[3] = blocos[3].replace("1/2", "12")
