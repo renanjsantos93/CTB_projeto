@@ -161,28 +161,34 @@ def test_dimensional_pela_rastreabilidade_e_linha_de_numeracao():
     assert len(res["juntas"]) == 3
 
 
-def test_relatorio_df_vem_da_rastreabilidade_dimensional():
+def test_relatorio_df_pela_linha_e_documento():
     d = tempfile.mkdtemp()
     mj, ms, out = (os.path.join(d, n) for n in ("j.xlsx", "s.xlsx", "o.xlsx"))
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.append(["Linha", "Spool", "Junta", "P/C", "Rastreabilidade - dimensional", None, None, None])
-    ws.append([None, None, None, None, "Status", "Relatório", "Executante", "Data"])
-    ws.append([LINHA, "001", "001", "P", "A", "053/26", "X", None])
-    ws.append([LINHA, "001", "002", "P", "A", "053/26", "X", None])
-    ws.append([LINHA, "001", "003", "C", "A", "099/26", "X", None])   # Campo: não entra
-    ws.append([LINHA, "002", "004", "P", "P", None, None, None])
-    ws.append([LINHA, "003", "005", "C", "A", "070/26", "X", None])   # spool só com Campo
+    ws.append(["Linha", "Documento", "Spool", "Junta", "P/C", "Rastreabilidade - dimensional", None, None, None])
+    ws.append([None, None, None, None, None, "Status", "Relatório", "Executante", "Data"])
+    ws.append([LINHA, "ISO-1", "001", "001", "P", "A", "053/26", "X", None])
+    ws.append([LINHA, "ISO-1", "001", "002", "C", "A", "099/26", "X", None])  # Campo: não conta
+    ws.append([LINHA, "ISO-1", "002", "003", "P", "P", None, None, None])     # recebe o do documento
+    ws.append([LINHA, "ISO-1", "003", "004", "C", "A", "099/26", "X", None])  # só Campo: idem
+    ws.append([LINHA, "ISO-2", "001", "005", "P", "A", "060/26", "X", None])  # documento com 2 relatórios
+    ws.append([LINHA, "ISO-2", "002", "006", "P", "A", "061/26", "X", None])
+    ws.append([LINHA, "ISO-2", "003", "007", "P", "P", None, None, None])
+    ws.append([LINHA, "ISO-3", "001", "008", "C", "A", "070/26", "X", None])  # sem Pipe com relatório
     wb.save(mj)
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.append(["Linha", "Spool", "Relatório DF"])
-    for sp in ("001", "002", "003"):
-        ws.append([LINHA, sp, None])
+    ws.append(["Linha", "Documento", "Spool", "Relatório DF"])
+    for doc, sp in (("ISO-1", "001"), ("ISO-1", "002"), ("ISO-1", "003"),
+                    ("ISO-2", "001"), ("ISO-2", "002"), ("ISO-2", "003"), ("ISO-3", "001")):
+        ws.append([LINHA, doc, sp, None])
     wb.save(ms)
-    atualizar_spools(mj, ms, out)
+    res = atualizar_spools(mj, ms, out)
     ws = openpyxl.load_workbook(out).active
-    assert [ws.cell(r, 3).value for r in (2, 3, 4)] == ["053/26", None, "070/26"]
+    assert [ws.cell(r, 4).value for r in range(2, 9)] == [
+        "053/26", "053/26", "053/26", "060/26", "061/26", "060/26 / 061/26", None]
+    assert len(res["rel_avisos"]) == 3
 
 
 def test_espessura_do_spool_e_a_maior_da_linha():

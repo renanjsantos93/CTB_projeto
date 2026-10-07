@@ -33,8 +33,10 @@ Total_Juntas / Total_Juntas_Pipe: corrigidos com a contagem de juntas do spool
 no Mapa de Juntas (todas as juntas / só as Pipe Shop; repetidas contam uma vez).
 
 Relatório DF: nº do relatório do grupo "Rastreabilidade - dimensional" das juntas
-Pipe Shop do spool (sem juntas Pipe, usa as demais). Mais de um relatório no
-mesmo spool são gravados juntos ("018/26 / 019/26") e avisados no relatório.
+Pipe Shop da mesma Linha + Documento (todos os spools do documento recebem o
+mesmo nº; juntas de Campo não contam). Se o documento tiver mais de um
+relatório, usa o das juntas Pipe do próprio spool; sem ele, grava todos
+("018/26 / 019/26"). Os dois casos são avisados no relatório.
 
 Espessura: a coluna "Espessura" do spool recebe a maior espessura encontrada
 entre todas as juntas da mesma linha no Mapa de Juntas (Pipe e Campo).
@@ -323,7 +325,7 @@ def consolidar(juntas, etapas):
     spools = OrderedDict()
     for j in juntas:
         s = spools.setdefault((j["chave"], j["doc"], j["spool"]), {"linha": j["linha"], "tag": j["tag"],
-                                                                   "chave": j["chave"],
+                                                                   "chave": j["chave"], "doc": j["doc"],
                                                          "juntas": [], "campo": []})
         (s["juntas"] if j["tipo"] == "PIPE" else s["campo"]).append(j)
     for s in spools.values():
@@ -464,6 +466,10 @@ def atualizar_spools(juntas_xlsx, spools_xlsx, saida, aba_juntas=None, aba_spool
     gravar, gravar_num, resultado, sem_juntas, divergencias = {}, {}, [], [], []
     n_esp = 0
     gravar_txt, rel_avisos = {}, []
+    rel_doc = defaultdict(set)  # (linha, documento) -> relatórios dimensionais das juntas Pipe
+    for j in juntas:
+        if j["tipo"] == "PIPE" and j["rel_dim"]:
+            rel_doc[(j["chave"], j["doc"])].add(j["rel_dim"])
     for r in range(hdr + 1, ws.max_row + 1):
         linha, sp = ws.cell(r, c_linha).value, _spool(ws.cell(r, c_spool).value)
         if not linha or not sp:
@@ -505,26 +511,22 @@ def atualizar_spools(juntas_xlsx, spools_xlsx, saida, aba_juntas=None, aba_spool
         if c and esp is not None and ler_numero(ws.cell(r, c).value) != esp:
             gravar_num["%s%d" % (_col_letra(c), r)] = esp
             n_esp += 1
-        # Relatório DF = relatório dimensional das juntas (Pipe; sem Pipe, todas)
+        # Relatório DF = relatório dimensional das juntas Pipe da Linha + Documento
         c = extras["rel_df"]
         if c:
-            base = s["juntas"] or s["campo"]
-            rels = sorted({j["rel_dim"] for j in base if j["rel_dim"]})
+            rels = sorted(rel_doc.get((s["chave"], s["doc"]), ()))
+            if len(rels) > 1:
+                proprios = sorted({j["rel_dim"] for j in s["juntas"] if j["rel_dim"]})
+                rel_avisos.append((r, linha, sp, "Relatório DF: documento com %d relatórios (%s); %s" % (
+                    len(rels), " / ".join(rels),
+                    "usado o do próprio spool" if proprios else "spool sem relatório próprio, gravados todos")))
+                rels = proprios or rels
             novo = " / ".join(rels)
             atual = _rel(ws.cell(r, c).value)
             if novo and novo != atual:
                 gravar_txt["%s%d" % (_col_letra(c), r)] = novo
             elif not novo and atual and limpar:
                 gravar_txt["%s%d" % (_col_letra(c), r)] = None
-            sem_rel = [j["junta"] for j in base if not j["rel_dim"]]
-            if rels and not s["juntas"]:
-                rel_avisos.append((r, linha, sp, "Relatório DF %s obtido de junta de Campo (spool sem juntas Pipe)"
-                                   % novo))
-            if len(rels) > 1:
-                rel_avisos.append((r, linha, sp, "Relatório DF: %d relatórios no spool (%s)" % (len(rels), novo)))
-            if rels and sem_rel:
-                rel_avisos.append((r, linha, sp, "Relatório DF %s: juntas sem relatório dimensional: %s"
-                                   % (novo, ", ".join(sem_rel))))
         for chave in (k for k, *_ in ETAPAS if k in etapas_juntas):
             data, motivo = s["etapas"][chave]
             resultado.append((r, linha, sp, chave, data, motivo, len(s["juntas"]), len(s["campo"])))
