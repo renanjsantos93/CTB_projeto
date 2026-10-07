@@ -1234,16 +1234,16 @@
 255;6''-B3B-MR-5407A-PP-2'';001;EVS;28/08/2026;10;2;
 255;6''-B3B-MR-5407A-PP-2'';001;END;01/09/2026;10;2;
 255;6''-B3B-MR-5407A-PP-2'';001;Dimensional;;10;2;10 de 10 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data), 008 (sem data), 009 (sem data), 010 (sem data), 011 (sem data)
-256;6''-B3B-MR-5407A-PP-2'';002;Visual de Ajuste;28/08/2026;8;2;
-256;6''-B3B-MR-5407A-PP-2'';002;Soldagem;28/08/2026;8;2;
-256;6''-B3B-MR-5407A-PP-2'';002;EVS;28/08/2026;8;2;
-256;6''-B3B-MR-5407A-PP-2'';002;END;01/09/2026;8;2;
-256;6''-B3B-MR-5407A-PP-2'';002;Dimensional;;8;2;8 de 8 juntas Pipe sem data: 013 (sem data), 014 (sem data), 015 (sem data), 016 (sem data), 017 (sem data), 019 (sem data), 020 (sem data), 021 (sem data)
-257;6''-B3B-MR-5407A-PP-2'';002;Visual de Ajuste;28/08/2026;8;2;
-257;6''-B3B-MR-5407A-PP-2'';002;Soldagem;28/08/2026;8;2;
-257;6''-B3B-MR-5407A-PP-2'';002;EVS;28/08/2026;8;2;
-257;6''-B3B-MR-5407A-PP-2'';002;END;01/09/2026;8;2;
-257;6''-B3B-MR-5407A-PP-2'';002;Dimensional;;8;2;8 de 8 juntas Pipe sem data: 013 (sem data), 014 (sem data), 015 (sem data), 016 (sem data), 017 (sem data), 019 (sem data), 020 (sem data), 021 (sem data)
+256;6''-B3B-MR-5407A-PP-2'';002;Visual de Ajuste;28/08/2026;8;1;
+256;6''-B3B-MR-5407A-PP-2'';002;Soldagem;28/08/2026;8;1;
+256;6''-B3B-MR-5407A-PP-2'';002;EVS;28/08/2026;8;1;
+256;6''-B3B-MR-5407A-PP-2'';002;END;01/09/2026;8;1;
+256;6''-B3B-MR-5407A-PP-2'';002;Dimensional;;8;1;8 de 8 juntas Pipe sem data: 013 (sem data), 014 (sem data), 015 (sem data), 016 (sem data), 017 (sem data), 019 (sem data), 020 (sem data), 021 (sem data)
+257;6''-B3B-MR-5407A-PP-2'';002;Visual de Ajuste;;0;1;spool sem juntas Pipe Shop
+257;6''-B3B-MR-5407A-PP-2'';002;Soldagem;;0;1;spool sem juntas Pipe Shop
+257;6''-B3B-MR-5407A-PP-2'';002;EVS;;0;1;spool sem juntas Pipe Shop
+257;6''-B3B-MR-5407A-PP-2'';002;END;;0;1;spool sem juntas Pipe Shop
+257;6''-B3B-MR-5407A-PP-2'';002;Dimensional;;0;1;spool sem juntas Pipe Shop
 258;6''-B3B-MR-5407A-PP-2'';003;Visual de Ajuste;29/09/2026;7;3;
 258;6''-B3B-MR-5407A-PP-2'';003;Soldagem;29/09/2026;7;3;
 258;6''-B3B-MR-5407A-PP-2'';003;EVS;29/09/2026;7;3;
@@ -1314,154 +1314,250 @@
 271;V-713-TRIM-1-Z01;002;EVS;10/09/2026;8;0;
 271;V-713-TRIM-1-Z01;002;END;15/09/2026;8;0;
 271;V-713-TRIM-1-Z01;002;Dimensional;;8;0;8 de 8 juntas Pipe sem data: 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data), 008 (sem data), 009 (sem data), 010 (sem data)
-90;"2""-A1E-BOG-7001A-C-2""-Z04";001;;;;;Total_Juntas = 4 no Mapa de Spools, 3 no Mapa de Juntas
-91;"2""-A1E-BOG-7001A-C-2""-Z04";002;;;;;Total_Juntas = 3 no Mapa de Spools, 4 no Mapa de Juntas
-92;"2""-A1E-BOG-7002A-C-2""-Z04";001;;;;;Total_Juntas = 4 no Mapa de Spools, 3 no Mapa de Juntas
-93;"2""-A1E-BOG-7002A-C-2""-Z04";002;;;;;Total_Juntas = 3 no Mapa de Spools, 4 no Mapa de Juntas
-94;"2""-A1E-BOG-7003B-C-2""-Z04";001;;;;;Total_Juntas = 4 no Mapa de Spools, 3 no Mapa de Juntas
-95;"2""-A1E-BOG-7003B-C-2""-Z04";002;;;;;Total_Juntas = 3 no Mapa de Spools, 4 no Mapa de Juntas
-96;"2""-A1E-BOG-7004B-C-2""-Z04";001;;;;;Total_Juntas = 4 no Mapa de Spools, 3 no Mapa de Juntas
-97;"2""-A1E-BOG-7004B-C-2""-Z04";002;;;;;Total_Juntas = 3 no Mapa de Spools, 4 no Mapa de Juntas
-98;"2""-A1E-BOG-7005C-C-2""-Z04";001;;;;;Total_Juntas = 4 no Mapa de Spools, 3 no Mapa de Juntas
-99;"2""-A1E-BOG-7005C-C-2""-Z04";002;;;;;Total_Juntas = 3 no Mapa de Spools, 4 no Mapa de Juntas
-100;"2""-A1E-BOG-7006A-C-3""-Z04";001;;;;;Total_Juntas = 4 no Mapa de Spools, 2 no Mapa de Juntas
-101;"2""-A1E-BOG-7006A-C-3""-Z04";002;;;;;Total_Juntas = 2 no Mapa de Spools, 4 no Mapa de Juntas
-102;"2""-A1E-BOG-7006C-C-2""-Z04";001;;;;;Total_Juntas = 4 no Mapa de Spools, 3 no Mapa de Juntas
-103;"2""-A1E-BOG-7006C-C-2""-Z04";002;;;;;Total_Juntas = 3 no Mapa de Spools, 4 no Mapa de Juntas
-104;"2""-A1E-BOG-7007A-C-3""-Z04";001;;;;;Total_Juntas = 4 no Mapa de Spools, 2 no Mapa de Juntas
-105;"2""-A1E-BOG-7007A-C-3""-Z04";002;;;;;Total_Juntas = 2 no Mapa de Spools, 4 no Mapa de Juntas
-106;"2""-A1E-BOG-7008B-C-3""-Z05";001;;;;;Total_Juntas = 4 no Mapa de Spools, 2 no Mapa de Juntas
-107;"2""-A1E-BOG-7008B-C-3""-Z05";002;;;;;Total_Juntas = 2 no Mapa de Spools, 4 no Mapa de Juntas
-108;"2""-A1E-BOG-7009B-C-3""-Z05";001;;;;;Total_Juntas = 4 no Mapa de Spools, 2 no Mapa de Juntas
-109;"2""-A1E-BOG-7009B-C-3""-Z05";002;;;;;Total_Juntas = 2 no Mapa de Spools, 4 no Mapa de Juntas
-110;"2""-A1E-BOG-7010C-C-3""-Z04";001;;;;;Total_Juntas = 4 no Mapa de Spools, 2 no Mapa de Juntas
-111;"2""-A1E-BOG-7010C-C-3""-Z04";002;;;;;Total_Juntas = 2 no Mapa de Spools, 4 no Mapa de Juntas
-112;"2""-A1E-BOG-7011C-C-3""-Z04";001;;;;;Total_Juntas = 4 no Mapa de Spools, 2 no Mapa de Juntas
-113;"2""-A1E-BOG-7011C-C-3""-Z04";002;;;;;Total_Juntas = 2 no Mapa de Spools, 4 no Mapa de Juntas
-114;"2""-A1E-BOG-7205B-Z04/1";001;;;;;Total_Juntas = 4 no Mapa de Spools, 6 no Mapa de Juntas
-115;"2""-A1E-BOG-7205B-Z04/2";002;;;;;Total_Juntas = 6 no Mapa de Spools, 4 no Mapa de Juntas
-117;"2""-A1E-CF-4104";001;;;;;Total_Juntas = 4 no Mapa de Spools, 2 no Mapa de Juntas
-118;"2""-A1E-CF-7201-Z04";001;;;;;Total_Juntas = 2 no Mapa de Spools, 5 no Mapa de Juntas
-119;"2""-A1E-IA-9004""-Z01";001;;;;;Total_Juntas = 5 no Mapa de Spools, 6 no Mapa de Juntas
-120;"2""-A1E-IA-9011-Z03";001;;;;;Total_Juntas = 6 no Mapa de Spools, 7 no Mapa de Juntas
-121;"2""-A1E-IA-9011-Z03";002;;;;;Total_Juntas = 7 no Mapa de Spools, 5 no Mapa de Juntas
-122;"2""-A1E-IA-9011-Z03";003;;;;;Total_Juntas = 5 no Mapa de Spools, 9 no Mapa de Juntas
-123;"2""-A1E-IA-9011-Z03";004;;;;;Total_Juntas = 9 no Mapa de Spools, 2 no Mapa de Juntas
-124;"2""-A1E-IA-9011-Z03";005;;;;;Total_Juntas = 2 no Mapa de Spools, 5 no Mapa de Juntas
-125;"2""-A1E-IA-9709-Z04/1";001;;;;;Total_Juntas = 5 no Mapa de Spools, 4 no Mapa de Juntas
-127;"2""-A1E-IA-9709-Z04/3";003;;;;;Total_Juntas = 4 no Mapa de Spools, 2 no Mapa de Juntas
-128;"2""-A1E-IA-9709-Z04/4";004;;;;;Total_Juntas = 2 no Mapa de Spools, 3 no Mapa de Juntas
-134;"2""-A3B-HF-9501";001;;;;;Total_Juntas = 3 no Mapa de Spools, 5 no Mapa de Juntas
-135;"2""-A3B-N2-9719-Z01/1";001;;;;;Total_Juntas = 5 no Mapa de Spools, 4 no Mapa de Juntas
-137;"2""-A3B-N2-9719-Z01/3";003;;;;;Total_Juntas = 4 no Mapa de Spools, 1 no Mapa de Juntas
-138;"2""-A3B-WW-9401-Z01";001;;;;;Total_Juntas = 1 no Mapa de Spools, 6 no Mapa de Juntas
-140;"2""-A3B-WW-9401-Z01";003;;;;;Total_Juntas = 6 no Mapa de Spools, 4 no Mapa de Juntas
-141;"2""-A3B-WW-9402-Z01";001;;;;;Total_Juntas = 4 no Mapa de Spools, 3 no Mapa de Juntas
-142;"2""-A3B-WW-9402-Z01";002;;;;;Total_Juntas = 3 no Mapa de Spools, 5 no Mapa de Juntas
-143;"2""-A3B-WW-9501M";001;;;;;Total_Juntas = 5 no Mapa de Spools, 3 no Mapa de Juntas
-144;"2""-A3B-WW-9501M";002;;;;;Total_Juntas = 3 no Mapa de Spools, 2 no Mapa de Juntas
-145;"2""-A3B-WW-9501M";003;;;;;Total_Juntas = 2 no Mapa de Spools, 9 no Mapa de Juntas
-146;"2""-B1E-MR-4010A-Z02";001;;;;;Total_Juntas = 9 no Mapa de Spools, 19 no Mapa de Juntas
-147;"2""-B3B-LPG-1001-Z01";001;;;;;Total_Juntas = 19 no Mapa de Spools, 1 no Mapa de Juntas
-148;"2""-B3B-LPG-1001-Z01";002;;;;;Total_Juntas = 1 no Mapa de Spools, 3 no Mapa de Juntas
-149;"2""-B3B-LPG-1001-Z01";003;;;;;Total_Juntas = 3 no Mapa de Spools, 4 no Mapa de Juntas
-152;"2""-B3B-LPG-7302-Z01/1";002;;;;;Total_Juntas = 4 no Mapa de Spools, 2 no Mapa de Juntas
-153;"2""-B3B-LPG-7302-Z01/1";003;;;;;Total_Juntas = 2 no Mapa de Spools, 6 no Mapa de Juntas
-154;"2""-B3B-LPG-7302-Z01/1";004;;;;;Total_Juntas = 6 no Mapa de Spools, 5 no Mapa de Juntas
-155;"2""-B3B-LPG-7302-Z01/1";005;;;;;Total_Juntas = 5 no Mapa de Spools, 1 no Mapa de Juntas
-156;"2""-B3B-LPG-7302-Z01/2";006;;;;;Total_Juntas = 1 no Mapa de Spools, 2 no Mapa de Juntas
-157;"2""-B3B-LPG-7302-Z01/3";007;;;;;Total_Juntas = 2 no Mapa de Spools, 4 no Mapa de Juntas
-159;"2""-B3B-NG-7301-Z01/1";003;;;;;Total_Juntas = 4 no Mapa de Spools, 2 no Mapa de Juntas
-160;"2""-B3B-NG-7301-Z01/1";004;;;;;Total_Juntas = 2 no Mapa de Spools, 3 no Mapa de Juntas
-161;"2""-B3B-NG-7301-Z01/1";005;;;;;Total_Juntas = 3 no Mapa de Spools, 5 no Mapa de Juntas
-162;"2""-B3B-NG-7301-Z01/1";006;;;;;Total_Juntas = 5 no Mapa de Spools, 1 no Mapa de Juntas
-163;"2""-B3B-NG-7301-Z01/2";001;;;;;Total_Juntas = 1 no Mapa de Spools, 4 no Mapa de Juntas
-164;"2""-D1E-LPG-4002A-C-3""-Z02";001;;;;;Total_Juntas = 4 no Mapa de Spools, 5 no Mapa de Juntas
-165;"24""-B1E-MR-4012A-Z02";001;;;;;Total_Juntas = 5 no Mapa de Spools, 4 no Mapa de Juntas
-166;"24""-B1E-MR-4012A-Z02";002;;;;;Total_Juntas = 4 no Mapa de Spools, 8 no Mapa de Juntas
-167;"24""-B1E-MR-5003A-Z03";001;;;;;Total_Juntas = 8 no Mapa de Spools, 4 no Mapa de Juntas
-168;"24""-B1E-MR-5003A-Z03";002;;;;;Total_Juntas = 4 no Mapa de Spools, 2 no Mapa de Juntas
-170;"24""-B1E-MR-5003A-Z03";004;;;;;Total_Juntas = 2 no Mapa de Spools, 5 no Mapa de Juntas
-171;2''-B3B-LO-5127A-PP-2'';001;;;;;Total_Juntas = 5 no Mapa de Spools, 4 no Mapa de Juntas
-172;"3""-A1E-BOG-7009-C-2""-Z04";001;;;;;Total_Juntas = 4 no Mapa de Spools, 6 no Mapa de Juntas
-173;"3""-A1E-BOG-7101A-C-3""-Z04";001;;;;;Total_Juntas = 6 no Mapa de Spools, 3 no Mapa de Juntas
-174;"3""-A1E-BOG-7101B-C-3""-Z04";001;;;;;Total_Juntas = 3 no Mapa de Spools, 5 no Mapa de Juntas
-175;"3""-A1E-BOG-7204A-C-3""-Z04/1";001;;;;;Total_Juntas = 5 no Mapa de Spools, 1 no Mapa de Juntas
-176;"3""-A1E-BOG-7204A-C-3""-Z04/2";002;;;;;Total_Juntas = 1 no Mapa de Spools, 5 no Mapa de Juntas
-177;"3""-A1E-BOG-7204A-C-3""-Z04/3";003;;;;;Total_Juntas = 5 no Mapa de Spools, 6 no Mapa de Juntas
-178;"3""-A1E-CF-4102";001;;;;;Total_Juntas = 6 no Mapa de Spools, 2 no Mapa de Juntas
-179;"3""-A1E-CF-7108A-Z04";001;;;;;Total_Juntas = 2 no Mapa de Spools, 13 no Mapa de Juntas
-180;"3""-A1E-CF-7108B-Z04";001;;;;;Total_Juntas = 13 no Mapa de Spools, 14 no Mapa de Juntas
-181;"3""-A3B-FG-8105-Z01/1";004;;;;;Total_Juntas = 14 no Mapa de Spools, 1 no Mapa de Juntas
-182;"3""-A3B-FG-8105-Z01/2";001;;;;;Total_Juntas = 1 no Mapa de Spools, 2 no Mapa de Juntas
-183;"3""-A3B-FG-8105-Z01/2";002;;;;;Total_Juntas = 2 no Mapa de Spools, 3 no Mapa de Juntas
-184;"3""-A3B-FG-8105-Z01/2";003;;;;;Total_Juntas = 3 no Mapa de Spools, 2 no Mapa de Juntas
-185;"3""-A3B-HM-3103-H-3""-Z01/1";003;;;;;Total_Juntas = 2 no Mapa de Spools, 4 no Mapa de Juntas
-187;"3""-A3B-HM-3103-H-3""-Z01/2";002;;;;;Total_Juntas = 4 no Mapa de Spools, 2 no Mapa de Juntas
-188;"3""-A3B-HM-8201-H-3""-Z01/1";001;;;;;Total_Juntas = 2 no Mapa de Spools, 6 no Mapa de Juntas
-189;"3""-A3B-HM-8201-H-3""-Z01/1";002;;;;;Total_Juntas = 6 no Mapa de Spools, 1 no Mapa de Juntas
-190;"3""-A3B-HM-8201-H-3""-Z01/2";003;;;;;Total_Juntas = 1 no Mapa de Spools, 4 no Mapa de Juntas
-193;"3""-B3B-MR-5305B-Z03";002;;;;;Total_Juntas = 5 no Mapa de Spools, 1 no Mapa de Juntas
-194;"3""-B3B-MR-5305B-Z03";003;;;;;Total_Juntas = 1 no Mapa de Spools, 4 no Mapa de Juntas
-196;"3""-B3B-MR-5505A-Z03";002;;;;;Total_Juntas = 5 no Mapa de Spools, 1 no Mapa de Juntas
-197;"3""-B3B-MR-5505A-Z03";003;;;;;Total_Juntas = 1 no Mapa de Spools, 4 no Mapa de Juntas
-198;"3/4""-A3B-CWS-0603-Z01";001;;;;;Total_Juntas = 4 no Mapa de Spools, 7 no Mapa de Juntas
-199;"3/4""-A3B-CWS-0604-Z01";001;;;;;Total_Juntas = 7 no Mapa de Spools, 9 no Mapa de Juntas
-200;"3/4""-A3B-CWS-0605-Z01";001;;;;;Total_Juntas = 9 no Mapa de Spools, 10 no Mapa de Juntas
-201;"3/4""-A3B-CWS-0605-Z01";002;;;;;Total_Juntas = 10 no Mapa de Spools, 1 no Mapa de Juntas
-202;"3/4""-A3B-CWS-0605-Z01";003;;;;;Total_Juntas = 1 no Mapa de Spools, 7 no Mapa de Juntas
-203;"4""-A3B-BOG-7204-Z01/1";003;;;;;Total_Juntas = 7 no Mapa de Spools, 2 no Mapa de Juntas
-204;"4""-A3B-BOG-7204-Z04";001;;;;;Total_Juntas = 2 no Mapa de Spools, 5 no Mapa de Juntas
-205;"4""-A3B-BOG-7204-Z04";002;;;;;Total_Juntas = 5 no Mapa de Spools, 4 no Mapa de Juntas
-206;"4""-A3B-HF-4006A-Z03";001;;;;;Total_Juntas = 4 no Mapa de Spools, 6 no Mapa de Juntas
-207;"4""-A3B-HF-5001A-Z03";001;;;;;Total_Juntas = 6 no Mapa de Spools, 4 no Mapa de Juntas
-209;"4""-B3B-MR-5511A-Z03";001;;;;;Total_Juntas = 4 no Mapa de Spools, 3 no Mapa de Juntas
-211;4''-B3B-LO-5113B-PP-2'';001;;;;;Total_Juntas = 3 no Mapa de Spools, 9 no Mapa de Juntas
-212;4''-B3B-LO-5113B-PP-2'';002;;;;;Total_Juntas = 9 no Mapa de Spools, 4 no Mapa de Juntas
-213;4''-B3B-LO-5309B-PP-2'';001;;;;;Total_Juntas = 4 no Mapa de Spools, 26 no Mapa de Juntas
-214;"6""-A1E-CF-4004A-Z02";001;;;;;Total_Juntas = 26 no Mapa de Spools, 4 no Mapa de Juntas
-215;"6""-A3B-HF-0404B-Z01/1";001;;;;;Total_Juntas = 4 no Mapa de Spools, 1 no Mapa de Juntas
-217;"6""-A3B-HF-4002A-Z03";001;;;;;Total_Juntas = 1 no Mapa de Spools, 6 no Mapa de Juntas
-218;"6""-A3B-HF-7301-Z01";001;;;;;Total_Juntas = 6 no Mapa de Spools, 2 no Mapa de Juntas
-219;"6""-A3B-HF-7301-Z01";002;;;;;Total_Juntas = 2 no Mapa de Spools, 3 no Mapa de Juntas
-220;"6""-A3B-HF-7301-Z01";003;;;;;Total_Juntas = 3 no Mapa de Spools, 6 no Mapa de Juntas
-221;"6""-A3B-HF-7301-Z01";004;;;;;Total_Juntas = 6 no Mapa de Spools, 2 no Mapa de Juntas
-222;"6""-A3B-HF-7301-Z01";005;;;;;Total_Juntas = 2 no Mapa de Spools, 1 no Mapa de Juntas
-223;"6""-A3B-HF-7301-Z01";006;;;;;Total_Juntas = 1 no Mapa de Spools, 2 no Mapa de Juntas
-224;"6""-A3B-HF-7301-Z01";007;;;;;Total_Juntas = 2 no Mapa de Spools, 3 no Mapa de Juntas
-225;"6""-A3B-HM-2205-H-3""-Z01/1";003;;;;;Total_Juntas = 3 no Mapa de Spools, 1 no Mapa de Juntas
-226;"6""-A3B-HM-2205-H-3""-Z01/2";001;;;;;Total_Juntas = 1 no Mapa de Spools, 4 no Mapa de Juntas
-227;"6""-A3B-HM-2205-H-3""-Z01/2";002;;;;;Total_Juntas = 4 no Mapa de Spools, 1 no Mapa de Juntas
-228;"6""-A3B-HM-8202-H-3""-Z01/1";001;;;;;Total_Juntas = 1 no Mapa de Spools, 4 no Mapa de Juntas
-229;"6""-A3B-HM-8202-H-3""-Z01/1";002;;;;;Total_Juntas = 4 no Mapa de Spools, 1 no Mapa de Juntas
-232;"6""-A3B-NG-0304B-Z01";001;;;;;Total_Juntas = 1 no Mapa de Spools, 2 no Mapa de Juntas
-233;"6""-A3B-NG-0407C-Z01/2";001;;;;;Total_Juntas = 2 no Mapa de Spools, 5 no Mapa de Juntas
-234;"6""-B1E-MR-4001A-C-3""-Z02";001;;;;;Total_Juntas = 5 no Mapa de Spools, 28 no Mapa de Juntas
-235;"6""-B1E-MR-4003A-C-4""-Z02";001;;;;;Total_Juntas = 28 no Mapa de Spools, 20 no Mapa de Juntas
-236;"6""-B3B-MR-4018A-Z02";001;;;;;Total_Juntas = 20 no Mapa de Spools, 2 no Mapa de Juntas
-238;"6""-B3B-MR-4018A-Z02";003;;;;;Total_Juntas = 2 no Mapa de Spools, 6 no Mapa de Juntas
-239;"6""-B3B-MR-5503A-Z03";001;;;;;Total_Juntas = 6 no Mapa de Spools, 4 no Mapa de Juntas
-242;"6""-B3B-NG-0304B";001;;;;;Total_Juntas = 4 no Mapa de Spools, 2 no Mapa de Juntas
-243;"6""-D1E-NG-4301A-C-3""-Z02";001;;;;;Total_Juntas = 2 no Mapa de Spools, 9 no Mapa de Juntas
-244;"6""-D3B-NG-0407C-Z01/2";001;;;;;Total_Juntas = 9 no Mapa de Spools, 5 no Mapa de Juntas
-245;"6""-D3B-NG-3104A-Z02";001;;;;;Total_Juntas = 5 no Mapa de Spools, 3 no Mapa de Juntas
-246;6''-B3B-MR-5405A-PP-2'';001;;;;;Total_Juntas = 3 no Mapa de Spools, 6 no Mapa de Juntas
-247;6''-B3B-MR-5405A-PP-2'';002;;;;;Total_Juntas = 6 no Mapa de Spools, 13 no Mapa de Juntas
-249;6''-B3B-MR-5405B-PP-2'';001;;;;;Total_Juntas = 13 no Mapa de Spools, 3 no Mapa de Juntas
-250;6''-B3B-MR-5405B-PP-2'';002;;;;;Total_Juntas = 3 no Mapa de Spools, 4 no Mapa de Juntas
-251;6''-B3B-MR-5405B-PP-2'';003;;;;;Total_Juntas = 4 no Mapa de Spools, 8 no Mapa de Juntas
-253;6''-B3B-MR-5405B-PP-2'';005;;;;;Total_Juntas = 8 no Mapa de Spools, 3 no Mapa de Juntas
-254;6''-B3B-MR-5405B-PP-2'';006;;;;;Total_Juntas = 3 no Mapa de Spools, 8 no Mapa de Juntas
-255;6''-B3B-MR-5407A-PP-2'';001;;;;;Total_Juntas = 8 no Mapa de Spools, 12 no Mapa de Juntas
-256;6''-B3B-MR-5407A-PP-2'';002;;;;;Total_Juntas = 12 no Mapa de Spools, 10 no Mapa de Juntas
-257;6''-B3B-MR-5407A-PP-2'';002;;;;;Total_Juntas = 9 no Mapa de Spools, 10 no Mapa de Juntas
-258;6''-B3B-MR-5407A-PP-2'';003;;;;;Total_Juntas = 1 no Mapa de Spools, 10 no Mapa de Juntas
-259;6''-B3B-MR-5407B-PP-2'';001;;;;;Total_Juntas = 10 no Mapa de Spools, 12 no Mapa de Juntas
-260;6''-B3B-MR-5407B-PP-2'';002;;;;;Total_Juntas = 12 no Mapa de Spools, 24 no Mapa de Juntas
-261;"8""-A1E-CF-9201-Z01/1";001;;;;;Total_Juntas = 24 no Mapa de Spools, 3 no Mapa de Juntas
-262;"8""-A1E-CF-9201-Z01/2";002;;;;;Total_Juntas = 3 no Mapa de Spools, 4 no Mapa de Juntas
-266;"8""-A3B-NG-0301-Z01/2";002;;;;;Total_Juntas = 8 no Mapa de Spools, 2 no Mapa de Juntas
-268;"8""-B3B-MR-4019A-Z02";002;;;;;Total_Juntas = 4 no Mapa de Spools, 5 no Mapa de Juntas
-269;"8""-B3B-NG-0304-Z01/2";001;;;;;Total_Juntas = 5 no Mapa de Spools, 4 no Mapa de Juntas
-270;V-713-TRIM-1-Z01;001;;;;;Total_Juntas = 4 no Mapa de Spools, 2 no Mapa de Juntas
-271;V-713-TRIM-1-Z01;002;;;;;Total_Juntas = 2 no Mapa de Spools, 8 no Mapa de Juntas
+10; 4''-B3B-LO-5113A-PP-2 ;002;;;;;TOTAL_JUNTAS_PIPE corrigido de 7 para 0 (Mapa de Juntas)
+20;"1""-A1E-IA-9010A-Z04";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 6 (Mapa de Juntas)
+25;"1""-A3B-N2-9105A-Z02";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 4 (Mapa de Juntas)
+26;"1""-A3B-N2-9105A-Z02";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 5 (Mapa de Juntas)
+30;"1""-A3B-N2-9109-Z01";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 0 para 8 (Mapa de Juntas)
+32;"1""-A3B-N2-9114-Z01";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 0 para 4 (Mapa de Juntas)
+33;"1""-A3B-N2-9114-Z01";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 0 para 7 (Mapa de Juntas)
+35;"1""-A3B-N2-9116-Z01/2";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 2 (Mapa de Juntas)
+46;"1""-B3B-LO-5002A-Z03";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 4 para 2 (Mapa de Juntas)
+49;"1""-B3B-LO-5004A-Z03";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 6 para 2 (Mapa de Juntas)
+57;"1""-D1E-NG-4001A-Z02";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 12 para 10 (Mapa de Juntas)
+63;"1.1/2""-A3B-CWR-0609-Z01";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 6 para 9 (Mapa de Juntas)
+65;"1.1/2""-A3B-CWS-0601-Z01";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 8 para 7 (Mapa de Juntas)
+73;"10""-B3B-MR-5203A-PP-2""-Z03";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 1 (Mapa de Juntas)
+75;"10""-B3B-MR-5203A-PP-2""-Z03";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 0 (Mapa de Juntas)
+77;"10""-B3B-MR-5203B-PP-2""-Z03";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 1 (Mapa de Juntas)
+80;10''-B3B-LO-5103A-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 14 (Mapa de Juntas)
+82;10''-B3B-LO-5103B-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 3 (Mapa de Juntas)
+83;10''-B3B-LO-5103B-2'';003;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 9 (Mapa de Juntas)
+85;10''-B3B-MR-5201B-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 9 para 2 (Mapa de Juntas)
+86;10''-B3B-MR-5201B-2'';003;;;;;TOTAL_JUNTAS_PIPE corrigido de 9 para 4 (Mapa de Juntas)
+90;"2""-A1E-BOG-7001A-C-2""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 3 (Mapa de Juntas)
+91;"2""-A1E-BOG-7001A-C-2""-Z04";002;;;;;TOTAL_JUNTAS corrigido de 3 para 4 (Mapa de Juntas)
+91;"2""-A1E-BOG-7001A-C-2""-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 4 (Mapa de Juntas)
+92;"2""-A1E-BOG-7002A-C-2""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 3 (Mapa de Juntas)
+93;"2""-A1E-BOG-7002A-C-2""-Z04";002;;;;;TOTAL_JUNTAS corrigido de 3 para 4 (Mapa de Juntas)
+93;"2""-A1E-BOG-7002A-C-2""-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 4 (Mapa de Juntas)
+94;"2""-A1E-BOG-7003B-C-2""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 3 (Mapa de Juntas)
+95;"2""-A1E-BOG-7003B-C-2""-Z04";002;;;;;TOTAL_JUNTAS corrigido de 3 para 4 (Mapa de Juntas)
+95;"2""-A1E-BOG-7003B-C-2""-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 4 (Mapa de Juntas)
+96;"2""-A1E-BOG-7004B-C-2""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 3 (Mapa de Juntas)
+97;"2""-A1E-BOG-7004B-C-2""-Z04";002;;;;;TOTAL_JUNTAS corrigido de 3 para 4 (Mapa de Juntas)
+97;"2""-A1E-BOG-7004B-C-2""-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 4 (Mapa de Juntas)
+98;"2""-A1E-BOG-7005C-C-2""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 3 (Mapa de Juntas)
+99;"2""-A1E-BOG-7005C-C-2""-Z04";002;;;;;TOTAL_JUNTAS corrigido de 3 para 4 (Mapa de Juntas)
+99;"2""-A1E-BOG-7005C-C-2""-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 4 (Mapa de Juntas)
+100;"2""-A1E-BOG-7006A-C-3""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+101;"2""-A1E-BOG-7006A-C-3""-Z04";002;;;;;TOTAL_JUNTAS corrigido de 2 para 4 (Mapa de Juntas)
+101;"2""-A1E-BOG-7006A-C-3""-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 4 (Mapa de Juntas)
+102;"2""-A1E-BOG-7006C-C-2""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 3 (Mapa de Juntas)
+103;"2""-A1E-BOG-7006C-C-2""-Z04";002;;;;;TOTAL_JUNTAS corrigido de 3 para 4 (Mapa de Juntas)
+103;"2""-A1E-BOG-7006C-C-2""-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 4 (Mapa de Juntas)
+104;"2""-A1E-BOG-7007A-C-3""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+105;"2""-A1E-BOG-7007A-C-3""-Z04";002;;;;;TOTAL_JUNTAS corrigido de 2 para 4 (Mapa de Juntas)
+105;"2""-A1E-BOG-7007A-C-3""-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 4 (Mapa de Juntas)
+106;"2""-A1E-BOG-7008B-C-3""-Z05";001;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+107;"2""-A1E-BOG-7008B-C-3""-Z05";002;;;;;TOTAL_JUNTAS corrigido de 2 para 4 (Mapa de Juntas)
+107;"2""-A1E-BOG-7008B-C-3""-Z05";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 4 (Mapa de Juntas)
+108;"2""-A1E-BOG-7009B-C-3""-Z05";001;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+109;"2""-A1E-BOG-7009B-C-3""-Z05";002;;;;;TOTAL_JUNTAS corrigido de 2 para 4 (Mapa de Juntas)
+109;"2""-A1E-BOG-7009B-C-3""-Z05";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 4 (Mapa de Juntas)
+110;"2""-A1E-BOG-7010C-C-3""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+111;"2""-A1E-BOG-7010C-C-3""-Z04";002;;;;;TOTAL_JUNTAS corrigido de 2 para 4 (Mapa de Juntas)
+111;"2""-A1E-BOG-7010C-C-3""-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 4 (Mapa de Juntas)
+112;"2""-A1E-BOG-7011C-C-3""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+113;"2""-A1E-BOG-7011C-C-3""-Z04";002;;;;;TOTAL_JUNTAS corrigido de 2 para 4 (Mapa de Juntas)
+113;"2""-A1E-BOG-7011C-C-3""-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 4 (Mapa de Juntas)
+114;"2""-A1E-BOG-7205B-Z04/1";001;;;;;TOTAL_JUNTAS corrigido de 4 para 6 (Mapa de Juntas)
+115;"2""-A1E-BOG-7205B-Z04/2";002;;;;;TOTAL_JUNTAS corrigido de 6 para 4 (Mapa de Juntas)
+116;"2""-A1E-CF-4007A-Z02";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 3 (Mapa de Juntas)
+117;"2""-A1E-CF-4104";001;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+118;"2""-A1E-CF-7201-Z04";001;;;;;TOTAL_JUNTAS corrigido de 2 para 5 (Mapa de Juntas)
+119;"2""-A1E-IA-9004""-Z01";001;;;;;TOTAL_JUNTAS corrigido de 5 para 6 (Mapa de Juntas)
+120;"2""-A1E-IA-9011-Z03";001;;;;;TOTAL_JUNTAS corrigido de 6 para 7 (Mapa de Juntas)
+121;"2""-A1E-IA-9011-Z03";002;;;;;TOTAL_JUNTAS corrigido de 7 para 5 (Mapa de Juntas)
+121;"2""-A1E-IA-9011-Z03";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 7 para 5 (Mapa de Juntas)
+122;"2""-A1E-IA-9011-Z03";003;;;;;TOTAL_JUNTAS corrigido de 5 para 9 (Mapa de Juntas)
+122;"2""-A1E-IA-9011-Z03";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 7 para 9 (Mapa de Juntas)
+123;"2""-A1E-IA-9011-Z03";004;;;;;TOTAL_JUNTAS corrigido de 9 para 2 (Mapa de Juntas)
+123;"2""-A1E-IA-9011-Z03";004;;;;;TOTAL_JUNTAS_PIPE corrigido de 7 para 2 (Mapa de Juntas)
+124;"2""-A1E-IA-9011-Z03";005;;;;;TOTAL_JUNTAS corrigido de 2 para 5 (Mapa de Juntas)
+124;"2""-A1E-IA-9011-Z03";005;;;;;TOTAL_JUNTAS_PIPE corrigido de 7 para 5 (Mapa de Juntas)
+125;"2""-A1E-IA-9709-Z04/1";001;;;;;TOTAL_JUNTAS corrigido de 5 para 4 (Mapa de Juntas)
+127;"2""-A1E-IA-9709-Z04/3";003;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+128;"2""-A1E-IA-9709-Z04/4";004;;;;;TOTAL_JUNTAS corrigido de 2 para 3 (Mapa de Juntas)
+134;"2""-A3B-HF-9501";001;;;;;TOTAL_JUNTAS corrigido de 3 para 5 (Mapa de Juntas)
+135;"2""-A3B-N2-9719-Z01/1";001;;;;;TOTAL_JUNTAS corrigido de 5 para 4 (Mapa de Juntas)
+137;"2""-A3B-N2-9719-Z01/3";003;;;;;TOTAL_JUNTAS corrigido de 4 para 1 (Mapa de Juntas)
+138;"2""-A3B-WW-9401-Z01";001;;;;;TOTAL_JUNTAS corrigido de 1 para 6 (Mapa de Juntas)
+139;"2""-A3B-WW-9401-Z01";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 6 para 5 (Mapa de Juntas)
+140;"2""-A3B-WW-9401-Z01";003;;;;;TOTAL_JUNTAS corrigido de 6 para 4 (Mapa de Juntas)
+140;"2""-A3B-WW-9401-Z01";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 6 para 4 (Mapa de Juntas)
+141;"2""-A3B-WW-9402-Z01";001;;;;;TOTAL_JUNTAS corrigido de 4 para 3 (Mapa de Juntas)
+142;"2""-A3B-WW-9402-Z01";002;;;;;TOTAL_JUNTAS corrigido de 3 para 5 (Mapa de Juntas)
+142;"2""-A3B-WW-9402-Z01";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 4 (Mapa de Juntas)
+143;"2""-A3B-WW-9501M";001;;;;;TOTAL_JUNTAS corrigido de 5 para 3 (Mapa de Juntas)
+144;"2""-A3B-WW-9501M";002;;;;;TOTAL_JUNTAS corrigido de 3 para 2 (Mapa de Juntas)
+144;"2""-A3B-WW-9501M";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 1 (Mapa de Juntas)
+145;"2""-A3B-WW-9501M";003;;;;;TOTAL_JUNTAS corrigido de 2 para 9 (Mapa de Juntas)
+145;"2""-A3B-WW-9501M";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 8 (Mapa de Juntas)
+146;"2""-B1E-MR-4010A-Z02";001;;;;;TOTAL_JUNTAS corrigido de 9 para 19 (Mapa de Juntas)
+147;"2""-B3B-LPG-1001-Z01";001;;;;;TOTAL_JUNTAS corrigido de 19 para 1 (Mapa de Juntas)
+148;"2""-B3B-LPG-1001-Z01";002;;;;;TOTAL_JUNTAS corrigido de 1 para 3 (Mapa de Juntas)
+148;"2""-B3B-LPG-1001-Z01";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 0 para 3 (Mapa de Juntas)
+149;"2""-B3B-LPG-1001-Z01";003;;;;;TOTAL_JUNTAS corrigido de 3 para 4 (Mapa de Juntas)
+149;"2""-B3B-LPG-1001-Z01";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 0 para 4 (Mapa de Juntas)
+150;"2""-B3B-LPG-1001-Z01";004;;;;;TOTAL_JUNTAS_PIPE corrigido de 0 para 4 (Mapa de Juntas)
+152;"2""-B3B-LPG-7302-Z01/1";002;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+152;"2""-B3B-LPG-7302-Z01/1";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 4 para 2 (Mapa de Juntas)
+153;"2""-B3B-LPG-7302-Z01/1";003;;;;;TOTAL_JUNTAS corrigido de 2 para 6 (Mapa de Juntas)
+153;"2""-B3B-LPG-7302-Z01/1";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 4 para 6 (Mapa de Juntas)
+154;"2""-B3B-LPG-7302-Z01/1";004;;;;;TOTAL_JUNTAS corrigido de 6 para 5 (Mapa de Juntas)
+154;"2""-B3B-LPG-7302-Z01/1";004;;;;;TOTAL_JUNTAS_PIPE corrigido de 4 para 5 (Mapa de Juntas)
+155;"2""-B3B-LPG-7302-Z01/1";005;;;;;TOTAL_JUNTAS corrigido de 5 para 1 (Mapa de Juntas)
+155;"2""-B3B-LPG-7302-Z01/1";005;;;;;TOTAL_JUNTAS_PIPE corrigido de 4 para 0 (Mapa de Juntas)
+156;"2""-B3B-LPG-7302-Z01/2";006;;;;;TOTAL_JUNTAS corrigido de 1 para 2 (Mapa de Juntas)
+157;"2""-B3B-LPG-7302-Z01/3";007;;;;;TOTAL_JUNTAS corrigido de 2 para 4 (Mapa de Juntas)
+159;"2""-B3B-NG-7301-Z01/1";003;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+159;"2""-B3B-NG-7301-Z01/1";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 2 (Mapa de Juntas)
+160;"2""-B3B-NG-7301-Z01/1";004;;;;;TOTAL_JUNTAS corrigido de 2 para 3 (Mapa de Juntas)
+161;"2""-B3B-NG-7301-Z01/1";005;;;;;TOTAL_JUNTAS corrigido de 3 para 5 (Mapa de Juntas)
+161;"2""-B3B-NG-7301-Z01/1";005;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 5 (Mapa de Juntas)
+162;"2""-B3B-NG-7301-Z01/1";006;;;;;TOTAL_JUNTAS corrigido de 5 para 1 (Mapa de Juntas)
+162;"2""-B3B-NG-7301-Z01/1";006;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 0 (Mapa de Juntas)
+163;"2""-B3B-NG-7301-Z01/2";001;;;;;TOTAL_JUNTAS corrigido de 1 para 4 (Mapa de Juntas)
+164;"2""-D1E-LPG-4002A-C-3""-Z02";001;;;;;TOTAL_JUNTAS corrigido de 4 para 5 (Mapa de Juntas)
+165;"24""-B1E-MR-4012A-Z02";001;;;;;TOTAL_JUNTAS corrigido de 5 para 4 (Mapa de Juntas)
+166;"24""-B1E-MR-4012A-Z02";002;;;;;TOTAL_JUNTAS corrigido de 4 para 8 (Mapa de Juntas)
+166;"24""-B1E-MR-4012A-Z02";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 6 (Mapa de Juntas)
+167;"24""-B1E-MR-5003A-Z03";001;;;;;TOTAL_JUNTAS corrigido de 8 para 4 (Mapa de Juntas)
+168;"24""-B1E-MR-5003A-Z03";002;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+168;"24""-B1E-MR-5003A-Z03";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 1 (Mapa de Juntas)
+169;"24""-B1E-MR-5003A-Z03";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 1 (Mapa de Juntas)
+170;"24""-B1E-MR-5003A-Z03";004;;;;;TOTAL_JUNTAS corrigido de 2 para 5 (Mapa de Juntas)
+170;"24""-B1E-MR-5003A-Z03";004;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 4 (Mapa de Juntas)
+171;2''-B3B-LO-5127A-PP-2'';001;;;;;TOTAL_JUNTAS corrigido de 5 para 4 (Mapa de Juntas)
+172;"3""-A1E-BOG-7009-C-2""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 6 (Mapa de Juntas)
+173;"3""-A1E-BOG-7101A-C-3""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 6 para 3 (Mapa de Juntas)
+174;"3""-A1E-BOG-7101B-C-3""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 3 para 5 (Mapa de Juntas)
+175;"3""-A1E-BOG-7204A-C-3""-Z04/1";001;;;;;TOTAL_JUNTAS corrigido de 5 para 1 (Mapa de Juntas)
+176;"3""-A1E-BOG-7204A-C-3""-Z04/2";002;;;;;TOTAL_JUNTAS corrigido de 1 para 5 (Mapa de Juntas)
+177;"3""-A1E-BOG-7204A-C-3""-Z04/3";003;;;;;TOTAL_JUNTAS corrigido de 5 para 6 (Mapa de Juntas)
+178;"3""-A1E-CF-4102";001;;;;;TOTAL_JUNTAS corrigido de 6 para 2 (Mapa de Juntas)
+179;"3""-A1E-CF-7108A-Z04";001;;;;;TOTAL_JUNTAS corrigido de 2 para 13 (Mapa de Juntas)
+180;"3""-A1E-CF-7108B-Z04";001;;;;;TOTAL_JUNTAS corrigido de 13 para 14 (Mapa de Juntas)
+181;"3""-A3B-FG-8105-Z01/1";004;;;;;TOTAL_JUNTAS corrigido de 14 para 1 (Mapa de Juntas)
+182;"3""-A3B-FG-8105-Z01/2";001;;;;;TOTAL_JUNTAS corrigido de 1 para 2 (Mapa de Juntas)
+183;"3""-A3B-FG-8105-Z01/2";002;;;;;TOTAL_JUNTAS corrigido de 2 para 3 (Mapa de Juntas)
+183;"3""-A3B-FG-8105-Z01/2";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 1 para 2 (Mapa de Juntas)
+184;"3""-A3B-FG-8105-Z01/2";003;;;;;TOTAL_JUNTAS corrigido de 3 para 2 (Mapa de Juntas)
+184;"3""-A3B-FG-8105-Z01/2";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 1 para 2 (Mapa de Juntas)
+185;"3""-A3B-HM-3103-H-3""-Z01/1";003;;;;;TOTAL_JUNTAS corrigido de 2 para 4 (Mapa de Juntas)
+187;"3""-A3B-HM-3103-H-3""-Z01/2";002;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+187;"3""-A3B-HM-3103-H-3""-Z01/2";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 4 para 1 (Mapa de Juntas)
+188;"3""-A3B-HM-8201-H-3""-Z01/1";001;;;;;TOTAL_JUNTAS corrigido de 2 para 6 (Mapa de Juntas)
+189;"3""-A3B-HM-8201-H-3""-Z01/1";002;;;;;TOTAL_JUNTAS corrigido de 6 para 1 (Mapa de Juntas)
+189;"3""-A3B-HM-8201-H-3""-Z01/1";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 1 (Mapa de Juntas)
+190;"3""-A3B-HM-8201-H-3""-Z01/2";003;;;;;TOTAL_JUNTAS corrigido de 1 para 4 (Mapa de Juntas)
+192;"3""-B3B-MR-5305B-Z03";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 4 para 3 (Mapa de Juntas)
+193;"3""-B3B-MR-5305B-Z03";002;;;;;TOTAL_JUNTAS corrigido de 5 para 1 (Mapa de Juntas)
+193;"3""-B3B-MR-5305B-Z03";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 4 para 1 (Mapa de Juntas)
+194;"3""-B3B-MR-5305B-Z03";003;;;;;TOTAL_JUNTAS corrigido de 1 para 4 (Mapa de Juntas)
+194;"3""-B3B-MR-5305B-Z03";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 4 para 3 (Mapa de Juntas)
+195;"3""-B3B-MR-5505A-Z03";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 4 para 3 (Mapa de Juntas)
+196;"3""-B3B-MR-5505A-Z03";002;;;;;TOTAL_JUNTAS corrigido de 5 para 1 (Mapa de Juntas)
+196;"3""-B3B-MR-5505A-Z03";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 4 para 1 (Mapa de Juntas)
+197;"3""-B3B-MR-5505A-Z03";003;;;;;TOTAL_JUNTAS corrigido de 1 para 4 (Mapa de Juntas)
+197;"3""-B3B-MR-5505A-Z03";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 4 para 3 (Mapa de Juntas)
+198;"3/4""-A3B-CWS-0603-Z01";001;;;;;TOTAL_JUNTAS corrigido de 4 para 7 (Mapa de Juntas)
+199;"3/4""-A3B-CWS-0604-Z01";001;;;;;TOTAL_JUNTAS corrigido de 7 para 9 (Mapa de Juntas)
+200;"3/4""-A3B-CWS-0605-Z01";001;;;;;TOTAL_JUNTAS corrigido de 9 para 10 (Mapa de Juntas)
+201;"3/4""-A3B-CWS-0605-Z01";002;;;;;TOTAL_JUNTAS corrigido de 10 para 1 (Mapa de Juntas)
+201;"3/4""-A3B-CWS-0605-Z01";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 9 para 1 (Mapa de Juntas)
+202;"3/4""-A3B-CWS-0605-Z01";003;;;;;TOTAL_JUNTAS corrigido de 1 para 7 (Mapa de Juntas)
+202;"3/4""-A3B-CWS-0605-Z01";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 9 para 7 (Mapa de Juntas)
+203;"4""-A3B-BOG-7204-Z01/1";003;;;;;TOTAL_JUNTAS corrigido de 7 para 2 (Mapa de Juntas)
+204;"4""-A3B-BOG-7204-Z04";001;;;;;TOTAL_JUNTAS corrigido de 2 para 5 (Mapa de Juntas)
+205;"4""-A3B-BOG-7204-Z04";002;;;;;TOTAL_JUNTAS corrigido de 5 para 4 (Mapa de Juntas)
+205;"4""-A3B-BOG-7204-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 3 (Mapa de Juntas)
+206;"4""-A3B-HF-4006A-Z03";001;;;;;TOTAL_JUNTAS corrigido de 4 para 6 (Mapa de Juntas)
+207;"4""-A3B-HF-5001A-Z03";001;;;;;TOTAL_JUNTAS corrigido de 6 para 4 (Mapa de Juntas)
+209;"4""-B3B-MR-5511A-Z03";001;;;;;TOTAL_JUNTAS corrigido de 4 para 3 (Mapa de Juntas)
+211;4''-B3B-LO-5113B-PP-2'';001;;;;;TOTAL_JUNTAS corrigido de 3 para 9 (Mapa de Juntas)
+212;4''-B3B-LO-5113B-PP-2'';002;;;;;TOTAL_JUNTAS corrigido de 9 para 4 (Mapa de Juntas)
+212;4''-B3B-LO-5113B-PP-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 9 para 1 (Mapa de Juntas)
+213;4''-B3B-LO-5309B-PP-2'';001;;;;;TOTAL_JUNTAS corrigido de 4 para 26 (Mapa de Juntas)
+214;"6""-A1E-CF-4004A-Z02";001;;;;;TOTAL_JUNTAS corrigido de 26 para 4 (Mapa de Juntas)
+215;"6""-A3B-HF-0404B-Z01/1";001;;;;;TOTAL_JUNTAS corrigido de 4 para 1 (Mapa de Juntas)
+217;"6""-A3B-HF-4002A-Z03";001;;;;;TOTAL_JUNTAS corrigido de 1 para 6 (Mapa de Juntas)
+218;"6""-A3B-HF-7301-Z01";001;;;;;TOTAL_JUNTAS corrigido de 6 para 2 (Mapa de Juntas)
+219;"6""-A3B-HF-7301-Z01";002;;;;;TOTAL_JUNTAS corrigido de 2 para 3 (Mapa de Juntas)
+219;"6""-A3B-HF-7301-Z01";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 3 (Mapa de Juntas)
+220;"6""-A3B-HF-7301-Z01";003;;;;;TOTAL_JUNTAS corrigido de 3 para 6 (Mapa de Juntas)
+220;"6""-A3B-HF-7301-Z01";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 6 (Mapa de Juntas)
+221;"6""-A3B-HF-7301-Z01";004;;;;;TOTAL_JUNTAS corrigido de 6 para 2 (Mapa de Juntas)
+221;"6""-A3B-HF-7301-Z01";004;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 1 (Mapa de Juntas)
+222;"6""-A3B-HF-7301-Z01";005;;;;;TOTAL_JUNTAS corrigido de 2 para 1 (Mapa de Juntas)
+222;"6""-A3B-HF-7301-Z01";005;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 0 (Mapa de Juntas)
+223;"6""-A3B-HF-7301-Z01";006;;;;;TOTAL_JUNTAS corrigido de 1 para 2 (Mapa de Juntas)
+224;"6""-A3B-HF-7301-Z01";007;;;;;TOTAL_JUNTAS corrigido de 2 para 3 (Mapa de Juntas)
+224;"6""-A3B-HF-7301-Z01";007;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 3 (Mapa de Juntas)
+225;"6""-A3B-HM-2205-H-3""-Z01/1";003;;;;;TOTAL_JUNTAS corrigido de 3 para 1 (Mapa de Juntas)
+226;"6""-A3B-HM-2205-H-3""-Z01/2";001;;;;;TOTAL_JUNTAS corrigido de 1 para 4 (Mapa de Juntas)
+227;"6""-A3B-HM-2205-H-3""-Z01/2";002;;;;;TOTAL_JUNTAS corrigido de 4 para 1 (Mapa de Juntas)
+227;"6""-A3B-HM-2205-H-3""-Z01/2";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 0 (Mapa de Juntas)
+228;"6""-A3B-HM-8202-H-3""-Z01/1";001;;;;;TOTAL_JUNTAS corrigido de 1 para 4 (Mapa de Juntas)
+229;"6""-A3B-HM-8202-H-3""-Z01/1";002;;;;;TOTAL_JUNTAS corrigido de 4 para 1 (Mapa de Juntas)
+229;"6""-A3B-HM-8202-H-3""-Z01/1";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 0 (Mapa de Juntas)
+231;"6""-A3B-HM-8202-H-3""-Z01/2";004;;;;;TOTAL_JUNTAS_PIPE corrigido de 0 para 1 (Mapa de Juntas)
+232;"6""-A3B-NG-0304B-Z01";001;;;;;TOTAL_JUNTAS corrigido de 1 para 2 (Mapa de Juntas)
+233;"6""-A3B-NG-0407C-Z01/2";001;;;;;TOTAL_JUNTAS corrigido de 2 para 5 (Mapa de Juntas)
+234;"6""-B1E-MR-4001A-C-3""-Z02";001;;;;;TOTAL_JUNTAS corrigido de 5 para 28 (Mapa de Juntas)
+235;"6""-B1E-MR-4003A-C-4""-Z02";001;;;;;TOTAL_JUNTAS corrigido de 28 para 20 (Mapa de Juntas)
+236;"6""-B3B-MR-4018A-Z02";001;;;;;TOTAL_JUNTAS corrigido de 20 para 2 (Mapa de Juntas)
+237;"6""-B3B-MR-4018A-Z02";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 1 (Mapa de Juntas)
+238;"6""-B3B-MR-4018A-Z02";003;;;;;TOTAL_JUNTAS corrigido de 2 para 6 (Mapa de Juntas)
+238;"6""-B3B-MR-4018A-Z02";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 5 (Mapa de Juntas)
+239;"6""-B3B-MR-5503A-Z03";001;;;;;TOTAL_JUNTAS corrigido de 6 para 4 (Mapa de Juntas)
+242;"6""-B3B-NG-0304B";001;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+243;"6""-D1E-NG-4301A-C-3""-Z02";001;;;;;TOTAL_JUNTAS corrigido de 2 para 9 (Mapa de Juntas)
+244;"6""-D3B-NG-0407C-Z01/2";001;;;;;TOTAL_JUNTAS corrigido de 9 para 5 (Mapa de Juntas)
+245;"6""-D3B-NG-3104A-Z02";001;;;;;TOTAL_JUNTAS corrigido de 5 para 3 (Mapa de Juntas)
+246;6''-B3B-MR-5405A-PP-2'';001;;;;;TOTAL_JUNTAS corrigido de 3 para 6 (Mapa de Juntas)
+247;6''-B3B-MR-5405A-PP-2'';002;;;;;TOTAL_JUNTAS corrigido de 6 para 13 (Mapa de Juntas)
+247;6''-B3B-MR-5405A-PP-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 6 para 10 (Mapa de Juntas)
+248;6''-B3B-MR-5405A-PP-2'';003;;;;;TOTAL_JUNTAS_PIPE corrigido de 6 para 10 (Mapa de Juntas)
+249;6''-B3B-MR-5405B-PP-2'';001;;;;;TOTAL_JUNTAS corrigido de 13 para 3 (Mapa de Juntas)
+250;6''-B3B-MR-5405B-PP-2'';002;;;;;TOTAL_JUNTAS corrigido de 3 para 4 (Mapa de Juntas)
+250;6''-B3B-MR-5405B-PP-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 3 (Mapa de Juntas)
+251;6''-B3B-MR-5405B-PP-2'';003;;;;;TOTAL_JUNTAS corrigido de 4 para 8 (Mapa de Juntas)
+251;6''-B3B-MR-5405B-PP-2'';003;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 6 (Mapa de Juntas)
+252;6''-B3B-MR-5405B-PP-2'';004;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 6 (Mapa de Juntas)
+253;6''-B3B-MR-5405B-PP-2'';005;;;;;TOTAL_JUNTAS corrigido de 8 para 3 (Mapa de Juntas)
+253;6''-B3B-MR-5405B-PP-2'';005;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 3 (Mapa de Juntas)
+254;6''-B3B-MR-5405B-PP-2'';006;;;;;TOTAL_JUNTAS corrigido de 3 para 8 (Mapa de Juntas)
+254;6''-B3B-MR-5405B-PP-2'';006;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 5 (Mapa de Juntas)
+255;6''-B3B-MR-5407A-PP-2'';001;;;;;TOTAL_JUNTAS corrigido de 8 para 12 (Mapa de Juntas)
+256;6''-B3B-MR-5407A-PP-2'';002;;;;;TOTAL_JUNTAS corrigido de 12 para 9 (Mapa de Juntas)
+256;6''-B3B-MR-5407A-PP-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 10 para 8 (Mapa de Juntas)
+257;6''-B3B-MR-5407A-PP-2'';002;;;;;TOTAL_JUNTAS corrigido de 9 para 1 (Mapa de Juntas)
+257;6''-B3B-MR-5407A-PP-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 10 para 0 (Mapa de Juntas)
+258;6''-B3B-MR-5407A-PP-2'';003;;;;;TOTAL_JUNTAS corrigido de 1 para 10 (Mapa de Juntas)
+258;6''-B3B-MR-5407A-PP-2'';003;;;;;TOTAL_JUNTAS_PIPE corrigido de 10 para 7 (Mapa de Juntas)
+259;6''-B3B-MR-5407B-PP-2'';001;;;;;TOTAL_JUNTAS corrigido de 10 para 12 (Mapa de Juntas)
+260;6''-B3B-MR-5407B-PP-2'';002;;;;;TOTAL_JUNTAS corrigido de 12 para 24 (Mapa de Juntas)
+260;6''-B3B-MR-5407B-PP-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 8 para 19 (Mapa de Juntas)
+261;"8""-A1E-CF-9201-Z01/1";001;;;;;TOTAL_JUNTAS corrigido de 24 para 3 (Mapa de Juntas)
+262;"8""-A1E-CF-9201-Z01/2";002;;;;;TOTAL_JUNTAS corrigido de 3 para 4 (Mapa de Juntas)
+265;"8""-A3B-NG-0301-Z01/1";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 8 para 4 (Mapa de Juntas)
+266;"8""-A3B-NG-0301-Z01/2";002;;;;;TOTAL_JUNTAS corrigido de 8 para 2 (Mapa de Juntas)
+266;"8""-A3B-NG-0301-Z01/2";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 4 para 2 (Mapa de Juntas)
+268;"8""-B3B-MR-4019A-Z02";002;;;;;TOTAL_JUNTAS corrigido de 4 para 5 (Mapa de Juntas)
+268;"8""-B3B-MR-4019A-Z02";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 4 (Mapa de Juntas)
+269;"8""-B3B-NG-0304-Z01/2";001;;;;;TOTAL_JUNTAS corrigido de 5 para 4 (Mapa de Juntas)
+270;V-713-TRIM-1-Z01;001;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+271;V-713-TRIM-1-Z01;002;;;;;TOTAL_JUNTAS corrigido de 2 para 8 (Mapa de Juntas)
+271;V-713-TRIM-1-Z01;002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 8 (Mapa de Juntas)

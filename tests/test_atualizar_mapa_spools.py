@@ -10,7 +10,7 @@ import tempfile
 import openpyxl
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
-from atualizar_mapa_spools import atualizar_spools, ler_data  # noqa: E402
+from atualizar_mapa_spools import _chave_doc, atualizar_spools, ler_data  # noqa: E402
 
 D = dt.datetime
 LINHA = '1"-A3B-N2-9114-Z01'
@@ -135,6 +135,7 @@ def test_layout_controltub_documento_e_colunas_de_montagem():
     assert linhas[0][4:] == [D(2026, 8, 10), D(2026, 8, 10), D(2020, 1, 1)]
     assert linhas[1][4:] == [None, None, None]
     assert [x[:3] + x[4:] for x in res["divergencias"]] == [(3, LINHA, "003", 3, 1)]
+    assert [r[3] for r in linhas] == [1, 1]  # Total_Juntas corrigido
 
 
 def test_dimensional_pela_rastreabilidade_e_linha_de_numeracao():
@@ -182,6 +183,25 @@ def test_espessura_do_spool_e_a_maior_da_linha():
     atualizar_spools(mj, ms, out)
     ws = openpyxl.load_workbook(out).active
     assert [ws.cell(r, 3).value for r in (2, 3, 4)] == [3.76, 3.76, 5.49]
+
+
+def test_totais_de_juntas_conforme_mapa_de_juntas():
+    d = tempfile.mkdtemp()
+    mj, ms, out = (os.path.join(d, n) for n in ("j.xlsx", "s.xlsx", "o.xlsx"))
+    _mapa_juntas(mj, [_j("001", "P"), _j("002", "P"), _j("002", "P"), _j("003", "C")])  # 002 repetida
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["Linha", "Spool", "Total_Juntas", "Total_Juntas_Pipe"])
+    ws.append([LINHA, "001", 7, 7])
+    wb.save(ms)
+    res = atualizar_spools(mj, ms, out)
+    ws = openpyxl.load_workbook(out).active
+    assert (ws["C2"].value, ws["D2"].value) == (3, 2)
+    assert len(res["divergencias"]) == 2
+
+
+def test_documento_mantem_a_folha():
+    assert _chave_doc("6''-B3B-MR-5407A-PP-2'' FL1") != _chave_doc("6''-B3B-MR-5407A-PP-2'' FL2")
 
 
 def test_ler_data():

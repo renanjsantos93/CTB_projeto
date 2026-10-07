@@ -29,6 +29,9 @@ A associação junta -> spool é feita por Linha (com zona, ex.: -Z02) + nº do
 spool. Se a linha do Mapa de Spools não tiver zona, usa-se a TAG padronizada
 (4 blocos) quando ela identifica uma única linha do Mapa de Juntas.
 
+Total_Juntas / Total_Juntas_Pipe: corrigidos com a contagem de juntas do spool
+no Mapa de Juntas (todas as juntas / só as Pipe Shop; repetidas contam uma vez).
+
 Espessura: a coluna "Espessura" do spool recebe a maior espessura encontrada
 entre todas as juntas da mesma linha no Mapa de Juntas (Pipe e Campo).
 
@@ -154,6 +157,11 @@ def _chave_linha(v):
     return _limpar(v).replace('"', "") if v not in (None, "") else ""
 
 
+def _chave_doc(v):
+    """Documento normalizado SEM remover a folha (FL1 e FL2 são documentos diferentes)."""
+    return _chave_linha(re.sub(r"\s*-?\s*(FL)\s*", r"-\1", str(v))) if v not in (None, "") else ""
+
+
 def _chave_tag(v):
     return padronizar_tag(v)[0].replace('"', "") if v not in (None, "") else ""
 
@@ -226,7 +234,7 @@ def ler_juntas(caminho, aba=None):
             # linha de numeração das colunas (1, 2, 3...) logo abaixo do cabeçalho
             if not isinstance(linha_bruta, str) or not spool:
                 continue
-            doc = _chave_linha(v(col["doc"]))
+            doc = _chave_doc(v(col["doc"]))
             ident = (_chave_linha(linha_bruta), doc, spool, _junta(v(col["junta"])))
             if ident in vistas:  # junta repetida no mapa (ou em outra aba)
                 duplicadas += 1
@@ -341,7 +349,8 @@ def localizar_spools(ws, max_linhas=30):
                         destinos[chave] = c
                         break
             extras = {nome: next((c for c, h in hs.items() if h == alvo), None) for nome, alvo in
-                      (("doc", "DOCUMENTO"), ("total", "TOTAL_JUNTAS"), ("esp", "ESPESSURA"))}
+                      (("doc", "DOCUMENTO"), ("total", "TOTAL_JUNTAS"),
+                       ("total_pipe", "TOTAL_JUNTAS_PIPE"), ("esp", "ESPESSURA"))}
             return row[0].row, c_linha, c_spool, destinos, max(hs), extras
     raise SystemExit("Cabeçalho do Mapa de Spools (Linha + Spool) não encontrado em %r" % ws.title)
 
@@ -435,14 +444,15 @@ def atualizar_spools(juntas_xlsx, spools_xlsx, saida, aba_juntas=None, aba_spool
         if j["espessura"] is not None:
             esp_linha[j["chave"]] = max(j["espessura"], esp_linha.get(j["chave"], 0))
 
-    gravar, gravar_esp, resultado, sem_juntas, divergencias = {}, {}, [], [], []
+    gravar, gravar_num, resultado, sem_juntas, divergencias = {}, {}, [], [], []
+    n_esp = 0
     for r in range(hdr + 1, ws.max_row + 1):
         linha, sp = ws.cell(r, c_linha).value, _spool(ws.cell(r, c_spool).value)
         if not linha or not sp:
             continue
         # Linha + Documento + Spool; sem Documento correspondente, Linha + Spool
         # (ou TAG padronizada + Spool) desde que aponte para um único spool
-        doc = _chave_linha(ws.cell(r, extras["doc"]).value) if extras["doc"] else None
+        doc = _chave_doc(ws.cell(r, extras["doc"]).value) if extras["doc"] else None
         s = spools.get((_chave_linha(linha), doc, sp))
         motivo_sem = "spool não encontrado no Mapa de Juntas"
         if s is None:
@@ -456,11 +466,13 @@ def atualizar_spools(juntas_xlsx, spools_xlsx, saida, aba_juntas=None, aba_spool
         if s is None:
             sem_juntas.append((r, linha, sp, motivo_sem))
             continue
-        # conferência: total de juntas do spool nos dois mapas
-        c = extras["total"]
-        esperado = len(s["juntas"]) + len(s["campo"])
-        if c and isinstance(ws.cell(r, c).value, (int, float)) and ws.cell(r, c).value != esperado:
-            divergencias.append((r, linha, sp, ws.cell(hdr, c).value, ws.cell(r, c).value, esperado))
+        # Total_Juntas / Total_Juntas_Pipe conforme o Mapa de Juntas
+        for nome, correto in (("total", len(s["juntas"]) + len(s["campo"])), ("total_pipe", len(s["juntas"]))):
+            c = extras[nome]
+            if c and ler_numero(ws.cell(r, c).value) != correto:
+                ref = "%s%d" % (_col_letra(c), r)
+                gravar_num[ref] = correto
+                divergencias.append((r, linha, sp, _norm(ws.cell(hdr, c).value), ws.cell(r, c).value, correto))
         for chave, c in destinos.items():
             data, _ = s["etapas"][origem_col[chave]]
             atual, _ = ler_data(ws.cell(r, c).value)
@@ -473,7 +485,8 @@ def atualizar_spools(juntas_xlsx, spools_xlsx, saida, aba_juntas=None, aba_spool
         c = extras["esp"]
         esp = esp_linha.get(s["chave"])
         if c and esp is not None and ler_numero(ws.cell(r, c).value) != esp:
-            gravar_esp["%s%d" % (_col_letra(c), r)] = esp
+            gravar_num["%s%d" % (_col_letra(c), r)] = esp
+            n_esp += 1
         for chave in (k for k, *_ in ETAPAS if k in etapas_juntas):
             data, motivo = s["etapas"][chave]
             resultado.append((r, linha, sp, chave, data, motivo, len(s["juntas"]), len(s["campo"])))
@@ -499,8 +512,8 @@ def atualizar_spools(juntas_xlsx, spools_xlsx, saida, aba_juntas=None, aba_spool
                 base = _estilo(xml, "%s%s" % (_col_letra(n - 1), lin)) if n > 1 else None
             estilo, styles = _estilo_data(styles, base, cache)
             xml = _gravar_celula(xml, ref, None, estilo, numero=_serial(data), forcar_estilo=True)
-        for ref, esp in gravar_esp.items():
-            xml = _gravar_celula(xml, ref, None, numero=esp)
+        for ref, num in gravar_num.items():
+            xml = _gravar_celula(xml, ref, None, numero=num)
         alterados = {caminho: xml, "xl/styles.xml": styles}
         with zipfile.ZipFile(saida, "w", zipfile.ZIP_DEFLATED) as zout:
             for item in zin.infolist():
@@ -508,7 +521,7 @@ def atualizar_spools(juntas_xlsx, spools_xlsx, saida, aba_juntas=None, aba_spool
                     else zin.read(item.filename)
                 zout.writestr(item, dados)
 
-    return {"aba": ws.title, "destinos": destinos, "gravados": gravar, "espessuras": gravar_esp,
+    return {"aba": ws.title, "destinos": destinos, "gravados": gravar, "numeros": gravar_num, "n_espessura": n_esp,
             "col_espessura": extras["esp"], "resultado": resultado,
             "sem_juntas": sem_juntas, "divergencias": divergencias, "avisos": avisos, "spools": spools, "juntas": juntas}
 
@@ -525,7 +538,7 @@ def salvar_relatorio(caminho, res):
         for r, linha, sp, motivo in res["sem_juntas"]:
             w.writerow([r, linha, sp, "", "", 0, 0, motivo])
         for r, linha, sp, coluna, valor, esperado in res["divergencias"]:
-            w.writerow([r, linha, sp, "", "", "", "", "%s = %s no Mapa de Spools, %s no Mapa de Juntas"
+            w.writerow([r, linha, sp, "", "", "", "", "%s corrigido de %s para %s (Mapa de Juntas)"
                         % (coluna, valor, esperado)])
 
 
@@ -561,13 +574,15 @@ def main(argv=None):
         print("  nenhuma coluna atualizada")
     if res["col_espessura"]:
         print("  %-15s (col. %-2s) <- maior espessura da linha: %d spools atualizados"
-              % ("Espessura", _col_letra(res["col_espessura"]), len(res["espessuras"])))
-    print("%d células alteradas" % (len(res["gravados"]) + len(res["espessuras"])))
+              % ("Espessura", _col_letra(res["col_espessura"]), res["n_espessura"]))
+    corr = defaultdict(int)
+    for d in res["divergencias"]:
+        corr[d[3]] += 1
+    for nome, n in sorted(corr.items()):
+        print("  %-15s corrigido em %d spools (contagem do Mapa de Juntas)" % (nome.title(), n))
+    print("%d células alteradas" % (len(res["gravados"]) + len(res["numeros"])))
     for r, linha, sp, motivo in res["sem_juntas"]:
         print("  linha %d: spool %s / %s: %s" % (r, sp, linha, motivo))
-    if res["divergencias"]:
-        print("  AVISO: %d divergências de quantidade de juntas entre os mapas (ver relatório)"
-              % len(res["divergencias"]))
     for av in res["avisos"]:
         print("  AVISO:", av)
     if a.relatorio:
