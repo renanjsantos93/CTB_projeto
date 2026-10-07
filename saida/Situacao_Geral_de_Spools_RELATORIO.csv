@@ -1327,17 +1327,12 @@
 218;"6""-A3B-HF-7301-Z01";001;;;;;"Diâmetro corrigido de 6"" para 3"""
 223;"6""-A3B-HF-7301-Z01";006;;;;;"Diâmetro corrigido de 6"" para 3"""
 224;"6""-A3B-HF-7301-Z01";007;;;;;"Diâmetro corrigido de 6"" para 3"""
-120;"2""-A1E-IA-9011-Z03";001;;;;;"Relatório DF: documento com 4 relatórios (016/26 / 017/26 / 018/26 / 019/26); usado o do próprio spool"
-121;"2""-A1E-IA-9011-Z03";002;;;;;"Relatório DF: documento com 4 relatórios (016/26 / 017/26 / 018/26 / 019/26); usado o do próprio spool"
-122;"2""-A1E-IA-9011-Z03";003;;;;;"Relatório DF: documento com 4 relatórios (016/26 / 017/26 / 018/26 / 019/26); usado o do próprio spool"
-123;"2""-A1E-IA-9011-Z03";004;;;;;"Relatório DF: documento com 4 relatórios (016/26 / 017/26 / 018/26 / 019/26); usado o do próprio spool"
-124;"2""-A1E-IA-9011-Z03";005;;;;;"Relatório DF: documento com 4 relatórios (016/26 / 017/26 / 018/26 / 019/26); usado o do próprio spool"
-249;6''-B3B-MR-5405B-PP-2'';001;;;;;"Relatório DF: documento com 2 relatórios (018/26 / 019/26); usado o do próprio spool"
-250;6''-B3B-MR-5405B-PP-2'';002;;;;;"Relatório DF: documento com 2 relatórios (018/26 / 019/26); usado o do próprio spool"
-251;6''-B3B-MR-5405B-PP-2'';003;;;;;"Relatório DF: documento com 2 relatórios (018/26 / 019/26); usado o do próprio spool"
-252;6''-B3B-MR-5405B-PP-2'';004;;;;;"Relatório DF: documento com 2 relatórios (018/26 / 019/26); usado o do próprio spool"
-253;6''-B3B-MR-5405B-PP-2'';005;;;;;"Relatório DF: documento com 2 relatórios (018/26 / 019/26); usado o do próprio spool"
-254;6''-B3B-MR-5405B-PP-2'';006;;;;;"Relatório DF: documento com 2 relatórios (018/26 / 019/26); usado o do próprio spool"
+10; 4''-B3B-LO-5113A-PP-2 ;002;;;;;Relatório DF 049/26 obtido de junta de Campo (spool sem juntas Pipe)
+75;"10""-B3B-MR-5203A-PP-2""-Z03";003;;;;;Relatório DF 066/26 obtido de junta de Campo (spool sem juntas Pipe)
+114;"2""-A1E-BOG-7205B-Z04/1";001;;;;;Relatório DF 098/26: juntas sem relatório dimensional: 001
+121;"2""-A1E-IA-9011-Z03";002;;;;;Relatório DF 016/26: juntas sem relatório dimensional: 012
+122;"2""-A1E-IA-9011-Z03";003;;;;;Relatório DF 017/26: juntas sem relatório dimensional: 013, 014
+257;6''-B3B-MR-5407A-PP-2'';002;;;;;Relatório DF 060/26 obtido de junta de Campo (spool sem juntas Pipe)
 10; 4''-B3B-LO-5113A-PP-2 ;002;;;;;TOTAL_JUNTAS_PIPE corrigido de 7 para 0 (Mapa de Juntas)
 20;"1""-A1E-IA-9010A-Z04";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 6 (Mapa de Juntas)
 25;"1""-A3B-N2-9105A-Z02";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 4 (Mapa de Juntas)
