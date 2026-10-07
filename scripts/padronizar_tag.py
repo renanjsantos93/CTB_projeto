@@ -172,19 +172,31 @@ def _caminho_aba(zf, nome_aba):
     return t if t.startswith("xl/") else "xl/" + t
 
 
-def _gravar_celula(xml, ref, texto, estilo=None):
-    val = '<is><t>%s</t></is>' % escape(texto)
+def _gravar_celula(xml, ref, texto, estilo=None, numero=None, forcar_estilo=False):
+    """Grava texto (inlineStr) na célula; com numero=..., grava valor numérico.
+    texto=None e numero=None limpam o valor (mantendo o estilo).
+    estilo só substitui o de uma célula existente com forcar_estilo=True."""
+    if numero is not None:
+        val, tipo = '<v>%s</v>' % repr(numero), ""
+    elif texto is None:
+        val, tipo = "", ""
+    else:
+        val, tipo = '<is><t>%s</t></is>' % escape(texto), ' t="inlineStr"'
     # célula já existente (vazia ou com valor)
     pad = re.compile(r'<c r="%s"((?:\s+[a-zA-Z:]+="[^"]*")*)\s*(?:/>|>(?:(?!<c[ >]).)*?</c>)' % ref, re.S)
     if pad.search(xml):
         def _sub(m):
             attrs = re.sub(r'\s+t="[^"]*"', "", m.group(1))
-            return '<c r="%s"%s t="inlineStr">%s</c>' % (ref, attrs, val)
+            if forcar_estilo and estilo is not None:
+                attrs = re.sub(r'\s+s="[^"]*"', "", attrs) + ' s="%s"' % estilo
+            return '<c r="%s"%s%s>%s</c>' % (ref, attrs, tipo, val)
         return pad.sub(_sub, xml, count=1)
+    if not val:
+        return xml
     # célula inexistente: insere na linha, respeitando a ordem das colunas
     lin = re.match(r"[A-Z]+(\d+)", ref).group(1)
     col = re.match(r"([A-Z]+)", ref).group(1)
-    nova = '<c r="%s"%s t="inlineStr">%s</c>' % (ref, ' s="%s"' % estilo if estilo else "", val)
+    nova = '<c r="%s"%s%s>%s</c>' % (ref, ' s="%s"' % estilo if estilo else "", tipo, val)
     mrow = re.search(r'(<row r="%s"[^>]*?)(/>|>(.*?)</row>)' % lin, xml, re.S)
     if not mrow:
         raise RuntimeError("linha %s não encontrada no XML" % lin)
