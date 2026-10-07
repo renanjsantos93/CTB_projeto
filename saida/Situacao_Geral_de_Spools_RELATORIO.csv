@@ -1314,6 +1314,19 @@
 271;V-713-TRIM-1-Z01;002;EVS;10/09/2026;8;0;
 271;V-713-TRIM-1-Z01;002;END;15/09/2026;8;0;
 271;V-713-TRIM-1-Z01;002;Dimensional;;8;0;8 de 8 juntas Pipe sem data: 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data), 008 (sem data), 009 (sem data), 010 (sem data)
+69;"10""-A3B-HF-9301-Z01/4";001;;;;;"Diâmetro corrigido de 10"" para 8"""
+116;"2""-A1E-CF-4007A-Z02";001;;;;;"Diâmetro corrigido de 2"" para 1"""
+123;"2""-A1E-IA-9011-Z03";004;;;;;"Diâmetro corrigido de 2"" para 1"""
+128;"2""-A1E-IA-9709-Z04/4";004;;;;;"Diâmetro corrigido de 2"" para 1/2"""
+129;"2""-A1E-IA-9709-Z04/5";005;;;;;"Diâmetro corrigido de 2"" para 1/2"""
+130;"2""-A1E-IA-9709-Z04/6";006;;;;;"Diâmetro corrigido de 2"" para 1/2"""
+131;"2""-A1E-IA-9709-Z04/7";007;;;;;"Diâmetro corrigido de 2"" para 1/2"""
+132;"2""-A1E-IA-9709-Z04/8";008;;;;;"Diâmetro corrigido de 2"" para 1/2"""
+133;"2""-A1E-IA-9709-Z04/9";009;;;;;"Diâmetro corrigido de 2"" para 1/2"""
+137;"2""-A3B-N2-9719-Z01/3";003;;;;;"Diâmetro corrigido de 2"" para 1"""
+218;"6""-A3B-HF-7301-Z01";001;;;;;"Diâmetro corrigido de 6"" para 3"""
+223;"6""-A3B-HF-7301-Z01";006;;;;;"Diâmetro corrigido de 6"" para 3"""
+224;"6""-A3B-HF-7301-Z01";007;;;;;"Diâmetro corrigido de 6"" para 3"""
 120;"2""-A1E-IA-9011-Z03";001;;;;;"Relatório DF: documento com 4 relatórios (016/26 / 017/26 / 018/26 / 019/26); usado o do próprio spool"
 121;"2""-A1E-IA-9011-Z03";002;;;;;"Relatório DF: documento com 4 relatórios (016/26 / 017/26 / 018/26 / 019/26); usado o do próprio spool"
 122;"2""-A1E-IA-9011-Z03";003;;;;;"Relatório DF: documento com 4 relatórios (016/26 / 017/26 / 018/26 / 019/26); usado o do próprio spool"

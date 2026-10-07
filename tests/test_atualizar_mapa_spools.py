@@ -234,6 +234,28 @@ def test_documento_mantem_a_folha():
     assert _chave_doc("6''-B3B-MR-5407A-PP-2'' FL1") != _chave_doc("6''-B3B-MR-5407A-PP-2'' FL2")
 
 
+def test_diametro_do_spool_e_o_maior_das_juntas():
+    d = tempfile.mkdtemp()
+    mj, ms, out = (os.path.join(d, n) for n in ("j.xlsx", "s.xlsx", "o.xlsx"))
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["Linha", "Spool", "Junta", "Diametro (Pol)", "Diametro (mm)", "P/C", "Visual Ajuste", None])
+    ws.append([None, None, None, None, None, None, "Status", "Data"])
+    ws.append([LINHA, "001", "001", '1"', 3, "P", "P", None])         # mm errado: vale a polegada
+    ws.append([LINHA, "001", "002", '1.1/2"', "48", "C", "P", None])  # Campo também conta
+    ws.append([LINHA, "002", "003", None, 60, "P", "P", None])        # sem polegada: usa o mm
+    wb.save(mj)
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["Linha", "Spool", "Diametro", "Di_Pol"])
+    ws.append([LINHA, "001", 33, '1"'])
+    ws.append([LINHA, "002", None, None])
+    wb.save(ms)
+    atualizar_spools(mj, ms, out)
+    ws = openpyxl.load_workbook(out).active
+    assert [[c.value for c in r][2:] for r in ws.iter_rows(min_row=2)] == [[48, '1 1/2"'], [60, '2"']]
+
+
 def test_ler_data():
     assert ler_data("10/09/026") == (dt.date(2026, 9, 10), True)
     assert ler_data("18/08/2026") == (dt.date(2026, 8, 18), True)

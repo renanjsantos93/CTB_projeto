@@ -38,6 +38,11 @@ mesmo nº; juntas de Campo não contam). Se o documento tiver mais de um
 relatório, usa o das juntas Pipe do próprio spool; sem ele, grava todos
 ("018/26 / 019/26"). Os dois casos são avisados no relatório.
 
+Diâmetro: Di_Pol do spool recebe o maior diâmetro (em polegadas) entre as juntas
+do spool no Mapa de Juntas, e Diametro (mm) o valor correspondente da tabela
+DIAMETRO da planilha (a coluna "Diametro (mm)" do Mapa de Juntas tem erros de
+digitação, por isso a polegada é a referência).
+
 Espessura: a coluna "Espessura" do spool recebe a maior espessura encontrada
 entre todas as juntas da mesma linha no Mapa de Juntas (Pipe e Campo).
 
@@ -151,6 +156,36 @@ def ler_numero(v):
     return float(m.group(1).replace(",", ".")) if m else None
 
 
+# tabela padrão (igual à aba DIAMETRO do ControlTub)
+TABELA_DIAMETRO = [('1/2"', 21), ('3/4"', 27), ('1"', 33), ('1 1/4"', 42), ('1 1/2"', 48), ('2"', 60),
+                   ('2 1/2"', 73), ('3"', 89), ('4"', 114), ('6"', 168), ('8"', 219), ('10"', 273),
+                   ('12"', 324), ('14"', 356), ('16"', 406), ('18"', 457), ('20"', 508), ('24"', 610)]
+
+
+def polegadas(v):
+    """'1 1/2"', '1.1/2"', '1-1/2', '1/2"', '10"' ou 1 -> valor em polegadas (float)."""
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return float(v)
+    t = _limpar(v).replace('"', "") if v not in (None, "") else ""
+    m = re.fullmatch(r"(\d+)(?:[ .-]?(\d+)/(\d+))?|(\d+)/(\d+)", t.replace(" ", ""))
+    if not m:
+        return None
+    if m.group(4):
+        return int(m.group(4)) / int(m.group(5))
+    return int(m.group(1)) + (int(m.group(2)) / int(m.group(3)) if m.group(2) else 0)
+
+
+def ler_tabela_diametro(wb):
+    """{polegadas: (texto, mm)} da aba DIAMETRO da planilha (ou a tabela padrão)."""
+    linhas = TABELA_DIAMETRO
+    for ws in wb.worksheets:
+        if _norm(ws.title) == "DIAMETRO":
+            linhas = [(p, mm) for p, mm in ws.iter_rows(min_row=2, max_col=2, values_only=True)
+                      if p and isinstance(mm, (int, float))] or linhas
+            break
+    return {polegadas(p): (p, mm) for p, mm in linhas if polegadas(p)}
+
+
 def _serial(d):
     return (d - dt.date(1899, 12, 30)).days
 
@@ -207,6 +242,8 @@ def localizar_juntas(ws, max_linhas=30):
     col["iso"] = hs.index("ISOMETRICO") + 1 if "ISOMETRICO" in hs else None
     col["doc"] = hs.index("DOCUMENTO") + 1 if "DOCUMENTO" in hs else None
     col["esp"] = hs.index("ESPESSURA") + 1 if "ESPESSURA" in hs else None
+    col["dpol"] = hs.index("DIAMETRO (POL)") + 1 if "DIAMETRO (POL)" in hs else None
+    col["dmm"] = hs.index("DIAMETRO (MM)") + 1 if "DIAMETRO (MM)" in hs else None
     if not col["linha"] and not col["iso"]:
         raise SystemExit("Coluna 'Linha' não encontrada no Mapa de Juntas")
     col["spool"] = hs.index("SPOOL") + 1
@@ -269,6 +306,7 @@ def ler_juntas(caminho, aba=None):
                 "chave": _chave_linha(linha_bruta), "tag": _chave_tag(linha_bruta), "doc": doc,
                 "spool": spool, "junta": _junta(v(col["junta"])), "tipo": tipo, "datas": datas,
                 "espessura": ler_numero(v(col["esp"])),
+                "diam_pol": polegadas(v(col["dpol"])), "diam_mm": ler_numero(v(col["dmm"])),
                 "rel_dim": _rel(v(col.get("rel_dim"))),
             })
     if duplicadas:
@@ -369,7 +407,7 @@ def localizar_spools(ws, max_linhas=30):
             extras = {nome: next((c for c, h in hs.items() if h == alvo), None) for nome, alvo in
                       (("doc", "DOCUMENTO"), ("total", "TOTAL_JUNTAS"),
                        ("total_pipe", "TOTAL_JUNTAS_PIPE"), ("esp", "ESPESSURA"),
-                       ("rel_df", "RELATORIO DF"))}
+                       ("rel_df", "RELATORIO DF"), ("dmm", "DIAMETRO"), ("dpol", "DI_POL"))}
             return row[0].row, c_linha, c_spool, destinos, max(hs), extras
     raise SystemExit("Cabeçalho do Mapa de Spools (Linha + Spool) não encontrado em %r" % ws.title)
 
@@ -439,6 +477,9 @@ def atualizar_spools(juntas_xlsx, spools_xlsx, saida, aba_juntas=None, aba_spool
     wb = openpyxl.load_workbook(spools_xlsx)
     ws = wb[aba_spools] if aba_spools else wb.worksheets[0]
     hdr, c_linha, c_spool, destinos, ultima, extras = localizar_spools(ws)
+    tabela = ler_tabela_diametro(wb)
+    por_mm = {mm: pol for pol, (_t, mm) in tabela.items()}
+    n_diam, diam_avisos = 0, []
 
     nomes = {k: n for k, n, _g in ETAPAS}
     for chave, nome, _g in ETAPAS:
@@ -511,6 +552,31 @@ def atualizar_spools(juntas_xlsx, spools_xlsx, saida, aba_juntas=None, aba_spool
         if c and esp is not None and ler_numero(ws.cell(r, c).value) != esp:
             gravar_num["%s%d" % (_col_letra(c), r)] = esp
             n_esp += 1
+        # diâmetro do spool = maior diâmetro (pol) entre as juntas do spool
+        if extras["dpol"] or extras["dmm"]:
+            pols = [j["diam_pol"] if j["diam_pol"] else por_mm.get(j["diam_mm"])
+                    for j in s["juntas"] + s["campo"]]
+            pols = [p for p in pols if p]
+            if pols:
+                d = max(pols)
+                texto, mm = tabela.get(d, ('%g"' % d, None))
+                if mm is None:
+                    diam_avisos.append((r, linha, sp, "Diâmetro %s fora da tabela DIAMETRO (mm não preenchido)"
+                                        % texto))
+                mudou = False
+                c = extras["dpol"]
+                if c and str(ws.cell(r, c).value or "").strip() != texto:
+                    gravar_txt["%s%d" % (_col_letra(c), r)] = texto
+                    mudou = True
+                c = extras["dmm"]
+                if c and mm is not None and ler_numero(ws.cell(r, c).value) != mm:
+                    gravar_num["%s%d" % (_col_letra(c), r)] = mm
+                    mudou = True
+                if mudou:
+                    n_diam += 1
+                    antes = (ws.cell(r, extras["dpol"]).value if extras["dpol"] else
+                             ws.cell(r, extras["dmm"]).value)
+                    diam_avisos.append((r, linha, sp, "Diâmetro corrigido de %s para %s" % (antes, texto)))
         # Relatório DF = relatório dimensional das juntas Pipe da Linha + Documento
         c = extras["rel_df"]
         if c:
@@ -564,6 +630,7 @@ def atualizar_spools(juntas_xlsx, spools_xlsx, saida, aba_juntas=None, aba_spool
                 zout.writestr(item, dados)
 
     return {"aba": ws.title, "destinos": destinos, "gravados": gravar, "numeros": gravar_num, "n_espessura": n_esp,
+            "n_diametro": n_diam, "diam_avisos": diam_avisos, "col_diametro": extras["dpol"] or extras["dmm"],
             "textos": gravar_txt, "col_rel_df": extras["rel_df"], "rel_avisos": rel_avisos,
             "col_espessura": extras["esp"], "resultado": resultado,
             "sem_juntas": sem_juntas, "divergencias": divergencias, "avisos": avisos, "spools": spools, "juntas": juntas}
@@ -580,7 +647,7 @@ def salvar_relatorio(caminho, res):
                         n_pipe, n_campo, motivo])
         for r, linha, sp, motivo in res["sem_juntas"]:
             w.writerow([r, linha, sp, "", "", 0, 0, motivo])
-        for r, linha, sp, msg in res["rel_avisos"]:
+        for r, linha, sp, msg in res["diam_avisos"] + res["rel_avisos"]:
             w.writerow([r, linha, sp, "", "", "", "", msg])
         for r, linha, sp, coluna, valor, esperado in res["divergencias"]:
             w.writerow([r, linha, sp, "", "", "", "", "%s corrigido de %s para %s (Mapa de Juntas)"
@@ -617,6 +684,9 @@ def main(argv=None):
         print("  %-15s (col. %-2s) <- %-16s %d spools concluídos" % (t, _col_letra(c), nomes[o], preench[o]))
     if not res["destinos"]:
         print("  nenhuma coluna atualizada")
+    if res["col_diametro"]:
+        print("  %-15s (col. %-2s) <- maior diâmetro do spool: %d spools atualizados"
+              % ("Diametro/Di_Pol", _col_letra(res["col_diametro"]), res["n_diametro"]))
     if res["col_espessura"]:
         print("  %-15s (col. %-2s) <- maior espessura da linha: %d spools atualizados"
               % ("Espessura", _col_letra(res["col_espessura"]), res["n_espessura"]))
@@ -626,7 +696,8 @@ def main(argv=None):
     for nome, n in sorted(corr.items()):
         print("  %-15s corrigido em %d spools (contagem do Mapa de Juntas)" % (nome.title(), n))
     if res["col_rel_df"]:
-        n_rel = sum(1 for v in res["textos"].values() if v)
+        letra = _col_letra(res["col_rel_df"])
+        n_rel = sum(1 for ref, v in res["textos"].items() if v and re.match(letra + r"\d", ref))
         print("  %-15s (col. %-2s) <- relatório dimensional das juntas: %d spools preenchidos"
               % ("Relatório DF", _col_letra(res["col_rel_df"]), n_rel))
         if res["rel_avisos"]:
