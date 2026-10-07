@@ -54,11 +54,11 @@
 19;"1""-A1E-IA-9008-Z03";001;EVS;02/09/2029;6;0;
 19;"1""-A1E-IA-9008-Z03";001;END;02/09/2026;6;0;
 19;"1""-A1E-IA-9008-Z03";001;Dimensional;;6;0;6 de 6 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data)
-20;"1""-A1E-IA-9010A-Z04";001;Visual de Ajuste;;6;0;1 de 6 juntas Pipe sem data: 006 (sem data)
-20;"1""-A1E-IA-9010A-Z04";001;Soldagem;;6;0;1 de 6 juntas Pipe sem data: 006 (sem data)
-20;"1""-A1E-IA-9010A-Z04";001;EVS;;6;0;1 de 6 juntas Pipe sem data: 006 (sem data)
-20;"1""-A1E-IA-9010A-Z04";001;END;;6;0;1 de 6 juntas Pipe sem data: 006 (END pendente (LIQUIDO PENETRANTE / PM))
-20;"1""-A1E-IA-9010A-Z04";001;Dimensional;;6;0;6 de 6 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data)
+20;"1""-A1E-IA-9010A-Z04";001;Visual de Ajuste;23/09/2026;5;1;
+20;"1""-A1E-IA-9010A-Z04";001;Soldagem;23/09/2026;5;1;
+20;"1""-A1E-IA-9010A-Z04";001;EVS;23/09/2026;5;1;
+20;"1""-A1E-IA-9010A-Z04";001;END;23/09/2026;5;1;
+20;"1""-A1E-IA-9010A-Z04";001;Dimensional;;5;1;5 de 5 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
 21;"1""-A1E-IA-9010B-Z04";001;Visual de Ajuste;23/09/2026;5;0;
 21;"1""-A1E-IA-9010B-Z04";001;Soldagem;23/09/2026;5;0;
 21;"1""-A1E-IA-9010B-Z04";001;EVS;23/09/2026;5;0;
@@ -89,11 +89,11 @@
 26;"1""-A3B-N2-9105A-Z02";003;EVS;22/08/2026;5;1;
 26;"1""-A3B-N2-9105A-Z02";003;END;24/08/2026;5;1;
 26;"1""-A3B-N2-9105A-Z02";003;Dimensional;;5;1;5 de 5 juntas Pipe sem data: 011 (sem data), 012 (sem data), 013 (sem data), 014 (sem data), 015 (sem data)
-27;"1""-A3B-N2-9106A-Z04";001;Visual de Ajuste;;5;0;1 de 5 juntas Pipe sem data: 005 (sem data)
-27;"1""-A3B-N2-9106A-Z04";001;Soldagem;;5;0;1 de 5 juntas Pipe sem data: 005 (sem data)
-27;"1""-A3B-N2-9106A-Z04";001;EVS;;5;0;1 de 5 juntas Pipe sem data: 005 (sem data)
-27;"1""-A3B-N2-9106A-Z04";001;END;;5;0;1 de 5 juntas Pipe sem data: 005 (END pendente (LIQUIDO PENETRANTE / PM))
-27;"1""-A3B-N2-9106A-Z04";001;Dimensional;;5;0;5 de 5 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
+27;"1""-A3B-N2-9106A-Z04";001;Visual de Ajuste;21/09/2026;4;1;
+27;"1""-A3B-N2-9106A-Z04";001;Soldagem;21/09/2026;4;1;
+27;"1""-A3B-N2-9106A-Z04";001;EVS;21/09/2026;4;1;
+27;"1""-A3B-N2-9106A-Z04";001;END;23/09/2026;4;1;
+27;"1""-A3B-N2-9106A-Z04";001;Dimensional;;4;1;4 de 4 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data)
 28;"1""-A3B-N2-9109-Z01";001;Visual de Ajuste;;0;1;spool sem juntas Pipe Shop
 28;"1""-A3B-N2-9109-Z01";001;Soldagem;;0;1;spool sem juntas Pipe Shop
 28;"1""-A3B-N2-9109-Z01";001;EVS;;0;1;spool sem juntas Pipe Shop
@@ -142,18 +142,18 @@
 37;"1""-A3B-WW-2003";001;Visual de Ajuste;05/09/2026;6;2;
 37;"1""-A3B-WW-2003";001;Soldagem;05/09/2026;6;2;
 37;"1""-A3B-WW-2003";001;EVS;05/09/2026;6;2;
-37;"1""-A3B-WW-2003";001;END;;6;2;6 de 6 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data)
+37;"1""-A3B-WW-2003";001;END;13/09/2026;6;2;
 37;"1""-A3B-WW-2003";001;Dimensional;;6;2;6 de 6 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data)
 38;"1""-A3B-WW-2003M";001;Visual de Ajuste;05/09/2026;6;2;
 38;"1""-A3B-WW-2003M";001;Soldagem;05/09/2026;6;2;
 38;"1""-A3B-WW-2003M";001;EVS;05/09/2026;6;2;
-38;"1""-A3B-WW-2003M";001;END;;6;2;1 de 6 juntas Pipe sem data: 007 (sem data)
+38;"1""-A3B-WW-2003M";001;END;13/09/2026;6;2;
 38;"1""-A3B-WW-2003M";001;Dimensional;;6;2;6 de 6 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data)
-39;"1""-A3B-WW-3005M";001;Visual de Ajuste;05/09/2026;3;1;
-39;"1""-A3B-WW-3005M";001;Soldagem;05/09/2026;3;1;
-39;"1""-A3B-WW-3005M";001;EVS;05/09/2026;3;1;
-39;"1""-A3B-WW-3005M";001;END;;3;1;1 de 3 juntas Pipe sem data: 004 (sem data)
-39;"1""-A3B-WW-3005M";001;Dimensional;;3;1;3 de 3 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data)
+39;"1""-A3B-WW-3005M";001;Visual de Ajuste;05/09/2026;2;2;
+39;"1""-A3B-WW-3005M";001;Soldagem;05/09/2026;2;2;
+39;"1""-A3B-WW-3005M";001;EVS;05/09/2026;2;2;
+39;"1""-A3B-WW-3005M";001;END;13/09/2026;2;2;
+39;"1""-A3B-WW-3005M";001;Dimensional;;2;2;2 de 2 juntas Pipe sem data: 002 (sem data), 003 (sem data)
 40;"1""-B1E-MR-4005A-Z02";001;Visual de Ajuste;17/08/2026;3;1;
 40;"1""-B1E-MR-4005A-Z02";001;Soldagem;17/08/2026;3;1;
 40;"1""-B1E-MR-4005A-Z02";001;EVS;17/08/2026;3;1;
@@ -182,7 +182,7 @@
 45;"1""-B3B-LO-5002A-Z03";001;Visual de Ajuste;02/09/2026;4;2;
 45;"1""-B3B-LO-5002A-Z03";001;Soldagem;02/09/2026;4;2;
 45;"1""-B3B-LO-5002A-Z03";001;EVS;02/09/2026;4;2;
-45;"1""-B3B-LO-5002A-Z03";001;END;;4;2;1 de 4 juntas Pipe sem data: 005 (sem data)
+45;"1""-B3B-LO-5002A-Z03";001;END;02/09/2026;4;2;
 45;"1""-B3B-LO-5002A-Z03";001;Dimensional;;4;2;4 de 4 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
 46;"1""-B3B-LO-5002A-Z03";002;Visual de Ajuste;02/09/2026;2;1;
 46;"1""-B3B-LO-5002A-Z03";002;Soldagem;02/09/2026;2;1;
@@ -252,7 +252,7 @@
 59;"1.1/2""-A1E-IA-9001""-Z01";001;Visual de Ajuste;12/09/2026;4;0;
 59;"1.1/2""-A1E-IA-9001""-Z01";001;Soldagem;12/09/2026;4;0;
 59;"1.1/2""-A1E-IA-9001""-Z01";001;EVS;12/09/2026;4;0;
-59;"1.1/2""-A1E-IA-9001""-Z01";001;END;;4;0;1 de 4 juntas Pipe sem data: 003 (sem data)
+59;"1.1/2""-A1E-IA-9001""-Z01";001;END;13/09/2026;4;0;
 59;"1.1/2""-A1E-IA-9001""-Z01";001;Dimensional;;4;0;4 de 4 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data)
 60;"1.1/2""-A1E-IA-9002""-Z01";001;Visual de Ajuste;12/09/2026;4;0;
 60;"1.1/2""-A1E-IA-9002""-Z01";001;Soldagem;12/09/2026;4;0;
@@ -359,36 +359,36 @@
 80;10''-B3B-LO-5103A-2'';002;EVS;28/08/2026;14;1;
 80;10''-B3B-LO-5103A-2'';002;END;01/09/2026;14;1;
 80;10''-B3B-LO-5103A-2'';002;Dimensional;;14;1;14 de 14 juntas Pipe sem data: 007 (sem data), 008 (sem data), 009 (sem data), 010 (sem data), 011 (sem data), 012 (sem data), 013 (sem data), 015 (sem data), 016 (sem data), 017 (sem data) ...
-81;10''-B3B-LO-5103B-2'';001;Visual de Ajuste;;5;0;5 de 5 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
-81;10''-B3B-LO-5103B-2'';001;Soldagem;;5;0;5 de 5 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
-81;10''-B3B-LO-5103B-2'';001;EVS;;5;0;5 de 5 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
-81;10''-B3B-LO-5103B-2'';001;END;;5;0;5 de 5 juntas Pipe sem data: 001 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 002 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 003 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 004 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 005 (END pendente (LIQUIDO PENETRANTE / PM, RX/US))
-81;10''-B3B-LO-5103B-2'';001;Dimensional;;5;0;5 de 5 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
-82;10''-B3B-LO-5103B-2'';002;Visual de Ajuste;;3;1;3 de 3 juntas Pipe sem data: 007 (sem data), 008 (sem data), 009 (sem data)
-82;10''-B3B-LO-5103B-2'';002;Soldagem;;3;1;3 de 3 juntas Pipe sem data: 007 (sem data), 008 (sem data), 009 (sem data)
-82;10''-B3B-LO-5103B-2'';002;EVS;;3;1;3 de 3 juntas Pipe sem data: 007 (sem data), 008 (sem data), 009 (sem data)
-82;10''-B3B-LO-5103B-2'';002;END;;3;1;3 de 3 juntas Pipe sem data: 007 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 008 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 009 (END pendente (LIQUIDO PENETRANTE / PM, RX/US))
-82;10''-B3B-LO-5103B-2'';002;Dimensional;;3;1;3 de 3 juntas Pipe sem data: 007 (sem data), 008 (sem data), 009 (sem data)
-83;10''-B3B-LO-5103B-2'';003;Visual de Ajuste;;9;3;9 de 9 juntas Pipe sem data: 011 (sem data), 012 (sem data), 013 (sem data), 014 (sem data), 015 (sem data), 017 (sem data), 018 (sem data), 019 (sem data), 020 (sem data)
-83;10''-B3B-LO-5103B-2'';003;Soldagem;;9;3;9 de 9 juntas Pipe sem data: 011 (sem data), 012 (sem data), 013 (sem data), 014 (sem data), 015 (sem data), 017 (sem data), 018 (sem data), 019 (sem data), 020 (sem data)
-83;10''-B3B-LO-5103B-2'';003;EVS;;9;3;9 de 9 juntas Pipe sem data: 011 (sem data), 012 (sem data), 013 (sem data), 014 (sem data), 015 (sem data), 017 (sem data), 018 (sem data), 019 (sem data), 020 (sem data)
-83;10''-B3B-LO-5103B-2'';003;END;;9;3;9 de 9 juntas Pipe sem data: 011 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 012 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 013 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 014 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 015 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 017 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 018 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 019 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 020 (END pendente (LIQUIDO PENETRANTE / PM, RX/US))
-83;10''-B3B-LO-5103B-2'';003;Dimensional;;9;3;9 de 9 juntas Pipe sem data: 011 (sem data), 012 (sem data), 013 (sem data), 014 (sem data), 015 (sem data), 017 (sem data), 018 (sem data), 019 (sem data), 020 (sem data)
-84;10''-B3B-MR-5201B-2'';001;Visual de Ajuste;;9;2;9 de 9 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data), 008 (sem data), 009 (sem data), 011 (sem data)
-84;10''-B3B-MR-5201B-2'';001;Soldagem;;9;2;9 de 9 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data), 008 (sem data), 009 (sem data), 011 (sem data)
-84;10''-B3B-MR-5201B-2'';001;EVS;;9;2;9 de 9 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data), 008 (sem data), 009 (sem data), 011 (sem data)
-84;10''-B3B-MR-5201B-2'';001;END;;9;2;9 de 9 juntas Pipe sem data: 002 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 003 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 004 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 005 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 006 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 007 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 008 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 009 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 011 (END pendente (LIQUIDO PENETRANTE / PM, RX/US))
-84;10''-B3B-MR-5201B-2'';001;Dimensional;;9;2;9 de 9 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data), 008 (sem data), 009 (sem data), 011 (sem data)
-85;10''-B3B-MR-5201B-2'';002;Visual de Ajuste;;2;2;2 de 2 juntas Pipe sem data: 013 (sem data), 014 (sem data)
-85;10''-B3B-MR-5201B-2'';002;Soldagem;;2;2;2 de 2 juntas Pipe sem data: 013 (sem data), 014 (sem data)
-85;10''-B3B-MR-5201B-2'';002;EVS;;2;2;2 de 2 juntas Pipe sem data: 013 (sem data), 014 (sem data)
-85;10''-B3B-MR-5201B-2'';002;END;;2;2;2 de 2 juntas Pipe sem data: 013 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 014 (END pendente (LIQUIDO PENETRANTE / PM, RX/US))
-85;10''-B3B-MR-5201B-2'';002;Dimensional;;2;2;2 de 2 juntas Pipe sem data: 013 (sem data), 014 (sem data)
-86;10''-B3B-MR-5201B-2'';003;Visual de Ajuste;;4;0;4 de 4 juntas Pipe sem data: 016 (sem data), 017 (sem data), 018 (sem data), 019 (sem data)
-86;10''-B3B-MR-5201B-2'';003;Soldagem;;4;0;4 de 4 juntas Pipe sem data: 016 (sem data), 017 (sem data), 018 (sem data), 019 (sem data)
-86;10''-B3B-MR-5201B-2'';003;EVS;;4;0;4 de 4 juntas Pipe sem data: 016 (sem data), 017 (sem data), 018 (sem data), 019 (sem data)
-86;10''-B3B-MR-5201B-2'';003;END;;4;0;4 de 4 juntas Pipe sem data: 016 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 017 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 018 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 019 (END pendente (LIQUIDO PENETRANTE / PM, RX/US))
-86;10''-B3B-MR-5201B-2'';003;Dimensional;;4;0;4 de 4 juntas Pipe sem data: 016 (sem data), 017 (sem data), 018 (sem data), 019 (sem data)
+81;10''-B3B-LO-5103B-2'';001;Visual de Ajuste;;0;5;spool sem juntas Pipe Shop
+81;10''-B3B-LO-5103B-2'';001;Soldagem;;0;5;spool sem juntas Pipe Shop
+81;10''-B3B-LO-5103B-2'';001;EVS;;0;5;spool sem juntas Pipe Shop
+81;10''-B3B-LO-5103B-2'';001;END;;0;5;spool sem juntas Pipe Shop
+81;10''-B3B-LO-5103B-2'';001;Dimensional;;0;5;spool sem juntas Pipe Shop
+82;10''-B3B-LO-5103B-2'';002;Visual de Ajuste;;0;4;spool sem juntas Pipe Shop
+82;10''-B3B-LO-5103B-2'';002;Soldagem;;0;4;spool sem juntas Pipe Shop
+82;10''-B3B-LO-5103B-2'';002;EVS;;0;4;spool sem juntas Pipe Shop
+82;10''-B3B-LO-5103B-2'';002;END;;0;4;spool sem juntas Pipe Shop
+82;10''-B3B-LO-5103B-2'';002;Dimensional;;0;4;spool sem juntas Pipe Shop
+83;10''-B3B-LO-5103B-2'';003;Visual de Ajuste;;0;12;spool sem juntas Pipe Shop
+83;10''-B3B-LO-5103B-2'';003;Soldagem;;0;12;spool sem juntas Pipe Shop
+83;10''-B3B-LO-5103B-2'';003;EVS;;0;12;spool sem juntas Pipe Shop
+83;10''-B3B-LO-5103B-2'';003;END;;0;12;spool sem juntas Pipe Shop
+83;10''-B3B-LO-5103B-2'';003;Dimensional;;0;12;spool sem juntas Pipe Shop
+84;10''-B3B-MR-5201B-2'';001;Visual de Ajuste;;0;11;spool sem juntas Pipe Shop
+84;10''-B3B-MR-5201B-2'';001;Soldagem;;0;11;spool sem juntas Pipe Shop
+84;10''-B3B-MR-5201B-2'';001;EVS;;0;11;spool sem juntas Pipe Shop
+84;10''-B3B-MR-5201B-2'';001;END;;0;11;spool sem juntas Pipe Shop
+84;10''-B3B-MR-5201B-2'';001;Dimensional;;0;11;spool sem juntas Pipe Shop
+85;10''-B3B-MR-5201B-2'';002;Visual de Ajuste;;0;4;spool sem juntas Pipe Shop
+85;10''-B3B-MR-5201B-2'';002;Soldagem;;0;4;spool sem juntas Pipe Shop
+85;10''-B3B-MR-5201B-2'';002;EVS;;0;4;spool sem juntas Pipe Shop
+85;10''-B3B-MR-5201B-2'';002;END;;0;4;spool sem juntas Pipe Shop
+85;10''-B3B-MR-5201B-2'';002;Dimensional;;0;4;spool sem juntas Pipe Shop
+86;10''-B3B-MR-5201B-2'';003;Visual de Ajuste;;0;4;spool sem juntas Pipe Shop
+86;10''-B3B-MR-5201B-2'';003;Soldagem;;0;4;spool sem juntas Pipe Shop
+86;10''-B3B-MR-5201B-2'';003;EVS;;0;4;spool sem juntas Pipe Shop
+86;10''-B3B-MR-5201B-2'';003;END;;0;4;spool sem juntas Pipe Shop
+86;10''-B3B-MR-5201B-2'';003;Dimensional;;0;4;spool sem juntas Pipe Shop
 87;"16""-B3B-MR-5001A-Z03";001;Visual de Ajuste;28/08/2026;2;1;
 87;"16""-B3B-MR-5001A-Z03";001;Soldagem;28/08/2026;2;1;
 87;"16""-B3B-MR-5001A-Z03";001;EVS;28/08/2026;2;1;
@@ -474,11 +474,11 @@
 103;"2""-A1E-BOG-7006C-C-2""-Z04";002;EVS;21/09/2026;4;0;
 103;"2""-A1E-BOG-7006C-C-2""-Z04";002;END;;4;0;4 de 4 juntas Pipe sem data: 004 (END pendente (RX/US)), 005 (END pendente (RX/US)), 006 (END pendente (RX/US)), 007 (END pendente (RX/US))
 103;"2""-A1E-BOG-7006C-C-2""-Z04";002;Dimensional;;4;0;4 de 4 juntas Pipe sem data: 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data)
-104;"2""-A1E-BOG-7007A-C-3""-Z04";001;Visual de Ajuste;;2;0;1 de 2 juntas Pipe sem data: 001 (sem data)
-104;"2""-A1E-BOG-7007A-C-3""-Z04";001;Soldagem;;2;0;1 de 2 juntas Pipe sem data: 001 (sem data)
-104;"2""-A1E-BOG-7007A-C-3""-Z04";001;EVS;;2;0;1 de 2 juntas Pipe sem data: 001 (sem data)
-104;"2""-A1E-BOG-7007A-C-3""-Z04";001;END;;2;0;2 de 2 juntas Pipe sem data: 001 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 002 (END pendente (RX/US))
-104;"2""-A1E-BOG-7007A-C-3""-Z04";001;Dimensional;;2;0;2 de 2 juntas Pipe sem data: 001 (sem data), 002 (sem data)
+104;"2""-A1E-BOG-7007A-C-3""-Z04";001;Visual de Ajuste;21/09/2026;1;1;
+104;"2""-A1E-BOG-7007A-C-3""-Z04";001;Soldagem;21/09/2026;1;1;
+104;"2""-A1E-BOG-7007A-C-3""-Z04";001;EVS;21/09/2026;1;1;
+104;"2""-A1E-BOG-7007A-C-3""-Z04";001;END;;1;1;1 de 1 juntas Pipe sem data: 002 (END pendente (RX/US))
+104;"2""-A1E-BOG-7007A-C-3""-Z04";001;Dimensional;;1;1;1 de 1 juntas Pipe sem data: 002 (sem data)
 105;"2""-A1E-BOG-7007A-C-3""-Z04";002;Visual de Ajuste;21/09/2026;4;0;
 105;"2""-A1E-BOG-7007A-C-3""-Z04";002;Soldagem;21/09/2026;4;0;
 105;"2""-A1E-BOG-7007A-C-3""-Z04";002;EVS;21/09/2026;4;0;
@@ -494,11 +494,11 @@
 107;"2""-A1E-BOG-7008B-C-3""-Z05";002;EVS;21/09/2026;4;0;
 107;"2""-A1E-BOG-7008B-C-3""-Z05";002;END;;4;0;4 de 4 juntas Pipe sem data: 003 (END pendente (RX/US)), 004 (END pendente (RX/US)), 005 (END pendente (RX/US)), 006 (END pendente (RX/US))
 107;"2""-A1E-BOG-7008B-C-3""-Z05";002;Dimensional;;4;0;4 de 4 juntas Pipe sem data: 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data)
-108;"2""-A1E-BOG-7009B-C-3""-Z05";001;Visual de Ajuste;;2;0;1 de 2 juntas Pipe sem data: 001 (sem data)
-108;"2""-A1E-BOG-7009B-C-3""-Z05";001;Soldagem;;2;0;1 de 2 juntas Pipe sem data: 001 (sem data)
-108;"2""-A1E-BOG-7009B-C-3""-Z05";001;EVS;;2;0;1 de 2 juntas Pipe sem data: 001 (sem data)
-108;"2""-A1E-BOG-7009B-C-3""-Z05";001;END;;2;0;2 de 2 juntas Pipe sem data: 001 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 002 (END pendente (RX/US))
-108;"2""-A1E-BOG-7009B-C-3""-Z05";001;Dimensional;;2;0;2 de 2 juntas Pipe sem data: 001 (sem data), 002 (sem data)
+108;"2""-A1E-BOG-7009B-C-3""-Z05";001;Visual de Ajuste;20/09/2026;1;1;
+108;"2""-A1E-BOG-7009B-C-3""-Z05";001;Soldagem;20/09/2026;1;1;
+108;"2""-A1E-BOG-7009B-C-3""-Z05";001;EVS;20/09/2026;1;1;
+108;"2""-A1E-BOG-7009B-C-3""-Z05";001;END;;1;1;1 de 1 juntas Pipe sem data: 002 (END pendente (RX/US))
+108;"2""-A1E-BOG-7009B-C-3""-Z05";001;Dimensional;;1;1;1 de 1 juntas Pipe sem data: 002 (sem data)
 109;"2""-A1E-BOG-7009B-C-3""-Z05";002;Visual de Ajuste;20/09/2026;4;0;
 109;"2""-A1E-BOG-7009B-C-3""-Z05";002;Soldagem;20/09/2026;4;0;
 109;"2""-A1E-BOG-7009B-C-3""-Z05";002;EVS;20/09/2026;4;0;
@@ -514,31 +514,31 @@
 111;"2""-A1E-BOG-7010C-C-3""-Z04";002;EVS;20/09/2026;4;0;
 111;"2""-A1E-BOG-7010C-C-3""-Z04";002;END;;4;0;4 de 4 juntas Pipe sem data: 003 (END pendente (RX/US)), 004 (END pendente (RX/US)), 005 (END pendente (RX/US)), 006 (END pendente (RX/US))
 111;"2""-A1E-BOG-7010C-C-3""-Z04";002;Dimensional;;4;0;4 de 4 juntas Pipe sem data: 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data)
-112;"2""-A1E-BOG-7011C-C-3""-Z04";001;Visual de Ajuste;;2;0;1 de 2 juntas Pipe sem data: 001 (sem data)
-112;"2""-A1E-BOG-7011C-C-3""-Z04";001;Soldagem;;2;0;1 de 2 juntas Pipe sem data: 001 (sem data)
-112;"2""-A1E-BOG-7011C-C-3""-Z04";001;EVS;;2;0;1 de 2 juntas Pipe sem data: 001 (sem data)
-112;"2""-A1E-BOG-7011C-C-3""-Z04";001;END;;2;0;2 de 2 juntas Pipe sem data: 001 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 002 (END pendente (RX/US))
-112;"2""-A1E-BOG-7011C-C-3""-Z04";001;Dimensional;;2;0;2 de 2 juntas Pipe sem data: 001 (sem data), 002 (sem data)
+112;"2""-A1E-BOG-7011C-C-3""-Z04";001;Visual de Ajuste;20/09/2026;1;1;
+112;"2""-A1E-BOG-7011C-C-3""-Z04";001;Soldagem;20/09/2026;1;1;
+112;"2""-A1E-BOG-7011C-C-3""-Z04";001;EVS;20/09/2026;1;1;
+112;"2""-A1E-BOG-7011C-C-3""-Z04";001;END;;1;1;1 de 1 juntas Pipe sem data: 002 (END pendente (RX/US))
+112;"2""-A1E-BOG-7011C-C-3""-Z04";001;Dimensional;;1;1;1 de 1 juntas Pipe sem data: 002 (sem data)
 113;"2""-A1E-BOG-7011C-C-3""-Z04";002;Visual de Ajuste;20/09/2026;4;0;
 113;"2""-A1E-BOG-7011C-C-3""-Z04";002;Soldagem;20/09/2026;4;0;
 113;"2""-A1E-BOG-7011C-C-3""-Z04";002;EVS;20/09/2026;4;0;
 113;"2""-A1E-BOG-7011C-C-3""-Z04";002;END;;4;0;4 de 4 juntas Pipe sem data: 003 (END pendente (RX/US)), 004 (END pendente (RX/US)), 005 (END pendente (RX/US)), 006 (END pendente (RX/US))
 113;"2""-A1E-BOG-7011C-C-3""-Z04";002;Dimensional;;4;0;4 de 4 juntas Pipe sem data: 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data)
-114;"2""-A1E-BOG-7205B-Z04/1";001;Visual de Ajuste;;6;0;1 de 6 juntas Pipe sem data: 001 (sem data)
-114;"2""-A1E-BOG-7205B-Z04/1";001;Soldagem;;6;0;1 de 6 juntas Pipe sem data: 001 (sem data)
-114;"2""-A1E-BOG-7205B-Z04/1";001;EVS;;6;0;1 de 6 juntas Pipe sem data: 001 (sem data)
-114;"2""-A1E-BOG-7205B-Z04/1";001;END;;6;0;6 de 6 juntas Pipe sem data: 001 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 002 (END pendente (RX/US)), 003 (END pendente (RX/US)), 004 (END pendente (RX/US)), 005 (END pendente (RX/US)), 006 (END pendente (RX/US))
-114;"2""-A1E-BOG-7205B-Z04/1";001;Dimensional;;6;0;6 de 6 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data)
+114;"2""-A1E-BOG-7205B-Z04/1";001;Visual de Ajuste;21/09/2026;5;1;
+114;"2""-A1E-BOG-7205B-Z04/1";001;Soldagem;21/09/2026;5;1;
+114;"2""-A1E-BOG-7205B-Z04/1";001;EVS;21/09/2026;5;1;
+114;"2""-A1E-BOG-7205B-Z04/1";001;END;;5;1;5 de 5 juntas Pipe sem data: 002 (END pendente (RX/US)), 003 (END pendente (RX/US)), 004 (END pendente (RX/US)), 005 (END pendente (RX/US)), 006 (END pendente (RX/US))
+114;"2""-A1E-BOG-7205B-Z04/1";001;Dimensional;;5;1;5 de 5 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data)
 115;"2""-A1E-BOG-7205B-Z04/2";002;Visual de Ajuste;21/09/2026;4;0;
 115;"2""-A1E-BOG-7205B-Z04/2";002;Soldagem;21/09/2026;4;0;
 115;"2""-A1E-BOG-7205B-Z04/2";002;EVS;21/09/2026;4;0;
 115;"2""-A1E-BOG-7205B-Z04/2";002;END;;4;0;4 de 4 juntas Pipe sem data: 007 (END pendente (RX/US)), 008 (END pendente (RX/US)), 009 (END pendente (RX/US)), 010 (END pendente (RX/US))
 115;"2""-A1E-BOG-7205B-Z04/2";002;Dimensional;;4;0;4 de 4 juntas Pipe sem data: 007 (sem data), 008 (sem data), 009 (sem data), 010 (sem data)
-116;"2""-A1E-CF-4007A-Z02";001;Visual de Ajuste;;3;1;1 de 3 juntas Pipe sem data: 003 (sem data)
-116;"2""-A1E-CF-4007A-Z02";001;Soldagem;;3;1;1 de 3 juntas Pipe sem data: 003 (sem data)
-116;"2""-A1E-CF-4007A-Z02";001;EVS;;3;1;1 de 3 juntas Pipe sem data: 003 (sem data)
-116;"2""-A1E-CF-4007A-Z02";001;END;;3;1;1 de 3 juntas Pipe sem data: 003 (END pendente (LIQUIDO PENETRANTE / PM))
-116;"2""-A1E-CF-4007A-Z02";001;Dimensional;;3;1;3 de 3 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data)
+116;"2""-A1E-CF-4007A-Z02";001;Visual de Ajuste;18/08/2026;2;2;
+116;"2""-A1E-CF-4007A-Z02";001;Soldagem;18/08/2026;2;2;
+116;"2""-A1E-CF-4007A-Z02";001;EVS;18/08/2026;2;2;
+116;"2""-A1E-CF-4007A-Z02";001;END;18/08/2026;2;2;
+116;"2""-A1E-CF-4007A-Z02";001;Dimensional;;2;2;2 de 2 juntas Pipe sem data: 002 (sem data), 004 (sem data)
 117;"2""-A1E-CF-4104";001;Visual de Ajuste;;0;2;spool sem juntas Pipe Shop
 117;"2""-A1E-CF-4104";001;Soldagem;;0;2;spool sem juntas Pipe Shop
 117;"2""-A1E-CF-4104";001;EVS;;0;2;spool sem juntas Pipe Shop
@@ -559,16 +559,16 @@
 120;"2""-A1E-IA-9011-Z03";001;EVS;20/08/2026;7;0;
 120;"2""-A1E-IA-9011-Z03";001;END;21/08/2026;7;0;
 120;"2""-A1E-IA-9011-Z03";001;Dimensional;;7;0;7 de 7 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data)
-121;"2""-A1E-IA-9011-Z03";002;Visual de Ajuste;;5;0;1 de 5 juntas Pipe sem data: 012 (sem data)
-121;"2""-A1E-IA-9011-Z03";002;Soldagem;;5;0;1 de 5 juntas Pipe sem data: 012 (sem data)
-121;"2""-A1E-IA-9011-Z03";002;EVS;;5;0;1 de 5 juntas Pipe sem data: 012 (sem data)
-121;"2""-A1E-IA-9011-Z03";002;END;;5;0;1 de 5 juntas Pipe sem data: 012 (END pendente (LIQUIDO PENETRANTE / PM))
-121;"2""-A1E-IA-9011-Z03";002;Dimensional;;5;0;5 de 5 juntas Pipe sem data: 008 (sem data), 009 (sem data), 010 (sem data), 011 (sem data), 012 (sem data)
-122;"2""-A1E-IA-9011-Z03";003;Visual de Ajuste;;9;0;2 de 9 juntas Pipe sem data: 013 (sem data), 014 (sem data)
-122;"2""-A1E-IA-9011-Z03";003;Soldagem;;9;0;2 de 9 juntas Pipe sem data: 013 (sem data), 014 (sem data)
-122;"2""-A1E-IA-9011-Z03";003;EVS;;9;0;2 de 9 juntas Pipe sem data: 013 (sem data), 014 (sem data)
-122;"2""-A1E-IA-9011-Z03";003;END;;9;0;2 de 9 juntas Pipe sem data: 013 (END pendente (LIQUIDO PENETRANTE / PM)), 014 (END pendente (LIQUIDO PENETRANTE / PM))
-122;"2""-A1E-IA-9011-Z03";003;Dimensional;;9;0;9 de 9 juntas Pipe sem data: 013 (sem data), 014 (sem data), 015 (sem data), 016 (sem data), 017 (sem data), 018 (sem data), 019 (sem data), 020 (sem data), 021 (sem data)
+121;"2""-A1E-IA-9011-Z03";002;Visual de Ajuste;20/08/2026;4;1;
+121;"2""-A1E-IA-9011-Z03";002;Soldagem;20/08/2026;4;1;
+121;"2""-A1E-IA-9011-Z03";002;EVS;20/08/2026;4;1;
+121;"2""-A1E-IA-9011-Z03";002;END;21/08/2026;4;1;
+121;"2""-A1E-IA-9011-Z03";002;Dimensional;;4;1;4 de 4 juntas Pipe sem data: 008 (sem data), 009 (sem data), 010 (sem data), 011 (sem data)
+122;"2""-A1E-IA-9011-Z03";003;Visual de Ajuste;21/08/2026;8;1;
+122;"2""-A1E-IA-9011-Z03";003;Soldagem;21/08/2026;8;1;
+122;"2""-A1E-IA-9011-Z03";003;EVS;21/08/2026;8;1;
+122;"2""-A1E-IA-9011-Z03";003;END;24/08/2026;8;1;
+122;"2""-A1E-IA-9011-Z03";003;Dimensional;;8;1;8 de 8 juntas Pipe sem data: 013 (sem data), 015 (sem data), 016 (sem data), 017 (sem data), 018 (sem data), 019 (sem data), 020 (sem data), 021 (sem data)
 123;"2""-A1E-IA-9011-Z03";004;Visual de Ajuste;24/08/2026;2;0;
 123;"2""-A1E-IA-9011-Z03";004;Soldagem;24/08/2026;2;0;
 123;"2""-A1E-IA-9011-Z03";004;EVS;24/08/2026;2;0;
@@ -679,11 +679,11 @@
 144;"2""-A3B-WW-9501M";002;EVS;15/05/2026;1;1;
 144;"2""-A3B-WW-9501M";002;END;15/09/2026;1;1;
 144;"2""-A3B-WW-9501M";002;Dimensional;;1;1;1 de 1 juntas Pipe sem data: 004 (sem data)
-145;"2""-A3B-WW-9501M";003;Visual de Ajuste;15/05/2026;8;1;
-145;"2""-A3B-WW-9501M";003;Soldagem;15/05/2026;8;1;
-145;"2""-A3B-WW-9501M";003;EVS;15/05/2026;8;1;
-145;"2""-A3B-WW-9501M";003;END;15/09/2026;8;1;
-145;"2""-A3B-WW-9501M";003;Dimensional;;8;1;8 de 8 juntas Pipe sem data: 007 (sem data), 008 (sem data), 009 (sem data), 010 (sem data), 011 (sem data), 012 (sem data), 013 (sem data), 014 (sem data)
+145;"2""-A3B-WW-9501M";003;Visual de Ajuste;15/05/2026;6;3;
+145;"2""-A3B-WW-9501M";003;Soldagem;15/05/2026;6;3;
+145;"2""-A3B-WW-9501M";003;EVS;15/05/2026;6;3;
+145;"2""-A3B-WW-9501M";003;END;15/09/2026;6;3;
+145;"2""-A3B-WW-9501M";003;Dimensional;;6;3;6 de 6 juntas Pipe sem data: 007 (sem data), 008 (sem data), 010 (sem data), 011 (sem data), 012 (sem data), 013 (sem data)
 146;"2""-B1E-MR-4010A-Z02";001;Visual de Ajuste;18/08/2026;12;7;
 146;"2""-B1E-MR-4010A-Z02";001;Soldagem;18/08/2026;12;7;
 146;"2""-B1E-MR-4010A-Z02";001;EVS;18/08/2026;12;7;
@@ -819,16 +819,16 @@
 172;"3""-A1E-BOG-7009-C-2""-Z04";001;EVS;22/09/2026;6;0;
 172;"3""-A1E-BOG-7009-C-2""-Z04";001;END;;6;0;6 de 6 juntas Pipe sem data: 001 (END pendente (RX/US)), 002 (END pendente (RX/US)), 003 (END pendente (RX/US)), 004 (END pendente (RX/US)), 005 (END pendente (RX/US)), 006 (END pendente (RX/US))
 172;"3""-A1E-BOG-7009-C-2""-Z04";001;Dimensional;;6;0;6 de 6 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data)
-173;"3""-A1E-BOG-7101A-C-3""-Z04";001;Visual de Ajuste;;3;0;1 de 3 juntas Pipe sem data: 001 (sem data)
-173;"3""-A1E-BOG-7101A-C-3""-Z04";001;Soldagem;;3;0;1 de 3 juntas Pipe sem data: 001 (sem data)
-173;"3""-A1E-BOG-7101A-C-3""-Z04";001;EVS;;3;0;1 de 3 juntas Pipe sem data: 001 (sem data)
-173;"3""-A1E-BOG-7101A-C-3""-Z04";001;END;;3;0;3 de 3 juntas Pipe sem data: 001 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 002 (END pendente (RX/US)), 003 (END pendente (RX/US))
-173;"3""-A1E-BOG-7101A-C-3""-Z04";001;Dimensional;;3;0;3 de 3 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data)
-174;"3""-A1E-BOG-7101B-C-3""-Z04";001;Visual de Ajuste;;5;0;1 de 5 juntas Pipe sem data: 001 (sem data)
-174;"3""-A1E-BOG-7101B-C-3""-Z04";001;Soldagem;;5;0;1 de 5 juntas Pipe sem data: 001 (sem data)
-174;"3""-A1E-BOG-7101B-C-3""-Z04";001;EVS;;5;0;1 de 5 juntas Pipe sem data: 001 (sem data)
-174;"3""-A1E-BOG-7101B-C-3""-Z04";001;END;;5;0;5 de 5 juntas Pipe sem data: 001 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 002 (END pendente (RX/US)), 003 (END pendente (RX/US)), 004 (END pendente (RX/US)), 005 (END pendente (RX/US))
-174;"3""-A1E-BOG-7101B-C-3""-Z04";001;Dimensional;;5;0;5 de 5 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
+173;"3""-A1E-BOG-7101A-C-3""-Z04";001;Visual de Ajuste;22/09/2026;2;1;
+173;"3""-A1E-BOG-7101A-C-3""-Z04";001;Soldagem;22/09/2026;2;1;
+173;"3""-A1E-BOG-7101A-C-3""-Z04";001;EVS;22/09/2026;2;1;
+173;"3""-A1E-BOG-7101A-C-3""-Z04";001;END;;2;1;2 de 2 juntas Pipe sem data: 002 (END pendente (RX/US)), 003 (END pendente (RX/US))
+173;"3""-A1E-BOG-7101A-C-3""-Z04";001;Dimensional;;2;1;2 de 2 juntas Pipe sem data: 002 (sem data), 003 (sem data)
+174;"3""-A1E-BOG-7101B-C-3""-Z04";001;Visual de Ajuste;22/09/2026;4;1;
+174;"3""-A1E-BOG-7101B-C-3""-Z04";001;Soldagem;22/09/2026;4;1;
+174;"3""-A1E-BOG-7101B-C-3""-Z04";001;EVS;22/09/2026;4;1;
+174;"3""-A1E-BOG-7101B-C-3""-Z04";001;END;;4;1;4 de 4 juntas Pipe sem data: 002 (END pendente (RX/US)), 003 (END pendente (RX/US)), 004 (END pendente (RX/US)), 005 (END pendente (RX/US))
+174;"3""-A1E-BOG-7101B-C-3""-Z04";001;Dimensional;;4;1;4 de 4 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
 175;"3""-A1E-BOG-7204A-C-3""-Z04/1";001;Visual de Ajuste;21/09/2026;1;0;
 175;"3""-A1E-BOG-7204A-C-3""-Z04/1";001;Soldagem;21/09/2026;1;0;
 175;"3""-A1E-BOG-7204A-C-3""-Z04/1";001;EVS;21/09/2026;1;0;
@@ -947,7 +947,7 @@
 198;"3/4""-A3B-CWS-0603-Z01";001;Visual de Ajuste;05/09/2026;6;1;
 198;"3/4""-A3B-CWS-0603-Z01";001;Soldagem;05/09/2026;6;1;
 198;"3/4""-A3B-CWS-0603-Z01";001;EVS;05/09/2026;6;1;
-198;"3/4""-A3B-CWS-0603-Z01";001;END;;6;1;6 de 6 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data)
+198;"3/4""-A3B-CWS-0603-Z01";001;END;14/09/2026;6;1;
 198;"3/4""-A3B-CWS-0603-Z01";001;Dimensional;;6;1;6 de 6 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data)
 199;"3/4""-A3B-CWS-0604-Z01";001;Visual de Ajuste;10/09/2026;8;1;
 199;"3/4""-A3B-CWS-0604-Z01";001;Soldagem;10/09/2026;8;1;
@@ -989,11 +989,11 @@
 206;"4""-A3B-HF-4006A-Z03";001;EVS;21/08/2026;6;0;
 206;"4""-A3B-HF-4006A-Z03";001;END;22/08/2026;6;0;
 206;"4""-A3B-HF-4006A-Z03";001;Dimensional;;6;0;6 de 6 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data)
-207;"4""-A3B-HF-5001A-Z03";001;Visual de Ajuste;;4;0;1 de 4 juntas Pipe sem data: 001 (sem data)
-207;"4""-A3B-HF-5001A-Z03";001;Soldagem;;4;0;1 de 4 juntas Pipe sem data: 001 (sem data)
-207;"4""-A3B-HF-5001A-Z03";001;EVS;;4;0;1 de 4 juntas Pipe sem data: 001 (sem data)
-207;"4""-A3B-HF-5001A-Z03";001;END;;4;0;1 de 4 juntas Pipe sem data: 001 (END pendente (LIQUIDO PENETRANTE / PM, RX/US))
-207;"4""-A3B-HF-5001A-Z03";001;Dimensional;;4;0;4 de 4 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data)
+207;"4""-A3B-HF-5001A-Z03";001;Visual de Ajuste;21/08/2026;3;1;
+207;"4""-A3B-HF-5001A-Z03";001;Soldagem;21/08/2026;3;1;
+207;"4""-A3B-HF-5001A-Z03";001;EVS;21/08/2026;3;1;
+207;"4""-A3B-HF-5001A-Z03";001;END;22/08/2026;3;1;
+207;"4""-A3B-HF-5001A-Z03";001;Dimensional;;3;1;3 de 3 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data)
 208;"4""-A3B-HF-5007A-Z03";001;Visual de Ajuste;21/08/2026;4;0;
 208;"4""-A3B-HF-5007A-Z03";001;Soldagem;21/08/2026;4;0;
 208;"4""-A3B-HF-5007A-Z03";001;EVS;21/08/2026;4;0;
@@ -1149,10 +1149,10 @@
 238;"6""-B3B-MR-4018A-Z02";003;EVS;20/08/2026;5;1;
 238;"6""-B3B-MR-4018A-Z02";003;END;22/08/2026;5;1;
 238;"6""-B3B-MR-4018A-Z02";003;Dimensional;;5;1;5 de 5 juntas Pipe sem data: 006 (sem data), 007 (sem data), 008 (sem data), 009 (sem data), 010 (sem data)
-239;"6""-B3B-MR-5503A-Z03";001;Visual de Ajuste;;4;0;4 de 4 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data)
-239;"6""-B3B-MR-5503A-Z03";001;Soldagem;;4;0;4 de 4 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data)
-239;"6""-B3B-MR-5503A-Z03";001;EVS;;4;0;4 de 4 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data)
-239;"6""-B3B-MR-5503A-Z03";001;END;;4;0;4 de 4 juntas Pipe sem data: 001 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 002 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 003 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 004 (END pendente (LIQUIDO PENETRANTE / PM, RX/US))
+239;"6""-B3B-MR-5503A-Z03";001;Visual de Ajuste;27/08/2026;4;0;
+239;"6""-B3B-MR-5503A-Z03";001;Soldagem;27/08/2026;4;0;
+239;"6""-B3B-MR-5503A-Z03";001;EVS;27/08/2026;4;0;
+239;"6""-B3B-MR-5503A-Z03";001;END;01/09/2026;4;0;
 239;"6""-B3B-MR-5503A-Z03";001;Dimensional;;4;0;4 de 4 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data)
 240;"6""-B3B-MR-5503B-Z03";001;Visual de Ajuste;27/08/2026;4;0;
 240;"6""-B3B-MR-5503B-Z03";001;Soldagem;27/08/2026;4;0;
@@ -1164,20 +1164,20 @@
 241;"6""-B3B-NG-0304A-Z01";001;EVS;12/09/2026;4;0;
 241;"6""-B3B-NG-0304A-Z01";001;END;15/09/2026;4;0;
 241;"6""-B3B-NG-0304A-Z01";001;Dimensional;;4;0;4 de 4 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data)
-242;"6""-B3B-NG-0304B";001;Visual de Ajuste;;2;0;2 de 2 juntas Pipe sem data: 001 (sem data), 002 (sem data)
-242;"6""-B3B-NG-0304B";001;Soldagem;;2;0;2 de 2 juntas Pipe sem data: 001 (sem data), 002 (sem data)
-242;"6""-B3B-NG-0304B";001;EVS;;2;0;2 de 2 juntas Pipe sem data: 001 (sem data), 002 (sem data)
-242;"6""-B3B-NG-0304B";001;END;;2;0;2 de 2 juntas Pipe sem data: 001 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 002 (END pendente (LIQUIDO PENETRANTE / PM, RX/US))
+242;"6""-B3B-NG-0304B";001;Visual de Ajuste;07/09/2026;2;0;
+242;"6""-B3B-NG-0304B";001;Soldagem;07/09/2026;2;0;
+242;"6""-B3B-NG-0304B";001;EVS;07/09/2026;2;0;
+242;"6""-B3B-NG-0304B";001;END;;2;0;2 de 2 juntas Pipe sem data: 001 (END pendente (RX/US)), 002 (END pendente (RX/US))
 242;"6""-B3B-NG-0304B";001;Dimensional;;2;0;2 de 2 juntas Pipe sem data: 001 (sem data), 002 (sem data)
 243;"6""-D1E-NG-4301A-C-3""-Z02";001;Visual de Ajuste;24/08/2026;8;1;
 243;"6""-D1E-NG-4301A-C-3""-Z02";001;Soldagem;24/08/2026;8;1;
 243;"6""-D1E-NG-4301A-C-3""-Z02";001;EVS;24/08/2026;8;1;
 243;"6""-D1E-NG-4301A-C-3""-Z02";001;END;;8;1;8 de 8 juntas Pipe sem data: 001 (END pendente (RX/US)), 002 (END pendente (RX/US)), 003 (END pendente (RX/US)), 004 (END pendente (RX/US)), 005 (END pendente (RX/US)), 006 (END pendente (RX/US)), 007 (END pendente (RX/US)), 008 (END pendente (RX/US))
 243;"6""-D1E-NG-4301A-C-3""-Z02";001;Dimensional;;8;1;8 de 8 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data), 008 (sem data)
-244;"6""-D3B-NG-0407C-Z01/2";001;Visual de Ajuste;;5;0;5 de 5 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
-244;"6""-D3B-NG-0407C-Z01/2";001;Soldagem;;5;0;5 de 5 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
-244;"6""-D3B-NG-0407C-Z01/2";001;EVS;;5;0;5 de 5 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
-244;"6""-D3B-NG-0407C-Z01/2";001;END;;5;0;5 de 5 juntas Pipe sem data: 001 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 002 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 003 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 004 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 005 (END pendente (LIQUIDO PENETRANTE / PM, RX/US))
+244;"6""-D3B-NG-0407C-Z01/2";001;Visual de Ajuste;14/09/2026;5;0;
+244;"6""-D3B-NG-0407C-Z01/2";001;Soldagem;14/09/2026;5;0;
+244;"6""-D3B-NG-0407C-Z01/2";001;EVS;14/09/2026;5;0;
+244;"6""-D3B-NG-0407C-Z01/2";001;END;15/09/2026;5;0;
 244;"6""-D3B-NG-0407C-Z01/2";001;Dimensional;;5;0;5 de 5 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
 245;"6""-D3B-NG-3104A-Z02";001;Visual de Ajuste;20/08/2026;3;0;
 245;"6""-D3B-NG-3104A-Z02";001;Soldagem;20/08/2026;3;0;
@@ -1329,18 +1329,17 @@
 224;"6""-A3B-HF-7301-Z01";007;;;;;"Diâmetro corrigido de 6"" para 3"""
 10; 4''-B3B-LO-5113A-PP-2 ;002;;;;;Relatório DF 049/26 obtido de junta de Campo (spool sem juntas Pipe)
 75;"10""-B3B-MR-5203A-PP-2""-Z03";003;;;;;Relatório DF 066/26 obtido de junta de Campo (spool sem juntas Pipe)
-114;"2""-A1E-BOG-7205B-Z04/1";001;;;;;Relatório DF 098/26: juntas sem relatório dimensional: 001
-121;"2""-A1E-IA-9011-Z03";002;;;;;Relatório DF 016/26: juntas sem relatório dimensional: 012
-122;"2""-A1E-IA-9011-Z03";003;;;;;Relatório DF 017/26: juntas sem relatório dimensional: 013, 014
+122;"2""-A1E-IA-9011-Z03";003;;;;;Relatório DF 017/26: juntas sem relatório dimensional: 013
 257;6''-B3B-MR-5407A-PP-2'';002;;;;;Relatório DF 060/26 obtido de junta de Campo (spool sem juntas Pipe)
 10; 4''-B3B-LO-5113A-PP-2 ;002;;;;;TOTAL_JUNTAS_PIPE corrigido de 7 para 0 (Mapa de Juntas)
-20;"1""-A1E-IA-9010A-Z04";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 6 (Mapa de Juntas)
 25;"1""-A3B-N2-9105A-Z02";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 4 (Mapa de Juntas)
 26;"1""-A3B-N2-9105A-Z02";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 5 (Mapa de Juntas)
+27;"1""-A3B-N2-9106A-Z04";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 4 (Mapa de Juntas)
 30;"1""-A3B-N2-9109-Z01";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 0 para 8 (Mapa de Juntas)
 32;"1""-A3B-N2-9114-Z01";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 0 para 4 (Mapa de Juntas)
 33;"1""-A3B-N2-9114-Z01";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 0 para 7 (Mapa de Juntas)
 35;"1""-A3B-N2-9116-Z01/2";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 2 (Mapa de Juntas)
+39;"1""-A3B-WW-3005M";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 2 (Mapa de Juntas)
 46;"1""-B3B-LO-5002A-Z03";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 4 para 2 (Mapa de Juntas)
 49;"1""-B3B-LO-5004A-Z03";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 6 para 2 (Mapa de Juntas)
 57;"1""-D1E-NG-4001A-Z02";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 12 para 10 (Mapa de Juntas)
@@ -1350,10 +1349,12 @@
 75;"10""-B3B-MR-5203A-PP-2""-Z03";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 0 (Mapa de Juntas)
 77;"10""-B3B-MR-5203B-PP-2""-Z03";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 1 (Mapa de Juntas)
 80;10''-B3B-LO-5103A-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 14 (Mapa de Juntas)
-82;10''-B3B-LO-5103B-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 3 (Mapa de Juntas)
-83;10''-B3B-LO-5103B-2'';003;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 9 (Mapa de Juntas)
-85;10''-B3B-MR-5201B-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 9 para 2 (Mapa de Juntas)
-86;10''-B3B-MR-5201B-2'';003;;;;;TOTAL_JUNTAS_PIPE corrigido de 9 para 4 (Mapa de Juntas)
+81;10''-B3B-LO-5103B-2'';001;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 0 (Mapa de Juntas)
+82;10''-B3B-LO-5103B-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 0 (Mapa de Juntas)
+83;10''-B3B-LO-5103B-2'';003;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 0 (Mapa de Juntas)
+84;10''-B3B-MR-5201B-2'';001;;;;;TOTAL_JUNTAS_PIPE corrigido de 9 para 0 (Mapa de Juntas)
+85;10''-B3B-MR-5201B-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 9 para 0 (Mapa de Juntas)
+86;10''-B3B-MR-5201B-2'';003;;;;;TOTAL_JUNTAS_PIPE corrigido de 9 para 0 (Mapa de Juntas)
 90;"2""-A1E-BOG-7001A-C-2""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 3 (Mapa de Juntas)
 91;"2""-A1E-BOG-7001A-C-2""-Z04";002;;;;;TOTAL_JUNTAS corrigido de 3 para 4 (Mapa de Juntas)
 91;"2""-A1E-BOG-7001A-C-2""-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 4 (Mapa de Juntas)
@@ -1376,31 +1377,34 @@
 103;"2""-A1E-BOG-7006C-C-2""-Z04";002;;;;;TOTAL_JUNTAS corrigido de 3 para 4 (Mapa de Juntas)
 103;"2""-A1E-BOG-7006C-C-2""-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 4 (Mapa de Juntas)
 104;"2""-A1E-BOG-7007A-C-3""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+104;"2""-A1E-BOG-7007A-C-3""-Z04";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 1 (Mapa de Juntas)
 105;"2""-A1E-BOG-7007A-C-3""-Z04";002;;;;;TOTAL_JUNTAS corrigido de 2 para 4 (Mapa de Juntas)
 105;"2""-A1E-BOG-7007A-C-3""-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 4 (Mapa de Juntas)
 106;"2""-A1E-BOG-7008B-C-3""-Z05";001;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
 107;"2""-A1E-BOG-7008B-C-3""-Z05";002;;;;;TOTAL_JUNTAS corrigido de 2 para 4 (Mapa de Juntas)
 107;"2""-A1E-BOG-7008B-C-3""-Z05";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 4 (Mapa de Juntas)
 108;"2""-A1E-BOG-7009B-C-3""-Z05";001;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+108;"2""-A1E-BOG-7009B-C-3""-Z05";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 1 (Mapa de Juntas)
 109;"2""-A1E-BOG-7009B-C-3""-Z05";002;;;;;TOTAL_JUNTAS corrigido de 2 para 4 (Mapa de Juntas)
 109;"2""-A1E-BOG-7009B-C-3""-Z05";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 4 (Mapa de Juntas)
 110;"2""-A1E-BOG-7010C-C-3""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
 111;"2""-A1E-BOG-7010C-C-3""-Z04";002;;;;;TOTAL_JUNTAS corrigido de 2 para 4 (Mapa de Juntas)
 111;"2""-A1E-BOG-7010C-C-3""-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 4 (Mapa de Juntas)
 112;"2""-A1E-BOG-7011C-C-3""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
+112;"2""-A1E-BOG-7011C-C-3""-Z04";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 1 (Mapa de Juntas)
 113;"2""-A1E-BOG-7011C-C-3""-Z04";002;;;;;TOTAL_JUNTAS corrigido de 2 para 4 (Mapa de Juntas)
 113;"2""-A1E-BOG-7011C-C-3""-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 4 (Mapa de Juntas)
 114;"2""-A1E-BOG-7205B-Z04/1";001;;;;;TOTAL_JUNTAS corrigido de 4 para 6 (Mapa de Juntas)
+114;"2""-A1E-BOG-7205B-Z04/1";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 6 para 5 (Mapa de Juntas)
 115;"2""-A1E-BOG-7205B-Z04/2";002;;;;;TOTAL_JUNTAS corrigido de 6 para 4 (Mapa de Juntas)
-116;"2""-A1E-CF-4007A-Z02";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 3 (Mapa de Juntas)
 117;"2""-A1E-CF-4104";001;;;;;TOTAL_JUNTAS corrigido de 4 para 2 (Mapa de Juntas)
 118;"2""-A1E-CF-7201-Z04";001;;;;;TOTAL_JUNTAS corrigido de 2 para 5 (Mapa de Juntas)
 119;"2""-A1E-IA-9004""-Z01";001;;;;;TOTAL_JUNTAS corrigido de 5 para 6 (Mapa de Juntas)
 120;"2""-A1E-IA-9011-Z03";001;;;;;TOTAL_JUNTAS corrigido de 6 para 7 (Mapa de Juntas)
 121;"2""-A1E-IA-9011-Z03";002;;;;;TOTAL_JUNTAS corrigido de 7 para 5 (Mapa de Juntas)
-121;"2""-A1E-IA-9011-Z03";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 7 para 5 (Mapa de Juntas)
+121;"2""-A1E-IA-9011-Z03";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 7 para 4 (Mapa de Juntas)
 122;"2""-A1E-IA-9011-Z03";003;;;;;TOTAL_JUNTAS corrigido de 5 para 9 (Mapa de Juntas)
-122;"2""-A1E-IA-9011-Z03";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 7 para 9 (Mapa de Juntas)
+122;"2""-A1E-IA-9011-Z03";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 7 para 8 (Mapa de Juntas)
 123;"2""-A1E-IA-9011-Z03";004;;;;;TOTAL_JUNTAS corrigido de 9 para 2 (Mapa de Juntas)
 123;"2""-A1E-IA-9011-Z03";004;;;;;TOTAL_JUNTAS_PIPE corrigido de 7 para 2 (Mapa de Juntas)
 124;"2""-A1E-IA-9011-Z03";005;;;;;TOTAL_JUNTAS corrigido de 2 para 5 (Mapa de Juntas)
@@ -1422,7 +1426,7 @@
 144;"2""-A3B-WW-9501M";002;;;;;TOTAL_JUNTAS corrigido de 3 para 2 (Mapa de Juntas)
 144;"2""-A3B-WW-9501M";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 1 (Mapa de Juntas)
 145;"2""-A3B-WW-9501M";003;;;;;TOTAL_JUNTAS corrigido de 2 para 9 (Mapa de Juntas)
-145;"2""-A3B-WW-9501M";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 8 (Mapa de Juntas)
+145;"2""-A3B-WW-9501M";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 2 para 6 (Mapa de Juntas)
 146;"2""-B1E-MR-4010A-Z02";001;;;;;TOTAL_JUNTAS corrigido de 9 para 19 (Mapa de Juntas)
 147;"2""-B3B-LPG-1001-Z01";001;;;;;TOTAL_JUNTAS corrigido de 19 para 1 (Mapa de Juntas)
 148;"2""-B3B-LPG-1001-Z01";002;;;;;TOTAL_JUNTAS corrigido de 1 para 3 (Mapa de Juntas)
@@ -1461,7 +1465,9 @@
 171;2''-B3B-LO-5127A-PP-2'';001;;;;;TOTAL_JUNTAS corrigido de 5 para 4 (Mapa de Juntas)
 172;"3""-A1E-BOG-7009-C-2""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 6 (Mapa de Juntas)
 173;"3""-A1E-BOG-7101A-C-3""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 6 para 3 (Mapa de Juntas)
+173;"3""-A1E-BOG-7101A-C-3""-Z04";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 2 (Mapa de Juntas)
 174;"3""-A1E-BOG-7101B-C-3""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 3 para 5 (Mapa de Juntas)
+174;"3""-A1E-BOG-7101B-C-3""-Z04";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 4 (Mapa de Juntas)
 175;"3""-A1E-BOG-7204A-C-3""-Z04/1";001;;;;;TOTAL_JUNTAS corrigido de 5 para 1 (Mapa de Juntas)
 176;"3""-A1E-BOG-7204A-C-3""-Z04/2";002;;;;;TOTAL_JUNTAS corrigido de 1 para 5 (Mapa de Juntas)
 177;"3""-A1E-BOG-7204A-C-3""-Z04/3";003;;;;;TOTAL_JUNTAS corrigido de 5 para 6 (Mapa de Juntas)
@@ -1504,6 +1510,7 @@
 205;"4""-A3B-BOG-7204-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 3 (Mapa de Juntas)
 206;"4""-A3B-HF-4006A-Z03";001;;;;;TOTAL_JUNTAS corrigido de 4 para 6 (Mapa de Juntas)
 207;"4""-A3B-HF-5001A-Z03";001;;;;;TOTAL_JUNTAS corrigido de 6 para 4 (Mapa de Juntas)
+207;"4""-A3B-HF-5001A-Z03";001;;;;;TOTAL_JUNTAS_PIPE corrigido de 4 para 3 (Mapa de Juntas)
 209;"4""-B3B-MR-5511A-Z03";001;;;;;TOTAL_JUNTAS corrigido de 4 para 3 (Mapa de Juntas)
 211;4''-B3B-LO-5113B-PP-2'';001;;;;;TOTAL_JUNTAS corrigido de 3 para 9 (Mapa de Juntas)
 212;4''-B3B-LO-5113B-PP-2'';002;;;;;TOTAL_JUNTAS corrigido de 9 para 4 (Mapa de Juntas)

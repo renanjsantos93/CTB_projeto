@@ -274,7 +274,7 @@ def ler_juntas(caminho, aba=None):
     wb = openpyxl.load_workbook(caminho, read_only=True, data_only=True)
     abas = [wb[aba]] if aba else [ws for ws in wb.worksheets if _tem_juntas(ws)]
     juntas, etapas_encontradas, avisos = [], set(), []
-    vistas, duplicadas = set(), 0
+    vistas, duplicadas, pc_desconhecido = set(), 0, defaultdict(list)
     for ws in abas:
         primeira, col, etapas = localizar_juntas(ws)
         etapas_encontradas |= set(etapas)
@@ -295,7 +295,7 @@ def ler_juntas(caminho, aba=None):
             pc = _norm(v(col["pc"]))
             tipo = "PIPE" if pc in PIPE else "CAMPO" if pc in CAMPO else ""
             if not tipo and pc:
-                avisos.append("%s!%d: P/C desconhecido %r (junta desconsiderada)" % (ws.title, r, v(col["pc"])))
+                pc_desconhecido[(ws.title, str(v(col["pc"])).strip())].append(r)
             datas = {}
             for chave, grupos in etapas.items():
                 datas[chave] = _data_etapa(chave, grupos, v)
@@ -307,6 +307,9 @@ def ler_juntas(caminho, aba=None):
                 "diam_pol": polegadas(v(col["dpol"])), "diam_mm": ler_numero(v(col["dmm"])),
                 "rel_dim": _rel(v(col.get("rel_dim"))),
             })
+    for (aba_, valor), linhas in pc_desconhecido.items():
+        avisos.append("%d juntas com P/C %r (não é Pipe nem Campo; fora das etapas e do Total_Juntas_Pipe): "
+                      "%s!%s" % (len(linhas), valor, aba_, ", ".join(map(str, linhas))))
     if duplicadas:
         avisos.append("%d juntas repetidas no Mapa de Juntas (contadas uma vez)" % duplicadas)
     return juntas, etapas_encontradas, avisos
