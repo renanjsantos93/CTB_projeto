@@ -161,6 +161,30 @@ def test_dimensional_pela_rastreabilidade_e_linha_de_numeracao():
     assert len(res["juntas"]) == 3
 
 
+def test_relatorio_df_vem_da_rastreabilidade_dimensional():
+    d = tempfile.mkdtemp()
+    mj, ms, out = (os.path.join(d, n) for n in ("j.xlsx", "s.xlsx", "o.xlsx"))
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["Linha", "Spool", "Junta", "P/C", "Rastreabilidade - dimensional", None, None, None])
+    ws.append([None, None, None, None, "Status", "Relatório", "Executante", "Data"])
+    ws.append([LINHA, "001", "001", "P", "A", "053/26", "X", None])
+    ws.append([LINHA, "001", "002", "P", "A", "053/26", "X", None])
+    ws.append([LINHA, "001", "003", "C", "A", "099/26", "X", None])   # Campo: não entra
+    ws.append([LINHA, "002", "004", "P", "P", None, None, None])
+    ws.append([LINHA, "003", "005", "C", "A", "070/26", "X", None])   # spool só com Campo
+    wb.save(mj)
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["Linha", "Spool", "Relatório DF"])
+    for sp in ("001", "002", "003"):
+        ws.append([LINHA, sp, None])
+    wb.save(ms)
+    atualizar_spools(mj, ms, out)
+    ws = openpyxl.load_workbook(out).active
+    assert [ws.cell(r, 3).value for r in (2, 3, 4)] == ["053/26", None, "070/26"]
+
+
 def test_espessura_do_spool_e_a_maior_da_linha():
     d = tempfile.mkdtemp()
     mj, ms, out = (os.path.join(d, n) for n in ("j.xlsx", "s.xlsx", "o.xlsx"))

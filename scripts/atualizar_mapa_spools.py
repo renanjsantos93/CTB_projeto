@@ -32,6 +32,10 @@ spool. Se a linha do Mapa de Spools não tiver zona, usa-se a TAG padronizada
 Total_Juntas / Total_Juntas_Pipe: corrigidos com a contagem de juntas do spool
 no Mapa de Juntas (todas as juntas / só as Pipe Shop; repetidas contam uma vez).
 
+Relatório DF: nº do relatório do grupo "Rastreabilidade - dimensional" das juntas
+Pipe Shop do spool (sem juntas Pipe, usa as demais). Mais de um relatório no
+mesmo spool são gravados juntos ("018/26 / 019/26") e avisados no relatório.
+
 Espessura: a coluna "Espessura" do spool recebe a maior espessura encontrada
 entre todas as juntas da mesma linha no Mapa de Juntas (Pipe e Campo).
 
@@ -175,6 +179,11 @@ def _spool(v):
     return s.zfill(3) if s.isdigit() else s
 
 
+def _rel(v):
+    s = str(v).strip() if v is not None else ""
+    return "" if s in ("", "0") else s
+
+
 def _junta(v):
     return _spool(v)
 
@@ -204,16 +213,22 @@ def localizar_juntas(ws, max_linhas=30):
 
     # grupos: cabeçalho na linha hdr, subcolunas (Status/Data...) na linha seguinte
     inicios = [(j, h) for j, h in enumerate(hs) if h]
+    GRUPOS_DIMENSIONAL = next(g for k, _n, g in ETAPAS if k == "DIMENSIONAL")
     etapas = defaultdict(list)  # chave -> [(nome_grupo, col_status|None, [cols_data])]
     for n, (j, h) in enumerate(inicios):
         fim = inicios[n + 1][0] if n + 1 < len(inicios) else max(len(hs), len(sub))
         datas = [k + 1 for k in range(j, fim) if k < len(sub) and sub[k].startswith("DATA")]
         status = next((k + 1 for k in range(j, fim) if k < len(sub) and sub[k] == "STATUS"), None)
+        if h in GRUPOS_DIMENSIONAL and "rel_dim" not in col:
+            col["rel_dim"] = next((k + 1 for k in range(j, fim) if k < len(sub) and sub[k].startswith("RELATORIO")),
+                                  None)
         if not datas:
             continue
         for chave, _nome, grupos in ETAPAS:
             if h in grupos:
                 etapas[chave].append((h, status, datas))
+    if not col.get("rel_dim") and "RELATORIO DF" in hs:  # sem rastreabilidade: coluna "Relatório DF"
+        col["rel_dim"] = hs.index("RELATORIO DF") + 1
     tem_sub = any(s for s in sub)
     return hdr + (2 if tem_sub else 1), col, dict(etapas)
 
@@ -252,6 +267,7 @@ def ler_juntas(caminho, aba=None):
                 "chave": _chave_linha(linha_bruta), "tag": _chave_tag(linha_bruta), "doc": doc,
                 "spool": spool, "junta": _junta(v(col["junta"])), "tipo": tipo, "datas": datas,
                 "espessura": ler_numero(v(col["esp"])),
+                "rel_dim": _rel(v(col.get("rel_dim"))),
             })
     if duplicadas:
         avisos.append("%d juntas repetidas no Mapa de Juntas (contadas uma vez)" % duplicadas)
@@ -350,7 +366,8 @@ def localizar_spools(ws, max_linhas=30):
                         break
             extras = {nome: next((c for c, h in hs.items() if h == alvo), None) for nome, alvo in
                       (("doc", "DOCUMENTO"), ("total", "TOTAL_JUNTAS"),
-                       ("total_pipe", "TOTAL_JUNTAS_PIPE"), ("esp", "ESPESSURA"))}
+                       ("total_pipe", "TOTAL_JUNTAS_PIPE"), ("esp", "ESPESSURA"),
+                       ("rel_df", "RELATORIO DF"))}
             return row[0].row, c_linha, c_spool, destinos, max(hs), extras
     raise SystemExit("Cabeçalho do Mapa de Spools (Linha + Spool) não encontrado em %r" % ws.title)
 
@@ -446,6 +463,7 @@ def atualizar_spools(juntas_xlsx, spools_xlsx, saida, aba_juntas=None, aba_spool
 
     gravar, gravar_num, resultado, sem_juntas, divergencias = {}, {}, [], [], []
     n_esp = 0
+    gravar_txt, rel_avisos = {}, []
     for r in range(hdr + 1, ws.max_row + 1):
         linha, sp = ws.cell(r, c_linha).value, _spool(ws.cell(r, c_spool).value)
         if not linha or not sp:
@@ -487,6 +505,26 @@ def atualizar_spools(juntas_xlsx, spools_xlsx, saida, aba_juntas=None, aba_spool
         if c and esp is not None and ler_numero(ws.cell(r, c).value) != esp:
             gravar_num["%s%d" % (_col_letra(c), r)] = esp
             n_esp += 1
+        # Relatório DF = relatório dimensional das juntas (Pipe; sem Pipe, todas)
+        c = extras["rel_df"]
+        if c:
+            base = s["juntas"] or s["campo"]
+            rels = sorted({j["rel_dim"] for j in base if j["rel_dim"]})
+            novo = " / ".join(rels)
+            atual = _rel(ws.cell(r, c).value)
+            if novo and novo != atual:
+                gravar_txt["%s%d" % (_col_letra(c), r)] = novo
+            elif not novo and atual and limpar:
+                gravar_txt["%s%d" % (_col_letra(c), r)] = None
+            sem_rel = [j["junta"] for j in base if not j["rel_dim"]]
+            if rels and not s["juntas"]:
+                rel_avisos.append((r, linha, sp, "Relatório DF %s obtido de junta de Campo (spool sem juntas Pipe)"
+                                   % novo))
+            if len(rels) > 1:
+                rel_avisos.append((r, linha, sp, "Relatório DF: %d relatórios no spool (%s)" % (len(rels), novo)))
+            if rels and sem_rel:
+                rel_avisos.append((r, linha, sp, "Relatório DF %s: juntas sem relatório dimensional: %s"
+                                   % (novo, ", ".join(sem_rel))))
         for chave in (k for k, *_ in ETAPAS if k in etapas_juntas):
             data, motivo = s["etapas"][chave]
             resultado.append((r, linha, sp, chave, data, motivo, len(s["juntas"]), len(s["campo"])))
@@ -514,6 +552,8 @@ def atualizar_spools(juntas_xlsx, spools_xlsx, saida, aba_juntas=None, aba_spool
             xml = _gravar_celula(xml, ref, None, estilo, numero=_serial(data), forcar_estilo=True)
         for ref, num in gravar_num.items():
             xml = _gravar_celula(xml, ref, None, numero=num)
+        for ref, txt in gravar_txt.items():
+            xml = _gravar_celula(xml, ref, txt)
         alterados = {caminho: xml, "xl/styles.xml": styles}
         with zipfile.ZipFile(saida, "w", zipfile.ZIP_DEFLATED) as zout:
             for item in zin.infolist():
@@ -522,6 +562,7 @@ def atualizar_spools(juntas_xlsx, spools_xlsx, saida, aba_juntas=None, aba_spool
                 zout.writestr(item, dados)
 
     return {"aba": ws.title, "destinos": destinos, "gravados": gravar, "numeros": gravar_num, "n_espessura": n_esp,
+            "textos": gravar_txt, "col_rel_df": extras["rel_df"], "rel_avisos": rel_avisos,
             "col_espessura": extras["esp"], "resultado": resultado,
             "sem_juntas": sem_juntas, "divergencias": divergencias, "avisos": avisos, "spools": spools, "juntas": juntas}
 
@@ -537,6 +578,8 @@ def salvar_relatorio(caminho, res):
                         n_pipe, n_campo, motivo])
         for r, linha, sp, motivo in res["sem_juntas"]:
             w.writerow([r, linha, sp, "", "", 0, 0, motivo])
+        for r, linha, sp, msg in res["rel_avisos"]:
+            w.writerow([r, linha, sp, "", "", "", "", msg])
         for r, linha, sp, coluna, valor, esperado in res["divergencias"]:
             w.writerow([r, linha, sp, "", "", "", "", "%s corrigido de %s para %s (Mapa de Juntas)"
                         % (coluna, valor, esperado)])
@@ -580,7 +623,14 @@ def main(argv=None):
         corr[d[3]] += 1
     for nome, n in sorted(corr.items()):
         print("  %-15s corrigido em %d spools (contagem do Mapa de Juntas)" % (nome.title(), n))
-    print("%d células alteradas" % (len(res["gravados"]) + len(res["numeros"])))
+    if res["col_rel_df"]:
+        n_rel = sum(1 for v in res["textos"].values() if v)
+        print("  %-15s (col. %-2s) <- relatório dimensional das juntas: %d spools preenchidos"
+              % ("Relatório DF", _col_letra(res["col_rel_df"]), n_rel))
+        if res["rel_avisos"]:
+            print("  AVISO: %d spools com relatório dimensional incompleto ou múltiplo (ver relatório)"
+                  % len({x[0] for x in res["rel_avisos"]}))
+    print("%d células alteradas" % (len(res["gravados"]) + len(res["numeros"]) + len(res["textos"])))
     for r, linha, sp, motivo in res["sem_juntas"]:
         print("  linha %d: spool %s / %s: %s" % (r, sp, linha, motivo))
     for av in res["avisos"]:
