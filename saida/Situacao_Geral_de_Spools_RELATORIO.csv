@@ -359,36 +359,36 @@
 80;10''-B3B-LO-5103A-2'';002;EVS;28/08/2026;14;1;
 80;10''-B3B-LO-5103A-2'';002;END;01/09/2026;14;1;
 80;10''-B3B-LO-5103A-2'';002;Dimensional;;14;1;14 de 14 juntas Pipe sem data: 007 (sem data), 008 (sem data), 009 (sem data), 010 (sem data), 011 (sem data), 012 (sem data), 013 (sem data), 015 (sem data), 016 (sem data), 017 (sem data) ...
-81;10''-B3B-LO-5103B-2'';001;Visual de Ajuste;;0;5;spool sem juntas Pipe Shop
-81;10''-B3B-LO-5103B-2'';001;Soldagem;;0;5;spool sem juntas Pipe Shop
-81;10''-B3B-LO-5103B-2'';001;EVS;;0;5;spool sem juntas Pipe Shop
-81;10''-B3B-LO-5103B-2'';001;END;;0;5;spool sem juntas Pipe Shop
-81;10''-B3B-LO-5103B-2'';001;Dimensional;;0;5;spool sem juntas Pipe Shop
-82;10''-B3B-LO-5103B-2'';002;Visual de Ajuste;;0;4;spool sem juntas Pipe Shop
-82;10''-B3B-LO-5103B-2'';002;Soldagem;;0;4;spool sem juntas Pipe Shop
-82;10''-B3B-LO-5103B-2'';002;EVS;;0;4;spool sem juntas Pipe Shop
-82;10''-B3B-LO-5103B-2'';002;END;;0;4;spool sem juntas Pipe Shop
-82;10''-B3B-LO-5103B-2'';002;Dimensional;;0;4;spool sem juntas Pipe Shop
-83;10''-B3B-LO-5103B-2'';003;Visual de Ajuste;;0;12;spool sem juntas Pipe Shop
-83;10''-B3B-LO-5103B-2'';003;Soldagem;;0;12;spool sem juntas Pipe Shop
-83;10''-B3B-LO-5103B-2'';003;EVS;;0;12;spool sem juntas Pipe Shop
-83;10''-B3B-LO-5103B-2'';003;END;;0;12;spool sem juntas Pipe Shop
-83;10''-B3B-LO-5103B-2'';003;Dimensional;;0;12;spool sem juntas Pipe Shop
-84;10''-B3B-MR-5201B-2'';001;Visual de Ajuste;;0;11;spool sem juntas Pipe Shop
-84;10''-B3B-MR-5201B-2'';001;Soldagem;;0;11;spool sem juntas Pipe Shop
-84;10''-B3B-MR-5201B-2'';001;EVS;;0;11;spool sem juntas Pipe Shop
-84;10''-B3B-MR-5201B-2'';001;END;;0;11;spool sem juntas Pipe Shop
-84;10''-B3B-MR-5201B-2'';001;Dimensional;;0;11;spool sem juntas Pipe Shop
-85;10''-B3B-MR-5201B-2'';002;Visual de Ajuste;;0;4;spool sem juntas Pipe Shop
-85;10''-B3B-MR-5201B-2'';002;Soldagem;;0;4;spool sem juntas Pipe Shop
-85;10''-B3B-MR-5201B-2'';002;EVS;;0;4;spool sem juntas Pipe Shop
-85;10''-B3B-MR-5201B-2'';002;END;;0;4;spool sem juntas Pipe Shop
-85;10''-B3B-MR-5201B-2'';002;Dimensional;;0;4;spool sem juntas Pipe Shop
-86;10''-B3B-MR-5201B-2'';003;Visual de Ajuste;;0;4;spool sem juntas Pipe Shop
-86;10''-B3B-MR-5201B-2'';003;Soldagem;;0;4;spool sem juntas Pipe Shop
-86;10''-B3B-MR-5201B-2'';003;EVS;;0;4;spool sem juntas Pipe Shop
-86;10''-B3B-MR-5201B-2'';003;END;;0;4;spool sem juntas Pipe Shop
-86;10''-B3B-MR-5201B-2'';003;Dimensional;;0;4;spool sem juntas Pipe Shop
+81;10''-B3B-LO-5103B-2'';001;Visual de Ajuste;;5;0;5 de 5 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
+81;10''-B3B-LO-5103B-2'';001;Soldagem;;5;0;5 de 5 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
+81;10''-B3B-LO-5103B-2'';001;EVS;;5;0;5 de 5 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
+81;10''-B3B-LO-5103B-2'';001;END;;5;0;5 de 5 juntas Pipe sem data: 001 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 002 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 003 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 004 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 005 (END pendente (LIQUIDO PENETRANTE / PM, RX/US))
+81;10''-B3B-LO-5103B-2'';001;Dimensional;;5;0;5 de 5 juntas Pipe sem data: 001 (sem data), 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data)
+82;10''-B3B-LO-5103B-2'';002;Visual de Ajuste;;3;1;3 de 3 juntas Pipe sem data: 007 (sem data), 008 (sem data), 009 (sem data)
+82;10''-B3B-LO-5103B-2'';002;Soldagem;;3;1;3 de 3 juntas Pipe sem data: 007 (sem data), 008 (sem data), 009 (sem data)
+82;10''-B3B-LO-5103B-2'';002;EVS;;3;1;3 de 3 juntas Pipe sem data: 007 (sem data), 008 (sem data), 009 (sem data)
+82;10''-B3B-LO-5103B-2'';002;END;;3;1;3 de 3 juntas Pipe sem data: 007 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 008 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 009 (END pendente (LIQUIDO PENETRANTE / PM, RX/US))
+82;10''-B3B-LO-5103B-2'';002;Dimensional;;3;1;3 de 3 juntas Pipe sem data: 007 (sem data), 008 (sem data), 009 (sem data)
+83;10''-B3B-LO-5103B-2'';003;Visual de Ajuste;;9;3;9 de 9 juntas Pipe sem data: 011 (sem data), 012 (sem data), 013 (sem data), 014 (sem data), 015 (sem data), 017 (sem data), 018 (sem data), 019 (sem data), 020 (sem data)
+83;10''-B3B-LO-5103B-2'';003;Soldagem;;9;3;9 de 9 juntas Pipe sem data: 011 (sem data), 012 (sem data), 013 (sem data), 014 (sem data), 015 (sem data), 017 (sem data), 018 (sem data), 019 (sem data), 020 (sem data)
+83;10''-B3B-LO-5103B-2'';003;EVS;;9;3;9 de 9 juntas Pipe sem data: 011 (sem data), 012 (sem data), 013 (sem data), 014 (sem data), 015 (sem data), 017 (sem data), 018 (sem data), 019 (sem data), 020 (sem data)
+83;10''-B3B-LO-5103B-2'';003;END;;9;3;9 de 9 juntas Pipe sem data: 011 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 012 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 013 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 014 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 015 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 017 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 018 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 019 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 020 (END pendente (LIQUIDO PENETRANTE / PM, RX/US))
+83;10''-B3B-LO-5103B-2'';003;Dimensional;;9;3;9 de 9 juntas Pipe sem data: 011 (sem data), 012 (sem data), 013 (sem data), 014 (sem data), 015 (sem data), 017 (sem data), 018 (sem data), 019 (sem data), 020 (sem data)
+84;10''-B3B-MR-5201B-2'';001;Visual de Ajuste;;9;2;9 de 9 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data), 008 (sem data), 009 (sem data), 011 (sem data)
+84;10''-B3B-MR-5201B-2'';001;Soldagem;;9;2;9 de 9 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data), 008 (sem data), 009 (sem data), 011 (sem data)
+84;10''-B3B-MR-5201B-2'';001;EVS;;9;2;9 de 9 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data), 008 (sem data), 009 (sem data), 011 (sem data)
+84;10''-B3B-MR-5201B-2'';001;END;;9;2;9 de 9 juntas Pipe sem data: 002 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 003 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 004 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 005 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 006 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 007 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 008 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 009 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 011 (END pendente (LIQUIDO PENETRANTE / PM, RX/US))
+84;10''-B3B-MR-5201B-2'';001;Dimensional;;9;2;9 de 9 juntas Pipe sem data: 002 (sem data), 003 (sem data), 004 (sem data), 005 (sem data), 006 (sem data), 007 (sem data), 008 (sem data), 009 (sem data), 011 (sem data)
+85;10''-B3B-MR-5201B-2'';002;Visual de Ajuste;;2;2;2 de 2 juntas Pipe sem data: 013 (sem data), 014 (sem data)
+85;10''-B3B-MR-5201B-2'';002;Soldagem;;2;2;2 de 2 juntas Pipe sem data: 013 (sem data), 014 (sem data)
+85;10''-B3B-MR-5201B-2'';002;EVS;;2;2;2 de 2 juntas Pipe sem data: 013 (sem data), 014 (sem data)
+85;10''-B3B-MR-5201B-2'';002;END;;2;2;2 de 2 juntas Pipe sem data: 013 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 014 (END pendente (LIQUIDO PENETRANTE / PM, RX/US))
+85;10''-B3B-MR-5201B-2'';002;Dimensional;;2;2;2 de 2 juntas Pipe sem data: 013 (sem data), 014 (sem data)
+86;10''-B3B-MR-5201B-2'';003;Visual de Ajuste;;4;0;4 de 4 juntas Pipe sem data: 016 (sem data), 017 (sem data), 018 (sem data), 019 (sem data)
+86;10''-B3B-MR-5201B-2'';003;Soldagem;;4;0;4 de 4 juntas Pipe sem data: 016 (sem data), 017 (sem data), 018 (sem data), 019 (sem data)
+86;10''-B3B-MR-5201B-2'';003;EVS;;4;0;4 de 4 juntas Pipe sem data: 016 (sem data), 017 (sem data), 018 (sem data), 019 (sem data)
+86;10''-B3B-MR-5201B-2'';003;END;;4;0;4 de 4 juntas Pipe sem data: 016 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 017 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 018 (END pendente (LIQUIDO PENETRANTE / PM, RX/US)), 019 (END pendente (LIQUIDO PENETRANTE / PM, RX/US))
+86;10''-B3B-MR-5201B-2'';003;Dimensional;;4;0;4 de 4 juntas Pipe sem data: 016 (sem data), 017 (sem data), 018 (sem data), 019 (sem data)
 87;"16""-B3B-MR-5001A-Z03";001;Visual de Ajuste;28/08/2026;2;1;
 87;"16""-B3B-MR-5001A-Z03";001;Soldagem;28/08/2026;2;1;
 87;"16""-B3B-MR-5001A-Z03";001;EVS;28/08/2026;2;1;
@@ -1349,12 +1349,10 @@
 75;"10""-B3B-MR-5203A-PP-2""-Z03";003;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 0 (Mapa de Juntas)
 77;"10""-B3B-MR-5203B-PP-2""-Z03";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 1 (Mapa de Juntas)
 80;10''-B3B-LO-5103A-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 14 (Mapa de Juntas)
-81;10''-B3B-LO-5103B-2'';001;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 0 (Mapa de Juntas)
-82;10''-B3B-LO-5103B-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 0 (Mapa de Juntas)
-83;10''-B3B-LO-5103B-2'';003;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 0 (Mapa de Juntas)
-84;10''-B3B-MR-5201B-2'';001;;;;;TOTAL_JUNTAS_PIPE corrigido de 9 para 0 (Mapa de Juntas)
-85;10''-B3B-MR-5201B-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 9 para 0 (Mapa de Juntas)
-86;10''-B3B-MR-5201B-2'';003;;;;;TOTAL_JUNTAS_PIPE corrigido de 9 para 0 (Mapa de Juntas)
+82;10''-B3B-LO-5103B-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 3 (Mapa de Juntas)
+83;10''-B3B-LO-5103B-2'';003;;;;;TOTAL_JUNTAS_PIPE corrigido de 5 para 9 (Mapa de Juntas)
+85;10''-B3B-MR-5201B-2'';002;;;;;TOTAL_JUNTAS_PIPE corrigido de 9 para 2 (Mapa de Juntas)
+86;10''-B3B-MR-5201B-2'';003;;;;;TOTAL_JUNTAS_PIPE corrigido de 9 para 4 (Mapa de Juntas)
 90;"2""-A1E-BOG-7001A-C-2""-Z04";001;;;;;TOTAL_JUNTAS corrigido de 4 para 3 (Mapa de Juntas)
 91;"2""-A1E-BOG-7001A-C-2""-Z04";002;;;;;TOTAL_JUNTAS corrigido de 3 para 4 (Mapa de Juntas)
 91;"2""-A1E-BOG-7001A-C-2""-Z04";002;;;;;TOTAL_JUNTAS_PIPE corrigido de 3 para 4 (Mapa de Juntas)
