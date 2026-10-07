@@ -9,14 +9,17 @@ Regra (procedimento "Atualização Automática do Mapa de Spools"):
  4. Se pelo menos uma junta Pipe Shop está sem data, o campo do spool fica
     em branco (valores antigos são apagados, salvo com --nao-limpar).
 
-Correspondência de etapas (Mapa de Juntas -> Mapa de Spools):
-    Visual de Ajuste (VA) -> Data de Corte / VA
-    Ajuste                -> Data de Ajuste
-    Soldagem              -> Data de Soldagem
-    EVS (Ensaio Visual)   -> Data de EVS
-    END (LP/PM, RX/US)    -> Data de END
-    Dimensional           -> Data Dimensional
-Etapas sem coluna em um dos mapas são ignoradas e avisadas no relatório.
+Correspondência de etapas (Mapa de Juntas -> Mapa de Spools do ControlTub):
+    Visual de Ajuste (VA)      -> Data Corte
+    Ajuste (Visual de Ajuste)  -> Data VA Fab
+    Soldagem                   -> Data Solda Fab
+    EVS (Ensaio Visual)        -> Data EV Fab
+    END (LP/PM, RX/US)         -> Data END Fab
+    Dimensional                -> Data DF Fab
+O Mapa de Juntas do ControlTub tem só a etapa "Visual Ajuste" (sem "Ajuste"
+separado), por isso Data Corte e Data VA Fab vêm da mesma data. As colunas de
+Montagem (VA Mon, Solda Mon...) nunca são alteradas. Etapas sem coluna em um
+dos mapas são ignoradas e avisadas no relatório.
 
 END: a data da junta é a mais recente entre os ensaios (LP, PM, RX, US...).
 Ensaios com status "N" (não aplicável) são ignorados; um ensaio com status
@@ -59,33 +62,37 @@ def _norm(v):
 # Etapas
 # --------------------------------------------------------------------------
 
-# (chave, nome, grupos no Mapa de Juntas, cabeçalhos no Mapa de Spools)
+# Etapas no Mapa de Juntas: (chave, nome, cabeçalhos de grupo)
 ETAPAS = [
     ("VA", "Visual de Ajuste",
-     {"VISUAL AJUSTE", "VISUAL DE AJUSTE", "VA"},
-     ["DATA DE CORTE", "DATA CORTE", "DATA VA", "DATA DE VA", "VA", "VISUAL DE AJUSTE",
-      "VISUAL AJUSTE", "DATA VISUAL DE AJUSTE", "DATA VISUAL AJUSTE"]),
-    ("AJUSTE", "Ajuste",
-     {"AJUSTE"},
-     ["DATA DE AJUSTE", "DATA AJUSTE", "AJUSTE"]),
+     {"VISUAL AJUSTE", "VISUAL DE AJUSTE", "VA"}),
     ("SOLDAGEM", "Soldagem",
-     {"SOLDAGEM", "SOLDA"},
-     ["DATA DE SOLDAGEM", "DATA SOLDAGEM", "SOLDAGEM"]),
+     {"SOLDAGEM", "SOLDA"}),
     ("EVS", "EVS",
-     {"ENSAIO VISUAL", "EVS", "ENSAIO VISUAL DE SOLDA", "INSPECAO VISUAL DE SOLDA"},
-     ["DATA DE EVS", "DATA EVS", "EVS"]),
+     {"ENSAIO VISUAL", "EVS", "ENSAIO VISUAL DE SOLDA", "INSPECAO VISUAL DE SOLDA"}),
     ("END", "END",
      {"LIQUIDO PENETRANTE / PM", "LIQUIDO PENETRANTE", "LP", "PM", "LP/PM", "PARTICULA MAGNETICA",
-      "RX/US", "RX", "US", "ULTRASSOM", "RADIOGRAFIA", "END"},
-     ["DATA DE END", "DATA END", "END"]),
+      "RX/US", "RX", "US", "ULTRASSOM", "RADIOGRAFIA", "END"}),
     ("DIMENSIONAL", "Dimensional",
-     {"DIMENSIONAL", "CONTROLE DIMENSIONAL", "INSPECAO DIMENSIONAL"},
-     ["DATA DIMENSIONAL", "DATA DE DIMENSIONAL", "DATA DO DIMENSIONAL", "DIMENSIONAL"]),
+     {"DIMENSIONAL", "CONTROLE DIMENSIONAL", "INSPECAO DIMENSIONAL", "DIMENSIONAL FINAL"}),
 ]
 
-# título das colunas criadas com --criar-colunas
-TITULOS = {"VA": "Data de Corte", "AJUSTE": "Data de Ajuste", "SOLDAGEM": "Data de Soldagem",
-           "EVS": "Data de EVS", "END": "Data de END", "DIMENSIONAL": "Data Dimensional"}
+# Colunas do Mapa de Spools: (chave, título ao criar, etapa de origem, cabeçalhos aceitos)
+COLUNAS = [
+    ("CORTE", "Data Corte", "VA",
+     ["DATA CORTE", "DATA DE CORTE"]),
+    ("VA", "Data VA Fab", "VA",
+     ["DATA VA FAB", "DATA DE AJUSTE", "DATA AJUSTE", "DATA VA", "DATA DE VA",
+      "DATA VISUAL DE AJUSTE", "DATA VISUAL AJUSTE"]),
+    ("SOLDAGEM", "Data Solda Fab", "SOLDAGEM",
+     ["DATA SOLDA FAB", "DATA DE SOLDAGEM", "DATA SOLDAGEM", "DATA SOLDA"]),
+    ("EVS", "Data EV Fab", "EVS",
+     ["DATA EV FAB", "DATA EVS FAB", "DATA DE EVS", "DATA EVS", "DATA EV"]),
+    ("END", "Data END Fab", "END",
+     ["DATA END FAB", "DATA DE END", "DATA END"]),
+    ("DIMENSIONAL", "Data DF Fab", "DIMENSIONAL",
+     ["DATA DF FAB", "DATA DIMENSIONAL", "DATA DE DIMENSIONAL", "DATA DF"]),
+]
 
 PIPE = {"P", "PIPE", "PIPE SHOP", "PIPESHOP", "OFICINA"}
 CAMPO = {"C", "CAMPO", "CAMP", "FIELD"}
@@ -167,6 +174,7 @@ def localizar_juntas(ws, max_linhas=30):
     col = {}
     col["linha"] = hs.index("LINHA") + 1 if "LINHA" in hs else None
     col["iso"] = hs.index("ISOMETRICO") + 1 if "ISOMETRICO" in hs else None
+    col["doc"] = hs.index("DOCUMENTO") + 1 if "DOCUMENTO" in hs else None
     if not col["linha"] and not col["iso"]:
         raise SystemExit("Coluna 'Linha' não encontrada no Mapa de Juntas")
     col["spool"] = hs.index("SPOOL") + 1
@@ -182,7 +190,7 @@ def localizar_juntas(ws, max_linhas=30):
         status = next((k + 1 for k in range(j, fim) if k < len(sub) and sub[k] == "STATUS"), None)
         if not datas:
             continue
-        for chave, _nome, grupos, _ in ETAPAS:
+        for chave, _nome, grupos in ETAPAS:
             if h in grupos:
                 etapas[chave].append((h, status, datas))
     tem_sub = any(s for s in sub)
@@ -193,6 +201,7 @@ def ler_juntas(caminho, aba=None):
     wb = openpyxl.load_workbook(caminho, read_only=True, data_only=True)
     abas = [wb[aba]] if aba else [ws for ws in wb.worksheets if _tem_juntas(ws)]
     juntas, etapas_encontradas, avisos = [], set(), []
+    vistas, duplicadas = set(), 0
     for ws in abas:
         primeira, col, etapas = localizar_juntas(ws)
         etapas_encontradas |= set(etapas)
@@ -203,6 +212,12 @@ def ler_juntas(caminho, aba=None):
             spool = _spool(v(col["spool"]))
             if not linha_bruta or not spool:
                 continue
+            doc = _chave_linha(v(col["doc"]))
+            ident = (_chave_linha(linha_bruta), doc, spool, _junta(v(col["junta"])))
+            if ident in vistas:  # junta repetida no mapa (ou em outra aba)
+                duplicadas += 1
+                continue
+            vistas.add(ident)
             pc = _norm(v(col["pc"]))
             tipo = "PIPE" if pc in PIPE else "CAMPO" if pc in CAMPO else ""
             if not tipo and pc:
@@ -212,9 +227,11 @@ def ler_juntas(caminho, aba=None):
                 datas[chave] = _data_etapa(chave, grupos, v)
             juntas.append({
                 "aba": ws.title, "linha_xlsx": r, "linha": str(linha_bruta).strip(),
-                "chave": _chave_linha(linha_bruta), "tag": _chave_tag(linha_bruta),
+                "chave": _chave_linha(linha_bruta), "tag": _chave_tag(linha_bruta), "doc": doc,
                 "spool": spool, "junta": _junta(v(col["junta"])), "tipo": tipo, "datas": datas,
             })
+    if duplicadas:
+        avisos.append("%d juntas repetidas no Mapa de Juntas (contadas uma vez)" % duplicadas)
     return juntas, etapas_encontradas, avisos
 
 
@@ -263,10 +280,10 @@ def _data_etapa(chave, grupos, v):
 # --------------------------------------------------------------------------
 
 def consolidar(juntas, etapas):
-    """{(chave_linha, spool): {"juntas": [...], "etapas": {chave: (date|None, motivo)}}}"""
+    """{(chave_linha, documento, spool): {"juntas": [...], "etapas": {chave: (date|None, motivo)}}}"""
     spools = OrderedDict()
     for j in juntas:
-        s = spools.setdefault((j["chave"], j["spool"]), {"linha": j["linha"], "tag": j["tag"],
+        s = spools.setdefault((j["chave"], j["doc"], j["spool"]), {"linha": j["linha"], "tag": j["tag"],
                                                          "juntas": [], "campo": []})
         (s["juntas"] if j["tipo"] == "PIPE" else s["campo"]).append(j)
     for s in spools.values():
@@ -301,13 +318,15 @@ def localizar_spools(ws, max_linhas=30):
                 break
         if c_spool and c_linha:
             destinos = {}
-            for chave, _nome, _g, cabs in ETAPAS:
+            for chave, _titulo, _origem, cabs in COLUNAS:
                 for alvo in cabs:
                     c = next((c for c, h in hs.items() if h == alvo and c not in destinos.values()), None)
                     if c:
                         destinos[chave] = c
                         break
-            return row[0].row, c_linha, c_spool, destinos, max(hs)
+            extras = {nome: next((c for c, h in hs.items() if h == alvo), None) for nome, alvo in
+                      (("doc", "DOCUMENTO"), ("total", "TOTAL_JUNTAS"))}
+            return row[0].row, c_linha, c_spool, destinos, max(hs), extras
     raise SystemExit("Cabeçalho do Mapa de Spools (Linha + Spool) não encontrado em %r" % ws.title)
 
 
@@ -368,52 +387,69 @@ def atualizar_spools(juntas_xlsx, spools_xlsx, saida, aba_juntas=None, aba_spool
                      criar_colunas=False, limpar=True):
     juntas, etapas_juntas, avisos = ler_juntas(juntas_xlsx, aba_juntas)
     spools = consolidar(juntas, etapas_juntas)
-    por_tag = defaultdict(set)
-    for (chave, sp), s in spools.items():
-        por_tag[(s["tag"], sp)].add(chave)
+    por_linha, por_tag = defaultdict(list), defaultdict(list)
+    for k, s in spools.items():
+        por_linha[(k[0], k[2])].append(k)
+        por_tag[(s["tag"], k[2])].append(k)
 
     wb = openpyxl.load_workbook(spools_xlsx)
     ws = wb[aba_spools] if aba_spools else wb.worksheets[0]
-    hdr, c_linha, c_spool, destinos, ultima = localizar_spools(ws)
+    hdr, c_linha, c_spool, destinos, ultima, extras = localizar_spools(ws)
 
-    novas = []
-    for chave, nome, _g, cabs in ETAPAS:
+    nomes = {k: n for k, n, _g in ETAPAS}
+    for chave, nome, _g in ETAPAS:
         if chave not in etapas_juntas:
             avisos.append("Etapa %s: coluna de data não encontrada no Mapa de Juntas (ignorada)" % nome)
-            continue
-        if chave not in destinos:
+    novas = []
+    for chave, titulo, origem, _cabs in COLUNAS:
+        if origem not in etapas_juntas:
+            destinos.pop(chave, None)
+        elif chave not in destinos:
             if criar_colunas:
                 ultima += 1
                 destinos[chave] = ultima
-                novas.append((ultima, TITULOS[chave]))
+                novas.append((ultima, titulo))
             else:
                 avisos.append("Etapa %s: coluna %r não encontrada no Mapa de Spools (use --criar-colunas)"
-                              % (nome, cabs[0]))
-    destinos = {k: c for k, c in destinos.items() if k in etapas_juntas}
+                              % (nomes[origem], titulo))
+    origem_col = {k: o for k, _t, o, _c in COLUNAS}
 
-    gravar, resultado, sem_juntas = {}, [], []
+    gravar, resultado, sem_juntas, divergencias = {}, [], [], []
     for r in range(hdr + 1, ws.max_row + 1):
         linha, sp = ws.cell(r, c_linha).value, _spool(ws.cell(r, c_spool).value)
         if not linha or not sp:
             continue
-        s = spools.get((_chave_linha(linha), sp))
+        # Linha + Documento + Spool; sem Documento correspondente, Linha + Spool
+        # (ou TAG padronizada + Spool) desde que aponte para um único spool
+        doc = _chave_linha(ws.cell(r, extras["doc"]).value) if extras["doc"] else None
+        s = spools.get((_chave_linha(linha), doc, sp))
+        motivo_sem = "spool não encontrado no Mapa de Juntas"
         if s is None:
-            cand = por_tag.get((_chave_tag(linha), sp), set())
-            if len(cand) == 1:
-                s = spools[(next(iter(cand)), sp)]
+            for cand in (por_linha.get((_chave_linha(linha), sp), []), por_tag.get((_chave_tag(linha), sp), [])):
+                if len(cand) == 1:
+                    s = spools[cand[0]]
+                    break
+                if len(cand) > 1:
+                    motivo_sem = "spool repetido em %d documentos do Mapa de Juntas; Documento não confere" % len(cand)
+                    break
         if s is None:
-            sem_juntas.append((r, linha, sp))
+            sem_juntas.append((r, linha, sp, motivo_sem))
             continue
+        # conferência: total de juntas do spool nos dois mapas
+        c = extras["total"]
+        esperado = len(s["juntas"]) + len(s["campo"])
+        if c and isinstance(ws.cell(r, c).value, (int, float)) and ws.cell(r, c).value != esperado:
+            divergencias.append((r, linha, sp, ws.cell(hdr, c).value, ws.cell(r, c).value, esperado))
+        for chave, c in destinos.items():
+            data, _ = s["etapas"][origem_col[chave]]
+            atual, _ = ler_data(ws.cell(r, c).value)
+            ref = "%s%d" % (_col_letra(c), r)
+            if data and data != atual:
+                gravar[ref] = data
+            elif not data and ws.cell(r, c).value not in (None, "") and limpar:
+                gravar[ref] = None
         for chave in (k for k, *_ in ETAPAS if k in etapas_juntas):
             data, motivo = s["etapas"][chave]
-            c = destinos.get(chave)
-            if c:
-                atual, _ = ler_data(ws.cell(r, c).value)
-                ref = "%s%d" % (_col_letra(c), r)
-                if data and data != atual:
-                    gravar[ref] = data
-                elif not data and ws.cell(r, c).value not in (None, "") and limpar:
-                    gravar[ref] = None
             resultado.append((r, linha, sp, chave, data, motivo, len(s["juntas"]), len(s["campo"])))
 
     with zipfile.ZipFile(spools_xlsx) as zin:
@@ -445,11 +481,11 @@ def atualizar_spools(juntas_xlsx, spools_xlsx, saida, aba_juntas=None, aba_spool
                 zout.writestr(item, dados)
 
     return {"aba": ws.title, "destinos": destinos, "gravados": gravar, "resultado": resultado,
-            "sem_juntas": sem_juntas, "avisos": avisos, "spools": spools, "juntas": juntas}
+            "sem_juntas": sem_juntas, "divergencias": divergencias, "avisos": avisos, "spools": spools, "juntas": juntas}
 
 
 def salvar_relatorio(caminho, res):
-    nomes = {k: n for k, n, _g, _c in ETAPAS}
+    nomes = {k: n for k, n, _g in ETAPAS}
     with open(caminho, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f, delimiter=";")
         w.writerow(["Linha planilha", "Linha", "Spool", "Etapa", "Data consolidada", "Juntas Pipe",
@@ -457,8 +493,11 @@ def salvar_relatorio(caminho, res):
         for r, linha, sp, chave, data, motivo, n_pipe, n_campo in res["resultado"]:
             w.writerow([r, linha, sp, nomes[chave], data.strftime("%d/%m/%Y") if data else "",
                         n_pipe, n_campo, motivo])
-        for r, linha, sp in res["sem_juntas"]:
-            w.writerow([r, linha, sp, "", "", 0, 0, "spool não encontrado no Mapa de Juntas"])
+        for r, linha, sp, motivo in res["sem_juntas"]:
+            w.writerow([r, linha, sp, "", "", 0, 0, motivo])
+        for r, linha, sp, coluna, valor, esperado in res["divergencias"]:
+            w.writerow([r, linha, sp, "", "", "", "", "%s = %s no Mapa de Spools, %s no Mapa de Juntas"
+                        % (coluna, valor, esperado)])
 
 
 def main(argv=None):
@@ -477,21 +516,26 @@ def main(argv=None):
 
     res = atualizar_spools(a.mapa_juntas, a.mapa_spools, a.saida, a.aba_juntas, a.aba_spools,
                            a.criar_colunas, not a.nao_limpar)
-    nomes = {k: n for k, n, _g, _c in ETAPAS}
+    nomes = {k: n for k, n, _g in ETAPAS}
+    titulos = {k: (t, o) for k, t, o, _c in COLUNAS}
     n_pipe = sum(1 for j in res["juntas"] if j["tipo"] == "PIPE")
     print("Mapa de Juntas: %d juntas (%d Pipe Shop), %d spools" % (len(res["juntas"]), n_pipe, len(res["spools"])))
-    print("Aba %s: colunas atualizadas: %s" % (res["aba"], ", ".join(
-        "%s (%s)" % (nomes[k], _col_letra(c)) for k, c in res["destinos"].items()) or "nenhuma"))
     preench = defaultdict(int)
     for _r, _l, _s, chave, data, *_ in res["resultado"]:
         if data:
             preench[chave] += 1
-    for k, n, *_ in ETAPAS:
-        if k in res["destinos"]:
-            print("  %-16s %d spools concluídos" % (n, preench[k]))
+    print("Aba %s:" % res["aba"])
+    for k, c in res["destinos"].items():
+        t, o = titulos[k]
+        print("  %-15s (col. %-2s) <- %-16s %d spools concluídos" % (t, _col_letra(c), nomes[o], preench[o]))
+    if not res["destinos"]:
+        print("  nenhuma coluna atualizada")
     print("%d células alteradas" % len(res["gravados"]))
-    for r, linha, sp in res["sem_juntas"]:
-        print("  linha %d: spool %s / %s não encontrado no Mapa de Juntas" % (r, sp, linha))
+    for r, linha, sp, motivo in res["sem_juntas"]:
+        print("  linha %d: spool %s / %s: %s" % (r, sp, linha, motivo))
+    if res["divergencias"]:
+        print("  AVISO: %d divergências de quantidade de juntas entre os mapas (ver relatório)"
+              % len(res["divergencias"]))
     for av in res["avisos"]:
         print("  AVISO:", av)
     if a.relatorio:

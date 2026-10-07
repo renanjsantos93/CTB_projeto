@@ -107,8 +107,34 @@ def test_linha_sem_zona_usa_tag_padronizada():
 
 def test_spool_inexistente_e_reportado():
     res, linhas, _ = _rodar([_j("001", "P", va=D(2026, 8, 10))], [[LINHA, "002"]])
-    assert res["sem_juntas"] == [(2, LINHA, "002")]
+    assert [x[:3] for x in res["sem_juntas"]] == [(2, LINHA, "002")]
     assert linhas[0][2] is None
+
+
+def test_layout_controltub_documento_e_colunas_de_montagem():
+    """Cabeçalhos reais do SGS; mesmo spool em dois documentos; Montagem intocada."""
+    d = tempfile.mkdtemp()
+    mj, ms, out = (os.path.join(d, n) for n in ("j.xlsx", "s.xlsx", "o.xlsx"))
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["Linha", "Documento", "Spool", "Junta", "P/C", "Visual Ajuste", None])
+    ws.append([None, None, None, None, None, "Status", "Data"])
+    ws.append([LINHA, "ISO-1", "003", "001", "P", "A", D(2026, 8, 10)])
+    ws.append([LINHA, "ISO-1", "003", "001", "P", "A", D(2026, 8, 10)])  # repetida
+    ws.append([LINHA, "ISO-2", "003", "002", "P", "P", None])
+    wb.save(mj)
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["Linha", "Documento", "Spool", "Total_Juntas", "Data\nCorte", "Data\nVA Fab",
+               "Data\nVA Mon"])
+    ws.append([LINHA, "ISO-1", "003", 1, None, None, D(2020, 1, 1)])
+    ws.append([LINHA, "ISO-2", "003", 3, D(2020, 1, 1), None, None])
+    wb.save(ms)
+    res = atualizar_spools(mj, ms, out)
+    linhas = [[c.value for c in r] for r in openpyxl.load_workbook(out).active.iter_rows(min_row=2)]
+    assert linhas[0][4:] == [D(2026, 8, 10), D(2026, 8, 10), D(2020, 1, 1)]
+    assert linhas[1][4:] == [None, None, None]
+    assert [x[:3] + x[4:] for x in res["divergencias"]] == [(3, LINHA, "003", 3, 1)]
 
 
 def test_ler_data():
