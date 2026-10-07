@@ -160,6 +160,30 @@ def test_dimensional_pela_rastreabilidade_e_linha_de_numeracao():
     assert len(res["juntas"]) == 3
 
 
+def test_espessura_do_spool_e_a_maior_da_linha():
+    d = tempfile.mkdtemp()
+    mj, ms, out = (os.path.join(d, n) for n in ("j.xlsx", "s.xlsx", "o.xlsx"))
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["Linha", "Spool", "Junta", "Espessura", "P/C", "Visual Ajuste", None])
+    ws.append([None, None, None, None, None, "Status", "Data"])
+    ws.append([LINHA, "001", "001", " 3,05", "P", "P", None])
+    ws.append([LINHA, "002", "002", 2.77, "P", "P", None])
+    ws.append([LINHA, "002", "003", "3,76", "C", "P", None])  # Campo também conta
+    ws.append(['2"-OUTRA-LINHA-0001', "001", "001", "5,49", "P", "P", None])
+    wb.save(mj)
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["Linha", "Spool", "Espessura", "Data\nCorte"])
+    ws.append([LINHA, "001", None, None])
+    ws.append([LINHA, "002", None, None])
+    ws.append(['2"-OUTRA-LINHA-0001', "001", None, None])
+    wb.save(ms)
+    atualizar_spools(mj, ms, out)
+    ws = openpyxl.load_workbook(out).active
+    assert [ws.cell(r, 3).value for r in (2, 3, 4)] == [3.76, 3.76, 5.49]
+
+
 def test_ler_data():
     assert ler_data("10/09/026") == (dt.date(2026, 9, 10), True)
     assert ler_data("18/08/2026") == (dt.date(2026, 8, 18), True)
