@@ -10,12 +10,12 @@ Regra (procedimento "Atualização Automática do Mapa de Spools"):
     em branco (valores antigos são apagados, salvo com --nao-limpar).
 
 Correspondência de etapas (Mapa de Juntas -> Mapa de Spools do ControlTub):
-    Visual de Ajuste (VA)      -> Data Corte
-    Ajuste (Visual de Ajuste)  -> Data VA Fab
-    Soldagem                   -> Data Solda Fab
-    EVS (Ensaio Visual)        -> Data EV Fab
-    END (LP/PM, RX/US)         -> Data END Fab
-    Dimensional                -> Data DF Fab
+    Visual de Ajuste (VA)          -> Data Corte
+    Ajuste (Visual de Ajuste)      -> Data VA Fab
+    Soldagem                       -> Data Solda Fab
+    EVS (Ensaio Visual)            -> Data EV Fab
+    END (LP/PM, RX/US)             -> Data END Fab
+    Rastreabilidade - dimensional  -> Data DF Fab
 O Mapa de Juntas do ControlTub tem só a etapa "Visual Ajuste" (sem "Ajuste"
 separado), por isso Data Corte e Data VA Fab vêm da mesma data. As colunas de
 Montagem (VA Mon, Solda Mon...) nunca são alteradas. Etapas sem coluna em um
@@ -74,7 +74,8 @@ ETAPAS = [
      {"LIQUIDO PENETRANTE / PM", "LIQUIDO PENETRANTE", "LP", "PM", "LP/PM", "PARTICULA MAGNETICA",
       "RX/US", "RX", "US", "ULTRASSOM", "RADIOGRAFIA", "END"}),
     ("DIMENSIONAL", "Dimensional",
-     {"DIMENSIONAL", "CONTROLE DIMENSIONAL", "INSPECAO DIMENSIONAL", "DIMENSIONAL FINAL"}),
+     {"RASTREABILIDADE - DIMENSIONAL", "RASTREABILIDADE DIMENSIONAL", "RASTREABILIDADE / DIMENSIONAL",
+      "DIMENSIONAL", "CONTROLE DIMENSIONAL", "INSPECAO DIMENSIONAL", "DIMENSIONAL FINAL"}),
 ]
 
 # Colunas do Mapa de Spools: (chave, título ao criar, etapa de origem, cabeçalhos aceitos)
@@ -210,7 +211,8 @@ def ler_juntas(caminho, aba=None):
                 return row[c - 1] if c and c - 1 < len(row) else None
             linha_bruta = v(col["linha"]) or v(col["iso"])
             spool = _spool(v(col["spool"]))
-            if not linha_bruta or not spool:
+            # linha de numeração das colunas (1, 2, 3...) logo abaixo do cabeçalho
+            if not isinstance(linha_bruta, str) or not spool:
                 continue
             doc = _chave_linha(v(col["doc"]))
             ident = (_chave_linha(linha_bruta), doc, spool, _junta(v(col["junta"])))

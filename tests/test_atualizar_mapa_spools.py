@@ -137,6 +137,29 @@ def test_layout_controltub_documento_e_colunas_de_montagem():
     assert [x[:3] + x[4:] for x in res["divergencias"]] == [(3, LINHA, "003", 3, 1)]
 
 
+def test_dimensional_pela_rastreabilidade_e_linha_de_numeracao():
+    d = tempfile.mkdtemp()
+    mj, ms, out = (os.path.join(d, n) for n in ("j.xlsx", "s.xlsx", "o.xlsx"))
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["Linha", "Spool", "Junta", "P/C", "Rastreabilidade - dimensional", None, None, None])
+    ws.append([None, None, None, None, "Status", "Relatório", "Executante", "Data"])
+    ws.append([1, 2, 3, 4, 5, 6, 7, 8])  # numeração das colunas (não é junta)
+    ws.append([LINHA, "001", "001", "P", "A", "053/26", "X", D(2026, 9, 2)])
+    ws.append([LINHA, "001", "002", "P", "A", "053/26", "X", D(2026, 9, 3)])
+    ws.append([LINHA, "001", "003", "C", "P", None, None, None])
+    wb.save(mj)
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["Linha", "Spool", "Data\nDF Fab", "Relatório DF"])
+    ws.append([LINHA, "001", None, "053/26"])
+    wb.save(ms)
+    res = atualizar_spools(mj, ms, out)
+    ws = openpyxl.load_workbook(out).active
+    assert ws["C2"].value == D(2026, 9, 3) and ws["D2"].value == "053/26"
+    assert len(res["juntas"]) == 3
+
+
 def test_ler_data():
     assert ler_data("10/09/026") == (dt.date(2026, 9, 10), True)
     assert ler_data("18/08/2026") == (dt.date(2026, 8, 18), True)
