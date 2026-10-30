@@ -2,7 +2,7 @@
 
 Uso: python scripts/painel_sistema_pcp.py <planilha.xlsx> <saida.json>
 
-Cada linha da saída é um par subsistema x atividade x data planejada, com as contagens:
+Cada linha da saída é um par subsistema x atividade x data planejada x skid x área, com as contagens:
   previsto   = registros cadastrados na PCP_ATIVIDADE
   executado  = registros com DATA DA EXECUÇÃO
   verificado = registros com DATA DA VERIFICAÇÃO
@@ -47,6 +47,12 @@ def data_planejada(v):
     return "Sem data planejada" if texto in ("", "#N/A") else texto
 
 
+def depara(v, vazio):
+    """Valor das colunas DEPARA DE SKID / DEPARA DE AREA, sem o " - " solto no fim."""
+    texto = re.sub(r"\s*-\s*$", "", str(v or "").strip())
+    return vazio if texto in ("", "#N/A", "0", "Pendente Cadastro area") else texto
+
+
 def preenchido(v):
     return v not in (None, "", 0, "-")
 
@@ -72,7 +78,9 @@ def main(planilha, saida):
         atividade = re.sub(r"\s*\(\s*449\.[^)]*\)\s*$", "", r["ATIVIDADE"] or "").strip()
         atividade = re.sub(r"\s*-\s*$", "", atividade)
         planejada = data_planejada(r.get("DATA PLANEJADA"))
-        a = agg[(sistema, subsistema, sigla, disciplina, etapa, atividade, planejada)]
+        skid = depara(r.get("DEPARA DE SKID"), "Skid não cadastrado")
+        area = depara(r.get("DEPARA DE AREA"), "Área não cadastrada")
+        a = agg[(sistema, subsistema, sigla, disciplina, etapa, atividade, planejada, skid, area)]
         a["previsto"] += 1
         a["executado"] += preenchido(r["DATA DA EXECUÇÃO"])
         a["verificado"] += preenchido(r["DATA DA VERIFICAÇÃO"])
@@ -80,12 +88,12 @@ def main(planilha, saida):
         a["reprovado"] += preenchido(r["DATA DA REPROVAÇÃO"])
 
     ordem_etapa = {e: i for i, (_, e) in enumerate(ETAPAS)}
-    chaves = sorted(agg, key=lambda k: (k[0], k[1], k[3], ordem_etapa.get(k[4], 99), k[5], k[6]))
+    chaves = sorted(agg, key=lambda k: (k[0], k[1], k[3], ordem_etapa.get(k[4], 99), k[5], k[6], k[7], k[8]))
     rows = [
         dict(id=f"{i + 1:05d}", sistema=s, descricao=descricoes[s], subsistema=sub,
              desc_subsistema=desc_sub[sub], sigla=sg, disciplina=d, etapa=e, atividade=at,
-             data_planejada=dp, **agg[(s, sub, sg, d, e, at, dp)])
-        for i, (s, sub, sg, d, e, at, dp) in enumerate(chaves)
+             data_planejada=dp, skid=sk, area=ar, **agg[(s, sub, sg, d, e, at, dp, sk, ar)])
+        for i, (s, sub, sg, d, e, at, dp, sk, ar) in enumerate(chaves)
     ]
     with open(saida, "w", encoding="utf-8") as f:
         json.dump(rows, f, ensure_ascii=False)
