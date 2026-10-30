@@ -54,9 +54,9 @@ def main(planilha, saida):
         if not any(valores):
             continue
         r = dict(zip(cab, valores))
-        sistema = r["SISTEMA"] or "Sem sistema"
+        sistema = r["SISTEMA"] or "Sistema não cadastrado"
         descricoes.setdefault(sistema, r["DESCRIÇÃO DO SISTEMA"] or "")
-        subsistema = r["SUBSISTEMA"] or "Sem subsistema"
+        subsistema = r["SUBSISTEMA"] or "Subsistema não cadastrado"
         desc_sub.setdefault(subsistema, r["DESCRIÇÃO DO SUBSISTEMA"] or "")
         sigla = r["DISCIPLINA"] or ""
         disciplina = DISCIPLINAS.get(r["DISCIPLINA"], r["DISCIPLINA"] or "Sem disciplina")
