@@ -1,6 +1,9 @@
 @echo off
 rem Instala a atualizacao automatica da OLODUM. Basta dar dois cliques neste arquivo.
 setlocal enabledelayedexpansion
+rem UTF-8 no console, para caminhos com acento (ex.: "Area de Trabalho" do OneDrive) nao se perderem.
+chcp 65001 >nul
+set "PYTHONIOENCODING=utf-8"
 cd /d "%~dp0"
 
 echo.
@@ -10,7 +13,13 @@ rem 1) Lancador "py" do instalador oficial do python.org
 for /f "delims=" %%P in ('py -3 -c "import sys;print(sys.executable)" 2^>nul') do set "PYEXE=%%P"
 rem 2) Comando "python" (ignora o atalho da Microsoft Store, que nao imprime nada)
 if not defined PYEXE for /f "delims=" %%P in ('python -c "import sys;print(sys.executable)" 2^>nul') do set "PYEXE=%%P"
-rem 3) Pastas onde o Python e o Anaconda costumam ficar
+rem 3) Python portatil dentro de uma pasta Painel_* no OneDrive ou na Area de Trabalho (ex.: Painel_CONTROLTUB\python)
+for %%R in ("%OneDriveCommercial%" "%OneDrive%" "%USERPROFILE%") do (
+  if not defined PYEXE for /d %%A in ("%%~R\*") do (
+    if not defined PYEXE for /d %%B in ("%%~A\Painel_*") do if exist "%%~B\python\python.exe" set "PYEXE=%%~B\python\python.exe"
+  )
+)
+rem 4) Pastas onde o Python e o Anaconda costumam ficar
 if not defined PYEXE for /d %%D in ("%LOCALAPPDATA%\Programs\Python\Python3*") do if exist "%%D\python.exe" set "PYEXE=%%D\python.exe"
 if not defined PYEXE for /d %%D in ("%ProgramFiles%\Python3*") do if exist "%%D\python.exe" set "PYEXE=%%D\python.exe"
 if not defined PYEXE for %%D in ("%USERPROFILE%\anaconda3" "%USERPROFILE%\miniconda3" "%LOCALAPPDATA%\anaconda3" "%ProgramData%\anaconda3") do if exist "%%~D\python.exe" set "PYEXE=%%~D\python.exe"

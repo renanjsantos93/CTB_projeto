@@ -24,7 +24,9 @@ import tempfile
 import time
 from pathlib import Path
 
-import painel_sistema_pcp
+# Python portátil (embeddable) não põe a pasta do script no caminho de importação; garante que acha o vizinho.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import painel_sistema_pcp  # noqa: E402
 
 # ---- Ajuste estes caminhos -------------------------------------------------------------
 PASTA_OLODUM = Path(r"J:\PARNAIBA - UGNL 2\04. QAQC\09. Matriz de rastreabilidade\07.OLODUM")
