@@ -2,7 +2,7 @@
 
 Uso: python scripts/painel_sistema_pcp.py <planilha.xlsx> <saida.json>
 
-Cada linha da saída é um par subsistema x atividade x data planejada x skid x área x fornecedor, com as contagens:
+Cada linha da saída é um par subsistema x atividade x data planejada x skid x área x fornecedor x pasta, com as contagens:
   previsto   = registros cadastrados na PCP_ATIVIDADE
   executado  = registros com DATA DA EXECUÇÃO
   verificado = registros com DATA DA VERIFICAÇÃO
@@ -81,7 +81,8 @@ def main(planilha, saida):
         skid = depara(r.get("DEPARA DE SKID"), "Skid não cadastrado")
         area = depara(r.get("DEPARA DE AREA"), "Área não cadastrada")
         fornecedor = depara(r.get("FORNECEDOR"), "Fornecedor não cadastrado")
-        a = agg[(sistema, subsistema, sigla, disciplina, etapa, atividade, planejada, skid, area, fornecedor)]
+        pasta = depara(r.get("Nº DA PASTA"), "Pasta não cadastrada")
+        a = agg[(sistema, subsistema, sigla, disciplina, etapa, atividade, planejada, skid, area, fornecedor, pasta)]
         a["previsto"] += 1
         a["executado"] += preenchido(r["DATA DA EXECUÇÃO"])
         a["verificado"] += preenchido(r["DATA DA VERIFICAÇÃO"])
@@ -89,12 +90,13 @@ def main(planilha, saida):
         a["reprovado"] += preenchido(r["DATA DA REPROVAÇÃO"])
 
     ordem_etapa = {e: i for i, (_, e) in enumerate(ETAPAS)}
-    chaves = sorted(agg, key=lambda k: (k[0], k[1], k[3], ordem_etapa.get(k[4], 99), k[5], k[6], k[7], k[8], k[9]))
+    chaves = sorted(agg, key=lambda k: (k[0], k[1], k[3], ordem_etapa.get(k[4], 99), k[5], k[6], k[7], k[8], k[9], k[10]))
     rows = [
         dict(id=f"{i + 1:05d}", sistema=s, descricao=descricoes[s], subsistema=sub,
              desc_subsistema=desc_sub[sub], sigla=sg, disciplina=d, etapa=e, atividade=at,
-             data_planejada=dp, skid=sk, area=ar, fornecedor=fo, **agg[(s, sub, sg, d, e, at, dp, sk, ar, fo)])
-        for i, (s, sub, sg, d, e, at, dp, sk, ar, fo) in enumerate(chaves)
+             data_planejada=dp, skid=sk, area=ar, fornecedor=fo, pasta=pa,
+             **agg[(s, sub, sg, d, e, at, dp, sk, ar, fo, pa)])
+        for i, (s, sub, sg, d, e, at, dp, sk, ar, fo, pa) in enumerate(chaves)
     ]
     with open(saida, "w", encoding="utf-8") as f:
         json.dump(rows, f, ensure_ascii=False)
