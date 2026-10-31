@@ -1,12 +1,15 @@
 # Cria a tarefa do Agendador que deixa o atualizar_olodum.py rodando sempre que você entra no Windows.
-# Rode uma vez, no PowerShell, de dentro da pasta scripts:
-#   powershell -ExecutionPolicy Bypass -File .\instalar_tarefa_olodum.ps1
+# O instalar_olodum.bat chama este arquivo passando o Python que encontrou; também dá para rodar direto:
+#   powershell -ExecutionPolicy Bypass -File .\instalar_tarefa_olodum.ps1 -Python "C:\caminho\python.exe"
+param([string]$Python)
 
 $pasta = Split-Path -Parent $MyInvocation.MyCommand.Path
 $script = Join-Path $pasta "atualizar_olodum.py"
 
-# pythonw roda sem abrir janela preta.
-$pythonw = (Get-Command pythonw.exe -ErrorAction Stop).Source
+if (-not $Python) { $Python = (Get-Command python.exe -ErrorAction Stop).Source }
+# pythonw roda sem abrir janela preta; se não existir, usa o python normal.
+$pythonw = Join-Path (Split-Path -Parent $Python) "pythonw.exe"
+if (-not (Test-Path $pythonw)) { $pythonw = $Python }
 
 $acao = New-ScheduledTaskAction -Execute $pythonw -Argument "`"$script`"" -WorkingDirectory $pasta
 $gatilho = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
@@ -15,7 +18,7 @@ $config = New-ScheduledTaskSettingsSet -RestartCount 999 -RestartInterval (New-T
     -ExecutionTimeLimit (New-TimeSpan -Seconds 0) -StartWhenAvailable -DontStopIfGoingOnBatteries -AllowStartIfOnBatteries
 
 Register-ScheduledTask -TaskName "Atualizar OLODUM" -Action $acao -Trigger $gatilho -Settings $config `
-    -Description "Atualiza a OLODUM_BASEDADOS e a base do painel quando as planilhas mudam e a cada 30 min" -Force
+    -Description "Atualiza a OLODUM_BASEDADOS e a base do painel quando as planilhas mudam e a cada 30 min" -Force -ErrorAction Stop
 
 Start-ScheduledTask -TaskName "Atualizar OLODUM"
 Write-Host "Tarefa 'Atualizar OLODUM' criada e iniciada. O registro fica em $pasta\atualizar_olodum.log"
