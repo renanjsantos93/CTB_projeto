@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel OLODUM por sistema</title>
+<style>
+  /* Tokens do painel (mesmos nomes usados no painel do claude.ai), tema claro e escuro. */
+  :root {
+    --font-anthropic-sans: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    --font-anthropic-serif: Georgia, "Times New Roman", serif;
+    --color-bg: #ffffff; --color-panel: #f6f7f9; --color-fg: #1d2330; --color-fg-muted: #5f6878;
+    --color-border-line: #dfe3ea; --color-ok: #1e7b45; --color-warn: #b7791f; --color-bad: #c0392b;
+    --cds-surface-popover: #ffffff; --cds-border: #d4d9e1; --cds-shadow-popover: 0 6px 24px rgba(20, 30, 50, .16);
+    --cds-chart-grid: #e6e9ef;
+    --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 12px; --cds-gap-lg: 20px; --cds-gap-xl: 32px;
+    --cds-pad-xs: 4px; --cds-pad-sm: 8px; --cds-pad-md: 12px; --cds-pad-lg: 16px; --cds-pad-xl: 24px;
+    --cds-radius: 8px; --cds-font-weight-medium: 600; --cds-dur-slow: .3s;
+    --cds-font-size-caption: 12.5px; --cds-font-size-body: 14px; --cds-font-size-heading: 16px; --cds-font-size-title: 26px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: #15181e; --color-panel: #1d2129; --color-fg: #e8ebf1; --color-fg-muted: #9aa3b2;
+      --color-border-line: #303643; --color-ok: #4cc283; --color-warn: #e0a84a; --color-bad: #ee6b5e;
+      --cds-surface-popover: #232833; --cds-border: #3a4150; --cds-shadow-popover: 0 6px 24px rgba(0, 0, 0, .5);
+      --cds-chart-grid: #2c323d; color-scheme: dark;
+    }
+  }
+  html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-family: var(--font-anthropic-sans); font-size: 14px; }
+  #dash-root { padding: 24px max(16px, 2vw) 40px; }
+  [hidden] { display: none !important; }
+</style>
+<script>
+  // Base embutida pelo gerar_painel_html.py a cada atualização.
+  window.__DADOS__ = /*__DADOS__*/[];
+</script>
+<script>
+  // Versão mínima do "dash" do painel do claude.ai, para o mesmo código rodar num arquivo HTML comum.
+  window.dash = (() => {
+    const PADRAO = { disciplinas: [], etapas: [], datas: [], fornecedores: [], skids: [], areas: [] };
+    let params = { ...PADRAO };
+    const desenhos = new Map();
+    const aoMudar = [];
+    let agendado = false;
+    const visivel = (el) => !el.closest('[hidden]');
+    const desenhar = (raiz, nome) => {
+      for (const [n, fn] of desenhos) {
+        if (nome && n !== nome) continue;
+        raiz.querySelectorAll('[data-draw="' + n + '"]').forEach((el) => { if (visivel(el)) fn(el); });
+      }
+    };
+    const tudo = () => { agendado = false; aoMudar.forEach((fn) => fn()); desenhar(document); };
+    const agendar = () => { if (!agendado) { agendado = true; setTimeout(tudo, 0); } };
+    // Ao mostrar algo que estava escondido (ex.: abrir a lista de um filtro), desenha o que há dentro.
+    new MutationObserver((mudancas) => {
+      for (const m of mudancas) if (m.oldValue !== null && !m.target.hasAttribute('hidden')) desenhar(m.target);
+    }).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['hidden'], attributeOldValue: true });
+    document.addEventListener('DOMContentLoaded', agendar);
+    return {
+      data: (id) => (id === 'pcp' ? { status: 'ok', data: window.__DADOS__, columns: [], meta: [], refreshing: false } : { status: 'missing', data: [] }),
+      draw: (nome, fn) => { if (fn) desenhos.set(nome, fn); else desenhar(document, nome); },
+      onData: (fn) => { aoMudar.push(fn); },
+      params: () => params,
+      setParams: (o) => {
+        params = { ...params, ...o };
+        for (const k of Object.keys(params)) if (params[k] === null || params[k] === undefined) delete params[k];
+        agendar();
+      },
+      resetParams: () => { params = { ...PADRAO }; agendar(); },
+      setLink: (id) => { try { history.replaceState(null, '', '#' + id); } catch (e) {} },
+      colors: ['#2f6fd6', '#d9822b', '#2a9d8f', '#8e5cc9', '#c94f7c', '#5b8c2a', '#c9a227', '#6b7a8f'],
+      calc: () => {}, loader: () => {}, refresh: () => {},
+    };
+  })();
+</script>
+</head>
+<body>
+<div id="dash-root">
+<style>
+  .pn { display: flex; flex-direction: column; gap: var(--cds-gap-lg); font-family: var(--font-anthropic-sans); font-variant-numeric: tabular-nums; }
+  .pn-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--cds-gap-sm) var(--cds-gap-md); }
+  .pn-atualizado { margin: 0; margin-left: auto; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); white-space: nowrap; }
+  .pn .pn-atualizado b { font-weight: 600; color: var(--color-fg); }
+  .pn-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; text-wrap: balance; }
+  .pn-lead { margin: 0; max-width: 72ch; color: var(--color-fg); line-height: 1.5; }
+  .pn .pn-lead b { font-weight: 600; }
+  .pn-src { margin: 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .pn-filters { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); align-items: end; }
+  .pn-field { display: flex; flex-direction: column; gap: var(--cds-gap-xs); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .pn-field select, .pn-field input { font: inherit; font-size: var(--cds-font-size-body); color: var(--color-fg); background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); min-width: 12rem; max-width: 100%; }
+  .pn-multi { position: relative; }
+  .pn-multi-btn { list-style: none; cursor: pointer; font-size: var(--cds-font-size-body); color: var(--color-fg); background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); min-width: 14rem; display: flex; justify-content: space-between; gap: var(--cds-gap-sm); align-items: center; }
+  .pn-multi-btn::-webkit-details-marker { display: none; }
+  .pn-multi-btn::after { content: "▾"; color: var(--color-fg-muted); }
+  .pn-multi-btn { font: inherit; font-size: var(--cds-font-size-body); text-align: left; width: 100%; }
+  .pn-multi-btn[aria-expanded="true"]::after { content: "▴"; }
+  .pn-multi-list[hidden] { display: none; }
+  .pn-multi-list input { flex: none; margin: 0; }
+  .pn-multi-btn:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+  .pn-multi-list { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; min-width: 100%; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-sm); display: flex; flex-direction: column; gap: 2px; }
+  .pn-multi-list label { display: flex; align-items: center; gap: var(--cds-gap-sm); color: var(--color-fg); font-size: var(--cds-font-size-body); padding: 2px var(--cds-pad-xs); border-radius: var(--cds-radius); cursor: pointer; white-space: nowrap; }
+  .pn-multi-list label:hover { background: var(--color-panel); }
+  .pn-multi-datas { max-height: 22rem; overflow-y: auto; }
+  .pn-multi-opcoes { display: flex; flex-direction: column; gap: 2px; }
+  .pn-multi-opcoes small { margin-left: auto; padding-left: var(--cds-gap-md); color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+  .pn-multi-acoes { display: flex; gap: var(--cds-gap-sm); padding-top: var(--cds-pad-xs); margin-top: var(--cds-pad-xs); border-top: 1px solid var(--color-border-line); }
+  .pn-btn { font: inherit; font-size: var(--cds-font-size-caption); color: var(--color-fg); background: transparent; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); cursor: pointer; }
+  .pn-btn:hover { background: var(--color-panel); }
+  .pn-chip { border-color: var(--color-fg); background: var(--color-panel); }
+  .pn .pn-chip b { font-weight: 600; }
+  .pn-btn:focus-visible, .pn-cel:focus-visible, .pn-sort:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+  .pn-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr)); gap: var(--cds-gap-md); }
+  .pn-kpi { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md) var(--cds-pad-lg); display: flex; flex-direction: column; gap: var(--cds-gap-xs); min-width: 0; }
+  .pn-kpi-label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .pn-kpi-value { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); line-height: 1.1; }
+  .pn-kpi-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .pn-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: flex; flex-direction: column; gap: var(--cds-gap-md); min-width: 0; }
+  .pn-card-head { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm) var(--cds-gap-md); align-items: end; justify-content: space-between; }
+  .pn-card-head > div { display: flex; flex-direction: column; gap: var(--cds-gap-xs); min-width: 0; }
+  .pn-h2 { margin: 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); }
+  .pn-note { margin: 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); max-width: 80ch; }
+  .pn-scroll { overflow: auto; max-height: 34rem; min-height: 8rem; }
+  .pn-matriz { overflow-x: auto; min-height: 16rem; }
+  .pn table { border-collapse: collapse; width: 100%; font-size: var(--cds-font-size-caption); }
+  .pn th { text-align: left; font-weight: var(--cds-font-weight-medium); color: var(--color-fg-muted); padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+  .pn-scroll th { position: sticky; top: 0; background: var(--color-panel); z-index: 1; }
+  .pn td { padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); vertical-align: middle; }
+  .pn .num { text-align: right; white-space: nowrap; }
+  .pn-sort { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  .pn-sort::after { content: ""; margin-left: .25em; }
+  th[aria-sort="descending"] .pn-sort::after { content: "↓"; }
+  th[aria-sort="ascending"] .pn-sort::after { content: "↑"; }
+  .pn-sis tbody tr { cursor: pointer; }
+  .pn-sis tbody tr:hover td { background: var(--color-bg); }
+  .pn-sis tbody tr.is-sel td { background: var(--color-bg); box-shadow: inset 0 -2px 0 var(--color-fg); }
+  .pn-code { font-weight: 600; white-space: nowrap; }
+  .pn-desc { color: var(--color-fg-muted); min-width: 12rem; }
+  .pn-bar { display: inline-block; vertical-align: middle; width: 4.5rem; height: .5rem; border-radius: var(--cds-radius); background: var(--cds-chart-grid); margin-right: var(--cds-gap-sm); overflow: hidden; }
+  .pn-bar > i { display: block; height: 100%; border-radius: var(--cds-radius); }
+  .pn-pill { display: inline-block; padding: 0 var(--cds-pad-sm); border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; line-height: 1.6; }
+  .pn-pill.ok { color: var(--color-ok); }
+  .pn-pill.and { color: var(--color-warn); }
+  .pn-pill.nao { color: var(--color-fg-muted); }
+  .pn-rep { color: var(--color-bad); }
+  .pn-matriz { --pn-sw-0: color-mix(in srgb, var(--color-bad) 30%, transparent); --pn-sw-50: color-mix(in srgb, var(--color-warn) 34%, transparent); --pn-sw-100: color-mix(in srgb, var(--color-ok) 34%, transparent); max-height: 40rem; overflow: auto; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-bg); }
+  .pn-legend { --pn-sw-0: color-mix(in srgb, var(--color-bad) 30%, transparent); --pn-sw-50: color-mix(in srgb, var(--color-warn) 34%, transparent); --pn-sw-100: color-mix(in srgb, var(--color-ok) 34%, transparent); align-items: center; }
+  .pn-legend span { display: inline-flex; align-items: center; gap: var(--cds-gap-xs); }
+  .pn-legend { align-self: center; }
+  .pn-leg { padding: 2px var(--cds-pad-sm); border-radius: 999px; border: 1px solid var(--color-border-line); color: var(--color-fg); font-size: var(--cds-font-size-caption); white-space: nowrap; }
+  .pn .pn-leg b { font-weight: 600; }
+  .pn-leg-0 { background: var(--pn-sw-0); }
+  .pn-leg-50 { background: var(--pn-sw-50); }
+  .pn-leg-100 { background: var(--pn-sw-100); }
+  .pn-leg-vazio { background: var(--color-bg); color: var(--color-fg-muted); }
+  .pn-sw { display: inline-block; width: .85rem; height: .85rem; border-radius: 2px; border: 1px solid var(--color-border-line); }
+  .pn .pn-mx { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0; }
+  .pn-mx thead { position: sticky; top: 0; z-index: 3; }
+  .pn-mx thead th { background: var(--color-panel); text-align: center; white-space: normal; vertical-align: bottom; border-bottom: 1px solid var(--color-border-line); border-right: 1px solid var(--color-border-line); padding: var(--cds-pad-xs); }
+  .pn-mx thead tr:first-child th { color: var(--color-fg); text-transform: uppercase; letter-spacing: .04em; }
+  .pn-mx thead tr:nth-child(2) th { color: var(--color-fg); }
+  .pn-mx th.pn-mx-atv { width: 6.5rem; min-width: 6.5rem; max-width: 6.5rem; font-weight: 400; line-height: 1.25; }
+  .pn-mx th.pn-mx-corner, .pn-mx td.pn-mx-sub { position: sticky; left: 0; z-index: 2; text-align: left; min-width: 13rem; max-width: 15rem; border-right: 1px solid var(--color-border-line); }
+  .pn-mx th.pn-mx-corner { z-index: 4; vertical-align: bottom; }
+  .pn-mx th.pn-mx-corner { white-space: nowrap; }
+  .pn-mx th.pn-mx-corner > span:first-child { margin-right: var(--cds-gap-sm); }
+  .pn .pn-qtd { font-weight: 600; color: var(--color-fg); background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: 999px; padding: 0 var(--cds-pad-sm); white-space: nowrap; margin-left: var(--cds-gap-xs); }
+  .pn-mx .pn-mx-qtd { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--color-fg); background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: 999px; padding: 0 var(--cds-pad-sm); white-space: nowrap; }
+  .pn-mx td { border-bottom: 1px solid var(--color-border-line); border-right: 1px solid var(--color-border-line); padding: 2px; text-align: center; background: var(--color-bg); }
+  .pn-mx td.pn-mx-sub { background: var(--color-panel); padding: var(--cds-pad-xs) var(--cds-pad-sm); }
+  .pn-mx td.pn-mx-tot { border-left: 2px solid var(--color-border-line); }
+  .pn-mx tr.pn-mx-total td { border-bottom: 2px solid var(--color-border-line); font-weight: 600; }
+  .pn-mx tr.pn-mx-nc td.pn-mx-sub { box-shadow: inset 3px 0 0 var(--color-bad); }
+  .pn-mx tr.pn-mx-nc td { border-top: 2px solid var(--color-border-line); }
+  .pn-mx tr.is-sel td.pn-mx-sub { box-shadow: inset 4px 0 0 var(--color-fg); background: var(--color-bg); }
+  .pn-sub-filtro { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm); font-size: var(--cds-font-size-caption); color: var(--color-fg); }
+  .pn .pn-sub-filtro b { font-weight: 600; }
+  .pn-nc { margin: 0; font-size: var(--cds-font-size-caption); color: var(--color-fg); display: flex; gap: var(--cds-gap-sm); align-items: baseline; flex-wrap: wrap; }
+  .pn-nc > span { flex: 1; min-width: 0; }
+  .pn-nc::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--color-bad); flex: none; align-self: center; }
+  .pn .pn-nc b { font-weight: 600; }
+  .pn-sub-btn { font: inherit; color: var(--color-fg); background: none; border: 0; padding: 0; cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 1px; }
+  .pn-sub-btn b { white-space: nowrap; }
+  .pn-sub-btn span { color: var(--color-fg-muted); font-size: .92em; line-height: 1.25; }
+  .pn-sub-btn:hover b { text-decoration: underline; }
+  .pn-sub-btn:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+  .pn-cel { border-radius: 2px; padding: 3px 2px; display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.2; }
+  .pn-cel b { font-weight: 600; }
+  .pn-cel span { color: var(--color-fg-muted); }
+  .pn-vazio { color: var(--color-fg-muted); }
+  .pn-legend { display: flex; gap: var(--cds-gap-md); flex-wrap: wrap; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .pn-detail-actions { display: flex; gap: var(--cds-gap-sm); flex-wrap: wrap; }
+  [data-dash-source-state=empty] { color: transparent; }
+  [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+  @media (max-width: 640px) { .pn-col-desc { display: none; } .pn-multi-btn { min-width: 0; } .pn-field select, .pn-field input { min-width: 0; width: 100%; } .pn-field { flex: 1 1 100%; } }
+</style>
+
+<div class="pn">
+  <header class="pn-head" id="resumo">
+    <h1 class="pn-title">Painel OLODUM por sistema</h1>
+    <p class="pn-atualizado">Atualizado em <b data-draw="atualizado" data-source="pcp">—</b></p>
+  </header>
+
+  <div class="pn-filters" id="filtros">
+    <div class="pn-field">Data planejada
+      <div class="pn-multi" id="pn-datas">
+        <button type="button" class="pn-multi-btn" aria-expanded="false"><span data-draw="filtro-data">—</span></button>
+        <div hidden class="pn-multi-list pn-multi-datas" role="group" aria-label="Data planejada">
+          <div class="pn-multi-opcoes" data-draw="op-datas" data-source="pcp"></div>
+          <div class="pn-multi-acoes">
+            <button type="button" class="pn-btn pn-todos" data-param="datas">Todas</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pn-field">Disciplina
+      <div class="pn-multi" id="pn-disciplinas">
+        <button type="button" class="pn-multi-btn" aria-expanded="false"><span data-draw="filtro-disc">—</span></button>
+        <div hidden class="pn-multi-list" role="group" aria-label="Disciplina">
+          <div class="pn-multi-opcoes" data-draw="op-disc" data-source="pcp"></div>
+          <div class="pn-multi-acoes">
+            <button type="button" class="pn-btn pn-todos" data-param="disciplinas">Todas</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pn-field">Etapa
+      <div class="pn-multi" id="pn-etapas">
+        <button type="button" class="pn-multi-btn" aria-expanded="false"><span data-draw="filtro-etapa">—</span></button>
+        <div hidden class="pn-multi-list" role="group" aria-label="Etapa">
+          <div class="pn-multi-opcoes" data-draw="op-etapas" data-source="pcp"></div>
+          <div class="pn-multi-acoes">
+            <button type="button" class="pn-btn pn-todos" data-param="etapas">Todas</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pn-field">Fornecedor
+      <div class="pn-multi" id="pn-fornecedores">
+        <button type="button" class="pn-multi-btn" aria-expanded="false"><span data-draw="filtro-forn">—</span></button>
+        <div hidden class="pn-multi-list" role="group" aria-label="Fornecedor">
+          <div class="pn-multi-opcoes" data-draw="op-forn" data-source="pcp"></div>
+          <div class="pn-multi-acoes">
+            <button type="button" class="pn-btn pn-todos" data-param="fornecedores">Todos</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pn-field">SKID
+      <div class="pn-multi" id="pn-skids">
+        <button type="button" class="pn-multi-btn" aria-expanded="false"><span data-draw="filtro-skid">—</span></button>
+        <div hidden class="pn-multi-list pn-multi-datas" role="group" aria-label="SKID">
+          <div class="pn-multi-opcoes" data-draw="op-skids" data-source="pcp"></div>
+          <div class="pn-multi-acoes">
+            <button type="button" class="pn-btn pn-todos" data-param="skids">Todos</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pn-field">Área
+      <div class="pn-multi" id="pn-areas">
+        <button type="button" class="pn-multi-btn" aria-expanded="false"><span data-draw="filtro-area">—</span></button>
+        <div hidden class="pn-multi-list pn-multi-datas" role="group" aria-label="Área">
+          <div class="pn-multi-opcoes" data-draw="op-areas" data-source="pcp"></div>
+          <div class="pn-multi-acoes">
+            <button type="button" class="pn-btn pn-todos" data-param="areas">Todas</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="pn-btn pn-chip pn-fechar pn-esc-sis" hidden aria-label="Remover o sistema selecionado">Sistema selecionado: <b data-draw="sel-nome">—</b> <span aria-hidden="true">×</span></button>
+    <button type="button" class="pn-btn pn-reset">Limpar filtros</button>
+  </div>
+
+  <div class="pn-kpis" id="indicadores">
+    <div class="pn-kpi"><span class="pn-kpi-label">Previsto</span><span class="pn-kpi-value" data-draw="kpi" data-kpi="previsto" data-source="pcp">—</span><span class="pn-kpi-note">registros cadastrados</span></div>
+    <div class="pn-kpi"><span class="pn-kpi-label">Executado</span><span class="pn-kpi-value" data-draw="kpi" data-kpi="executado" data-source="pcp">—</span><span class="pn-kpi-note">com data de execução</span></div>
+    <div class="pn-kpi"><span class="pn-kpi-label">Aprovado</span><span class="pn-kpi-value" data-draw="kpi" data-kpi="aprovado" data-source="pcp">—</span><span class="pn-kpi-note">com data de aprovação</span></div>
+    <div class="pn-kpi"><span class="pn-kpi-label">Backlog aprovação</span><span class="pn-kpi-value" data-draw="kpi" data-kpi="backlog" data-source="pcp">—</span><span class="pn-kpi-note">executado menos aprovado</span></div>
+    <div class="pn-kpi"><span class="pn-kpi-label">Saldo</span><span class="pn-kpi-value" data-draw="kpi" data-kpi="saldo" data-source="pcp">—</span><span class="pn-kpi-note">previsto menos aprovado</span></div>
+    <div class="pn-kpi"><span class="pn-kpi-label">Reprovados</span><span class="pn-kpi-value" data-draw="kpi" data-kpi="reprovado" data-source="pcp">—</span><span class="pn-kpi-note">com data de reprovação</span></div>
+    <div class="pn-kpi"><span class="pn-kpi-label">Avanço</span><span class="pn-kpi-value" data-draw="kpi" data-kpi="pct" data-source="pcp">—</span><span class="pn-kpi-note">aprovado sobre previsto</span></div>
+  </div>
+
+  <section class="pn-card" id="sistemas">
+    <div class="pn-card-head">
+      <div>
+        <h2 class="pn-h2">Sistemas</h2>
+      </div>
+      <label class="pn-field" for="pn-busca">Buscar sistema
+        <input id="pn-busca" class="pn-busca" type="search" placeholder="Código ou descrição">
+      </label>
+    </div>
+    <div class="pn-scroll">
+      <table class="pn-sis" data-source="pcp">
+        <thead>
+          <tr>
+            <th><button type="button" class="pn-sort" data-sort="sistema">Sistema</button> <span class="pn-qtd" data-draw="sis-qtd" data-source="pcp">—</span></th>
+            <th class="pn-col-desc"><button type="button" class="pn-sort" data-sort="descricao">Descrição</button></th>
+            <th class="num"><button type="button" class="pn-sort" data-sort="previsto">Previsto</button></th>
+            <th class="num"><button type="button" class="pn-sort" data-sort="executado">Executado</button></th>
+            <th class="num"><button type="button" class="pn-sort" data-sort="aprovado">Aprovado</button></th>
+            <th class="num"><button type="button" class="pn-sort" data-sort="saldo">Saldo</button></th>
+            <th aria-sort="descending"><button type="button" class="pn-sort" data-sort="pct">Avanço</button></th>
+            <th><button type="button" class="pn-sort" data-sort="status">Status</button></th>
+          </tr>
+        </thead>
+        <tbody data-draw="sistemas"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="pn-card" id="matriz">
+    <div class="pn-card-head">
+      <div>
+        <h2 class="pn-h2">Avanço por subsistema</h2>
+      </div>
+      <div class="pn-legend" role="list" aria-label="Legenda das cores de avanço">
+        <span class="pn-leg pn-leg-0" role="listitem"><b>0%</b> não iniciado</span>
+        <span class="pn-leg pn-leg-50" role="listitem"><b>1% a 79%</b> em andamento</span>
+        <span class="pn-leg pn-leg-100" role="listitem"><b>80% a 100%</b> avançado</span>
+        <span class="pn-leg pn-leg-vazio" role="listitem"><b>·</b> sem atividade prevista</span>
+      </div>
+    </div>
+    <div class="pn-matriz" data-draw="matriz" data-source="pcp">—</div>
+  </section>
+
+  <section class="pn-card" id="pastas">
+    <div class="pn-card-head">
+      <div>
+        <h2 class="pn-h2">Avanço por pasta</h2>
+        <div class="pn-sub-filtro pn-esc-sub" hidden>
+          <span>Só as pastas do subsistema <b data-draw="sub-nome">—</b></span>
+          <button type="button" class="pn-btn pn-chip pn-fechar-sub" aria-label="Remover o subsistema selecionado">Ver todas as pastas <span aria-hidden="true">×</span></button>
+        </div>
+      </div>
+      <div class="pn-legend" role="list" aria-label="Legenda das cores de avanço">
+        <span class="pn-leg pn-leg-0" role="listitem"><b>0%</b> não iniciado</span>
+        <span class="pn-leg pn-leg-50" role="listitem"><b>1% a 79%</b> em andamento</span>
+        <span class="pn-leg pn-leg-100" role="listitem"><b>80% a 100%</b> avançado</span>
+        <span class="pn-leg pn-leg-vazio" role="listitem"><b>·</b> sem atividade prevista</span>
+      </div>
+    </div>
+    <div class="pn-matriz" data-draw="matriz-pasta" data-source="pcp">—</div>
+  </section>
+</div>
+
+<script>
+  const nf = new Intl.NumberFormat('pt-BR');
+  const pf = new Intl.NumberFormat('pt-BR', { style: 'percent', maximumFractionDigits: 1 });
+  const enc = (v) => String(v).replace(/%/g, '%25').replace(/&/g, '%26').replace(/=/g, '%3D');
+  const lista = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+  // Filtro vazio vale como "todas".
+  const P = () => {
+    const p = dash.params();
+    const D = lista(p.disciplinas), E = lista(p.etapas), T = lista(p.datas), K = lista(p.skids), A = lista(p.areas), F = lista(p.fornecedores);
+    return { D, E, T, K, A, F, dSet: new Set(D), eSet: new Set(E), tSet: new Set(T), kSet: new Set(K), aSet: new Set(A), fSet: new Set(F), s: p.sistema || null, sub: p.subsistema || null };
+  };
+  // TTAS e preservação não entram em nenhuma parte do painel.
+  const FORA = new Set(['TTAS', 'Preservação']);
+  const passaDE = (p, d, e) => (!p.D.length || p.dSet.has(d)) && (!p.E.length || p.eSet.has(e));
+  // Cada filtro e a coluna da base que ele olha. Com `pular`, aquele filtro é ignorado (usado para montar as opções dele).
+  const CAMPO = { disciplinas: 'disciplina', etapas: 'etapa', datas: 'data_planejada', fornecedores: 'fornecedor', skids: 'skid', areas: 'area' };
+  const SET = { disciplinas: 'dSet', etapas: 'eSet', datas: 'tSet', fornecedores: 'fSet', skids: 'kSet', areas: 'aSet' };
+  const passa = (p, r, pular) => Object.keys(CAMPO).every((k) => k === pular || !p[SET[k]].size || p[SET[k]].has(r[CAMPO[k]]));
+  const ehData = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+  const fmtData = (v) => (ehData(v) ? v.slice(8, 10) + '/' + v.slice(5, 7) + '/' + v.slice(0, 4) : v);
+  const hojeISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+  // Datas da mais próxima de hoje para a mais distante; valores que não são data ficam no fim.
+  const ordemDatas = (vals) => {
+    const hoje = Date.parse(hojeISO());
+    const dist = (v) => Math.abs(Date.parse(v) - hoje);
+    return [...vals].sort((a, b) => (ehData(b) - ehData(a)) || (ehData(a) ? dist(a) - dist(b) || a.localeCompare(b) : a.localeCompare(b, 'pt-BR')));
+  };
+  const statusDe = (a) => (a.aprovado >= a.previsto ? 'Concluído' : a.executado > 0 || a.aprovado > 0 ? 'Em andamento' : 'Não iniciado');
+  const somar = (rows) => {
+    const a = { previsto: 0, executado: 0, aprovado: 0, reprovado: 0 };
+    for (const r of rows) { a.previsto += Number(r.previsto); a.executado += Number(r.executado); a.aprovado += Number(r.aprovado); a.reprovado += Number(r.reprovado || 0); }
+    a.saldo = a.previsto - a.aprovado;
+    a.backlog = a.executado - a.aprovado;
+    a.pct = a.previsto ? a.aprovado / a.previsto : 0;
+    a.status = statusDe(a);
+    return a;
+  };
+  const filtradas = (p, comSistema) => {
+    const g = dash.data('pcp');
+    if (g.status !== 'ok') return null;
+    return g.data.filter((r) => !FORA.has(r.etapa) && passa(p, r) && (!comSistema || !p.s || r.sistema === p.s));
+  };
+  const porSistema = (p) => {
+    const rows = filtradas(p, false);
+    if (!rows) return null;
+    const m = new Map();
+    for (const r of rows) {
+      if (!m.has(r.sistema)) m.set(r.sistema, []);
+      m.get(r.sistema).push(r);
+    }
+    return [...m.entries()].map(([sistema, rs]) => ({ sistema, descricao: rs[0].descricao, ...somar(rs) }));
+  };
+  const STATUS = { 'Concluído': 'ok', 'Em andamento': 'and', 'Não iniciado': 'nao' };
+  const corAvanco = (pct) => (pct >= 1 ? 'var(--color-ok)' : dash.colors[0]);
+
+  const td = (tr, text, cls) => {
+    const c = tr.insertCell();
+    if (cls) c.className = cls;
+    c.textContent = text;
+    return c;
+  };
+  const tdAvanco = (tr, pct) => {
+    const c = tr.insertCell();
+    c.style.whiteSpace = 'nowrap';
+    const bar = document.createElement('span');
+    bar.className = 'pn-bar';
+    const fill = document.createElement('i');
+    fill.style.width = Math.min(100, pct * 100) + '%';
+    fill.style.background = corAvanco(pct);
+    bar.append(fill);
+    c.append(bar, document.createTextNode(pf.format(pct)));
+  };
+  const tdStatus = (tr, status) => {
+    const c = tr.insertCell();
+    const pill = document.createElement('span');
+    pill.className = 'pn-pill ' + (STATUS[status] || 'nao');
+    pill.textContent = status;
+    c.append(pill);
+  };
+
+  dash.draw('kpi', (el) => {
+    const rows = filtradas(P(), true);
+    const f = el.dataset.kpi;
+    if (!rows) { el.textContent = '—'; return; }
+    const v = somar(rows)[f];
+    el.textContent = f === 'pct' ? pf.format(v) : nf.format(v);
+  });
+
+  const topo = () => {
+    const rows = porSistema(P());
+    if (!rows) return null;
+    const pend = rows.filter((r) => r.saldo > 0);
+    return pend.length ? pend.reduce((x, y) => (y.saldo > x.saldo ? y : x)) : null;
+  };
+  dash.draw('top-sis', (el) => {
+    const r = topo();
+    el.textContent = r ? r.sistema : '—';
+  });
+  dash.draw('top-saldo', (el) => {
+    const r = topo();
+    el.textContent = r ? nf.format(r.saldo) : '—';
+  });
+
+  const resumoFiltro = (sel, todas, plural) => (!sel.length ? todas : sel.length === 1 ? sel[0] : sel.length + ' ' + plural);
+  const ROTULO_ETAPA = { Montagem: 'Construção e Montagem' };
+  dash.draw('filtro-disc', (el) => {
+    el.textContent = resumoFiltro(P().D, 'Todas as disciplinas', 'disciplinas');
+  });
+  dash.draw('filtro-etapa', (el) => {
+    el.textContent = resumoFiltro(P().E.map((e) => ROTULO_ETAPA[e] || e), 'Todas as etapas', 'etapas');
+  });
+
+  dash.draw('filtro-data', (el) => {
+    el.textContent = resumoFiltro(ordemDatas(P().T).map(fmtData), 'Todas as datas', 'datas');
+  });
+  // Lista de opções de um filtro: só os valores que existem com os outros filtros (e o sistema aberto),
+  // com a quantidade prevista de cada um. O que já está marcado continua na lista para poder ser desmarcado.
+  const desenhaOpcoes = (el, param, campo, ordenar, rotulo) => {
+    el.replaceChildren();
+    const g = dash.data('pcp');
+    if (g.status !== 'ok') { el.textContent = '—'; return; }
+    const p = P();
+    const marcadosAgora = new Set(lista(dash.params()[param]));
+    const qtd = new Map();
+    for (const r of g.data) {
+      if (FORA.has(r.etapa) || (p.s && r.sistema !== p.s) || !passa(p, r, param)) continue;
+      qtd.set(r[campo], (qtd.get(r[campo]) || 0) + Number(r.previsto));
+    }
+    for (const v of marcadosAgora) if (!qtd.has(v)) qtd.set(v, 0);
+    if (!qtd.size) { el.textContent = 'Nenhuma opção com os outros filtros.'; return; }
+    for (const v of ordenar([...qtd.keys()])) {
+      const lab = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'pn-chk';
+      cb.dataset.param = param;
+      cb.value = v;
+      cb.checked = marcadosAgora.has(v);
+      cb.addEventListener('change', () => dash.setParams({ [param]: marcados(param) }));
+      const n = document.createElement('small');
+      n.textContent = nf.format(qtd.get(v));
+      lab.append(cb, document.createTextNode(' ' + rotulo(v)), n);
+      el.append(lab);
+    }
+  };
+  // Ordem alfabética, com o "não cadastrado" no fim.
+  const ordemNome = (vazio) => (vals) => vals.sort((x, y) => (x === vazio) - (y === vazio) || x.localeCompare(y, 'pt-BR', { numeric: true }));
+  const igual = (v) => v;
+  const ordemFixa = (seq) => (vals) => vals.sort((x, y) => {
+    const ix = seq.indexOf(x), iy = seq.indexOf(y);
+    return (ix < 0 ? 99 : ix) - (iy < 0 ? 99 : iy) || x.localeCompare(y, 'pt-BR');
+  });
+  const ORDEM_DISC = ['Tubulação', 'Instrumentação', 'Elétrica', 'Equipamento estático', 'Equipamento dinâmico', 'Automação', 'Estrutura', 'Civil', 'Geral'];
+  const ORDEM_ETAPA = ['Recebimento', 'Montagem', 'Condicionamento', 'Comissionamento', 'Completação mecânica'];
+  dash.draw('op-disc', (el) => desenhaOpcoes(el, 'disciplinas', 'disciplina', ordemFixa(ORDEM_DISC), igual));
+  dash.draw('op-etapas', (el) => desenhaOpcoes(el, 'etapas', 'etapa', ordemFixa(ORDEM_ETAPA), (v) => ROTULO_ETAPA[v] || v));
+  dash.draw('op-datas', (el) => desenhaOpcoes(el, 'datas', 'data_planejada', ordemDatas, fmtData));
+  dash.draw('op-skids', (el) => desenhaOpcoes(el, 'skids', 'skid', ordemNome('Skid não cadastrado'), igual));
+  dash.draw('op-areas', (el) => desenhaOpcoes(el, 'areas', 'area', ordemNome('Área não cadastrada'), igual));
+  dash.draw('op-forn', (el) => desenhaOpcoes(el, 'fornecedores', 'fornecedor', ordemNome('Fornecedor não cadastrado'), igual));
+  dash.draw('filtro-forn', (el) => {
+    el.textContent = resumoFiltro(P().F, 'Todos os fornecedores', 'fornecedores');
+  });
+  dash.draw('filtro-skid', (el) => {
+    el.textContent = resumoFiltro(P().K, 'Todos os skids', 'skids');
+  });
+  dash.draw('filtro-area', (el) => {
+    el.textContent = resumoFiltro(P().A, 'Todas as áreas', 'áreas');
+  });
+
+  // Quando a OLODUM foi salva pela última vez (vem na base), no horário de quem está vendo.
+  const fmtAtualizado = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  dash.draw('atualizado', (el) => {
+    const g = dash.data('pcp');
+    const iso = g.status === 'ok' && g.data.length ? g.data.reduce((m, r) => (r.atualizado_em > m ? r.atualizado_em : m), '') : '';
+    const d = iso ? new Date(iso) : null;
+    el.textContent = d && !isNaN(d) ? fmtAtualizado.format(d).replace(', ', ' às ') : '—';
+  });
+
+  dash.draw('sel-nome', (el) => {
+    el.textContent = P().s || '—';
+  });
+  dash.draw('sel-desc', (el) => {
+    const g = dash.data('pcp');
+    const s = P().s;
+    const r = g.status === 'ok' && s ? g.data.find((x) => x.sistema === s) : null;
+    el.textContent = r && r.descricao ? r.descricao : '—';
+  });
+
+  const SEM_SUB = 'Subsistema não cadastrado';
+  const SEM_SIS = 'Sistema não cadastrado';
+  const MX_ETAPAS = ['Montagem', 'Condicionamento', 'Comissionamento', 'Completação mecânica'];
+  const MX_ROTULO = { Recebimento: 'Recebimento', Montagem: 'Construção e Montagem', Condicionamento: 'Condicionamento', Comissionamento: 'Comissionamento', 'Completação mecânica': 'Completação Mecânica' };
+  const MX_DISC = ['Estrutura', 'Civil', 'Equipamento estático', 'Equipamento dinâmico', 'Elétrica', 'Instrumentação', 'Automação', 'Tubulação', 'Geral'];
+  const MX_ORDEM = {
+    'Tubulação|Montagem': ['Lista de Verificação de Montagem - Tubulação', 'Mapeamento de Juntas - Report ControlTub'],
+    'Tubulação|Condicionamento': ['Teste Hidrostático em Tubulação', 'Teste de Estanqueidade de Válvula', 'Estanqueidade', 'Lavagem', 'Sopragem/Secagem', 'Limpeza Química', 'Flushing', 'Remontagem'],
+    'Equipamento estático|Montagem': ['Relatório Topográfico', 'Relatório de Torque', 'Lista de Verificação de Montagem'],
+    'Equipamento estático|Condicionamento': ['Montagem de Internos', 'Lavagem de Equipamento', 'Teste Hidrostático em Equipamento', 'Secagem/Sopragem', 'Inspeção por Boroscopia', 'Remontagem de Equipamento Estático'],
+    'Equipamento estático|Comissionamento': ['Fechamento de BV', 'Inertização', 'Report - Relatório de Inspeção Final - NR-13'],
+    'Equipamento dinâmico|Montagem': ['Relatório Topográfico', 'Relatório de Torque', 'Paralelismo', 'Lista de Verificação de Montagem'],
+    'Equipamento dinâmico|Condicionamento': ['Alinhamento Final', 'Remontagem de Equipamento Dinâmico', 'Flushing com Óleo', 'Teste Sem Carga'],
+    'Elétrica|Montagem': ['Relatório Topográfico', 'Lista de Verificação de Montagem', 'Relatório de Torque'],
+    'Elétrica|Condicionamento': ['Teste de Cabos - Baixa Tensão', 'Teste de Cabo de Média Tensão - HI-POT', 'Resistência de Isolamento em Motor Elétrico', 'Teste de Painel', 'Lista de Verificação de Energização de Painel', 'Teste de Transformador', 'Teste de Cubículo', 'Teste da Chave Seccionadora', 'Teste de Gerador'],
+    'Instrumentação|Condicionamento': ['Teste de Continuidade em Cabos de I&C', 'Calibração'],
+  };
+  // Colunas da estrutura de tubulação que aparecem mesmo sem registro previsto na PCP_ATIVIDADE.
+  const MX_FIXAS = { 'Tubulação|Montagem': 'TUB', 'Tubulação|Condicionamento': 'TUB' };
+  // Faixas de avanço: 0% vermelho, abaixo de 80% amarelo, 80% ou mais verde.
+  const corCelula = (pct) => (pct >= 0.8 ? 'var(--pn-sw-100)' : pct > 0 ? 'var(--pn-sw-50)' : 'var(--pn-sw-0)');
+
+  const celula = (tr, r, cls) => {
+    const c = tr.insertCell();
+    if (cls) c.className = cls;
+    if (!r) { c.textContent = '·'; c.classList.add('pn-vazio'); return; }
+    const box = document.createElement('div');
+    box.className = 'pn-cel';
+    box.style.background = corCelula(r.pct);
+    const v = document.createElement('b');
+    v.textContent = pf.format(r.pct);
+    const n = document.createElement('span');
+    n.textContent = nf.format(r.aprovado) + ' / ' + nf.format(r.previsto);
+    box.append(v, n);
+    c.append(box);
+  };
+
+  // Quadro de avanço com uma linha por subsistema ou por pasta (cfg diz qual).
+  const desenhaMatriz = (el, cfg) => {
+    el.replaceChildren();
+    const g = dash.data('pcp');
+    if (g.status !== 'ok') { el.textContent = '—'; return; }
+    const p = P();
+    const colOk = (d, e) => MX_ETAPAS.includes(e) && passaDE(p, d, e);
+    // Soma as linhas da PCP por subsistema e atividade; o recebimento vira uma coluna só.
+    const grupos0 = new Map();
+    const descs = new Map();
+    const juntar = (id, base, r) => {
+      let x = grupos0.get(id);
+      if (!x) grupos0.set(id, (x = { ...base, previsto: 0, executado: 0, aprovado: 0 }));
+      x.previsto += Number(r.previsto); x.executado += Number(r.executado); x.aprovado += Number(r.aprovado);
+    };
+    for (const r of g.data) {
+      if (FORA.has(r.etapa) || (p.s && r.sistema !== p.s) || !passa(p, r) || (cfg.filtro && !cfg.filtro(p, r))) continue;
+      const info = { sistema: r.sistema, chave: r[cfg.campo] };
+      const lr = cfg.linha(r);
+      // Descrição de cada linha; uma pasta com atividades de mais de um sistema mostra "Vários sistemas".
+      const d0 = descs.get(lr), d1 = cfg.desc(r);
+      if (d0 === undefined) descs.set(lr, d1); else if (d0 !== d1) descs.set(lr, cfg.varios || d0);
+      for (const linha of [lr, 'Total|' + (p.s || 'Todos')]) {
+        if (r.etapa === 'Recebimento') juntar('R|' + linha, { tipo: 'recebimento', linha, ...info, disciplina: r.disciplina }, r);
+        else juntar('C|' + linha + '|' + r.disciplina + '|' + r.etapa + '|' + r.atividade, { tipo: 'celula', linha, ...info, sigla: r.sigla, disciplina: r.disciplina, etapa: r.etapa, atividade: r.atividade }, r);
+      }
+    }
+    const byId = new Map([...grupos0.entries()].map(([id, x]) => [id, { ...x, pct: x.previsto ? x.aprovado / x.previsto : 0 }]));
+    const naLinha = (r) => !r.linha.startsWith('Total|');
+
+    const cols = new Map();
+    const linhas = new Map();
+    const comReceb = !p.E.length || p.eSet.has('Recebimento');
+    let temReceb = false;
+    for (const r of byId.values()) {
+      if (r.tipo === 'recebimento' && comReceb && naLinha(r)) {
+        temReceb = true;
+        if (!linhas.has(r.linha)) linhas.set(r.linha, r);
+        continue;
+      }
+      if (r.tipo !== 'celula' || !naLinha(r)) continue;
+      const k = r.disciplina + '|' + r.etapa + '|' + r.atividade;
+      if (!cols.has(k)) cols.set(k, { d: r.disciplina, e: r.etapa, a: r.atividade, sigla: r.sigla });
+      if (!linhas.has(r.linha)) linhas.set(r.linha, r);
+    }
+    for (const [de, sigla] of Object.entries(MX_FIXAS)) {
+      const [d, e] = de.split('|');
+      if (!colOk(d, e)) continue;
+      for (const a of MX_ORDEM[de]) if (!cols.has(de + '|' + a)) cols.set(de + '|' + a, { d, e, a, sigla });
+    }
+    if (!cols.size && !temReceb) { el.textContent = 'Nenhuma atividade com esses filtros.'; return; }
+
+    const pos = (arr, v) => { const i = arr.indexOf(v); return i < 0 ? 99 : i; };
+    const ordemAtv = (c) => pos(MX_ORDEM[c.d + '|' + c.e] || MX_ORDEM[c.e] || [], c.a);
+    const colunas = [...cols.values()].sort((x, y) => pos(MX_DISC, x.d) - pos(MX_DISC, y.d) || pos(MX_ETAPAS, x.e) - pos(MX_ETAPAS, y.e) || ordemAtv(x) - ordemAtv(y) || x.a.localeCompare(y.a, 'pt-BR'));
+
+    const t = document.createElement('table');
+    t.className = 'pn-mx';
+    const th = (row, text, cls, span) => {
+      const c = document.createElement('th');
+      c.textContent = text;
+      if (cls) c.className = cls;
+      if (span) Object.entries(span).forEach(([k, v]) => { if (v > 1) c.setAttribute(k, v); });
+      row.append(c);
+      return c;
+    };
+    const head = t.createTHead();
+    const h1 = head.insertRow(), h2 = head.insertRow(), h3 = head.insertRow();
+    const canto = th(h1, '', 'pn-mx-corner', { rowspan: 3 });
+    const cantoTitulo = document.createElement('span');
+    cantoTitulo.textContent = cfg.titulo;
+    const cantoQtd = document.createElement('span');
+    cantoQtd.className = 'pn-mx-qtd';
+    canto.append(cantoTitulo, cantoQtd);
+    if (temReceb) th(h1, 'Recebimento', 'pn-mx-atv', { rowspan: 3 });
+    const grupos = (fn) => colunas.reduce((acc, c) => {
+      const k = fn(c);
+      const last = acc[acc.length - 1];
+      if (last && last.k === k) last.n++; else acc.push({ k, c, n: 1 });
+      return acc;
+    }, []);
+    for (const gd of grupos((c) => c.d)) th(h1, gd.c.d, null, { colspan: gd.n });
+    th(h1, 'Total', 'pn-mx-atv', { rowspan: 3 });
+    for (const ge of grupos((c) => c.d + '|' + c.e)) th(h2, MX_ROTULO[ge.c.e] + ' - ' + ge.c.sigla, null, { colspan: ge.n });
+    for (const c of colunas) th(h3, c.a, 'pn-mx-atv');
+
+    // Células visíveis de uma linha (recebimento primeiro) e o total delas.
+    const celulasDa = (linha) => {
+      const cel = [];
+      if (temReceb) {
+        cel.push(byId.get('R|' + linha) || null);
+      }
+      for (const c of colunas) cel.push(byId.get('C|' + linha + '|' + c.d + '|' + c.e + '|' + c.a) || null);
+      return cel;
+    };
+    const totalDa = (cel) => {
+      const vistos = cel.filter(Boolean);
+      return vistos.length ? somar(vistos) : null;
+    };
+    const body = t.createTBody();
+    const linhaTotal = 'Total|' + (p.s || 'Todos');
+    const desenhaLinha = (linha, info, total) => {
+      const tr = body.insertRow();
+      if (total) tr.className = 'pn-mx-total';
+      else if (info.chave === cfg.vazio) tr.className = 'pn-mx-nc';
+      if (!total && cfg.selecionada && cfg.selecionada(p) === linha) tr.classList.add('is-sel');
+      const c0 = tr.insertCell();
+      c0.className = 'pn-mx-sub';
+      if (total) {
+        c0.textContent = p.s ? 'Total do sistema' : 'Total geral';
+      } else {
+        const desc0 = descs.get(linha);
+        const umSistema = desc0 !== cfg.varios;
+        const b = document.createElement(umSistema ? 'button' : 'div');
+        if (umSistema) b.type = 'button';
+        b.className = 'pn-sub-btn';
+        const code = document.createElement('b');
+        code.textContent = info.chave;
+        const desc = document.createElement('span');
+        desc.textContent = info.chave === cfg.vazio ? cfg.textoVazio : desc0;
+        b.append(code, desc);
+        // O clique faz o que o quadro pede (cfg.aoClicar); só vale quando a linha é de um sistema só.
+        if (umSistema) b.addEventListener('click', () => cfg.aoClicar(info, linha));
+        c0.append(b);
+      }
+      const cel = celulasDa(linha);
+      for (const r of cel) celula(tr, r);
+      celula(tr, totalDa(cel), 'pn-mx-tot');
+    };
+    desenhaLinha(linhaTotal, null, true);
+    // Subsistemas do maior para o menor avanço da coluna Total.
+    const subs = [...linhas.values()]
+      .map((r) => ({ r, tot: totalDa(celulasDa(r.linha)) }))
+      .sort((x, y) => (y.tot ? y.tot.pct : -1) - (x.tot ? x.tot.pct : -1) || (y.tot ? y.tot.previsto : 0) - (x.tot ? x.tot.previsto : 0) || x.r.chave.localeCompare(y.r.chave, 'pt-BR'));
+    // Quantidade de linhas mostradas, ao lado do título da primeira coluna.
+    cantoQtd.textContent = nf.format(subs.length) + ' ' + (subs.length === 1 ? cfg.singular : cfg.plural);
+    // A linha "não cadastrado" fica sempre por último.
+    for (const { r } of subs) if (r.chave !== cfg.vazio) desenhaLinha(r.linha, r, false);
+    for (const { r } of subs) if (r.chave === cfg.vazio) desenhaLinha(r.linha, r, false);
+    el.append(t);
+  };
+  const SEM_PASTA = 'Pasta não cadastrada';
+  const irPara = (id) => {
+    document.querySelectorAll('#' + id).forEach((d) => d.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    dash.setLink(id);
+  };
+  // O subsistema escolhido no quadro de subsistemas filtra o quadro de pastas ("sistema|subsistema").
+  const doSubsistema = (p, r) => !p.sub || r.sistema + '|' + r.subsistema === p.sub;
+  dash.draw('matriz', (el) => desenhaMatriz(el, {
+    titulo: 'Subsistema', singular: 'subsistema', plural: 'subsistemas', campo: 'subsistema', vazio: SEM_SUB, textoVazio: 'Atividades sem subsistema na PCP_ATIVIDADE',
+    linha: (r) => r.sistema + '|' + r.subsistema, desc: (r) => r.desc_subsistema,
+    selecionada: (p) => p.sub,
+    aoClicar: (info, linha) => { dash.setParams({ sistema: info.sistema, subsistema: linha }); irPara('pastas'); },
+  }));
+  dash.draw('matriz-pasta', (el) => desenhaMatriz(el, {
+    titulo: 'Pasta', singular: 'pasta', plural: 'pastas', campo: 'pasta', vazio: SEM_PASTA, textoVazio: 'Atividades sem Nº da pasta na PCP_ATIVIDADE',
+    linha: (r) => 'P|' + r.pasta, desc: (r) => r.sistema, varios: 'Vários sistemas',
+    filtro: doSubsistema,
+    aoClicar: (info) => { dash.setParams({ sistema: info.sistema, subsistema: null }); irPara('sistemas'); },
+  }));
+  dash.draw('sub-nome', (el) => {
+    const sub = P().sub;
+    el.textContent = sub ? sub.slice(sub.indexOf('|') + 1) : '—';
+  });
+
+  // Atividades sem subsistema, dentro dos filtros.
+  const naoCadastrado = () => {
+    const rows = filtradas(P(), true);
+    if (!rows) return null;
+    return somar(rows.filter((r) => r.subsistema === SEM_SUB));
+  };
+  dash.draw('nc-qtd', (el) => {
+    const a = naoCadastrado();
+    el.textContent = a ? nf.format(a.previsto) : '—';
+  });
+  const pastaNaoCadastrada = () => {
+    const p = P();
+    const rows = filtradas(p, true);
+    return rows ? somar(rows.filter((r) => r.pasta === SEM_PASTA && doSubsistema(p, r))) : null;
+  };
+  dash.draw('pnc-qtd', (el) => {
+    const a = pastaNaoCadastrada();
+    el.textContent = a ? nf.format(a.previsto) : '—';
+  });
+  dash.draw('pnc-aprov', (el) => {
+    const a = pastaNaoCadastrada();
+    el.textContent = a ? nf.format(a.aprovado) : '—';
+  });
+  dash.draw('nc-emit', (el) => {
+    const a = naoCadastrado();
+    el.textContent = a ? nf.format(a.aprovado) : '—';
+  });
+
+  // Sistemas que passam pelos filtros e pela busca.
+  const sistemasVisiveis = (p) => {
+    const rows = porSistema(p);
+    if (!rows) return null;
+    let busca = '';
+    document.querySelectorAll('.pn-busca').forEach((i) => { busca = i.value.trim().toLowerCase(); });
+    return busca ? rows.filter((r) => (r.sistema + ' ' + r.descricao).toLowerCase().includes(busca)) : rows;
+  };
+  dash.draw('sis-qtd', (el) => {
+    const rows = sistemasVisiveis(P());
+    el.textContent = rows ? nf.format(rows.length) + (rows.length === 1 ? ' sistema' : ' sistemas') : '—';
+  });
+  // Começa do maior para o menor % de avanço.
+  let ordem = { campo: 'pct', dir: -1 };
+  dash.draw('sistemas', (tb) => {
+    tb.replaceChildren();
+    const p = P();
+    const rows = sistemasVisiveis(p);
+    if (!rows) return;
+    const { campo, dir } = ordem;
+    // O sistema não cadastrado fica sempre na última linha; empate no campo ordenado vai para o maior previsto.
+    rows.sort((a, b) => (a.sistema === SEM_SIS) - (b.sistema === SEM_SIS)
+      || (typeof a[campo] === 'number' ? (a[campo] - b[campo]) : String(a[campo]).localeCompare(String(b[campo]), 'pt-BR')) * dir
+      || b.previsto - a.previsto || a.sistema.localeCompare(b.sistema));
+    for (const r of rows) {
+      const tr = tb.insertRow();
+      tr.dataset.key = r.sistema;
+      tr.tabIndex = 0;
+      if (r.sistema === p.s) tr.className = 'is-sel';
+      td(tr, r.sistema, 'pn-code');
+      td(tr, r.descricao, 'pn-desc pn-col-desc');
+      td(tr, nf.format(r.previsto), 'num');
+      td(tr, nf.format(r.executado), 'num');
+      td(tr, nf.format(r.aprovado), 'num');
+      td(tr, nf.format(r.saldo), 'num');
+      tdAvanco(tr, r.pct);
+      tdStatus(tr, r.status);
+    }
+  });
+
+  const marcados = (param) => {
+    const v = [];
+    document.querySelectorAll('.pn-chk').forEach((c) => { if (c.dataset.param === param && c.checked) v.push(c.value); });
+    return v;
+  };
+  document.querySelectorAll('.pn-chk').forEach((c) => c.addEventListener('change', () => dash.setParams({ [c.dataset.param]: marcados(c.dataset.param) })));
+  document.querySelectorAll('.pn-todos').forEach((b) => b.addEventListener('click', () => dash.setParams({ [b.dataset.param]: [] })));
+  document.querySelectorAll('.pn-reset').forEach((b) => b.addEventListener('click', () => { dash.resetParams(); dash.setParams({ sistema: null, subsistema: null }); }));
+  document.querySelectorAll('.pn-fechar').forEach((b) => b.addEventListener('click', () => dash.setParams({ sistema: null, subsistema: null })));
+  document.querySelectorAll('.pn-fechar-sub').forEach((b) => b.addEventListener('click', () => dash.setParams({ subsistema: null })));
+  document.querySelectorAll('.pn-busca').forEach((i) => i.addEventListener('input', () => { dash.draw('sistemas'); dash.draw('sis-qtd'); }));
+  document.querySelectorAll('.pn-sort').forEach((btn) => btn.addEventListener('click', () => {
+    const campo = btn.dataset.sort;
+    ordem = { campo, dir: ordem.campo === campo ? -ordem.dir : (['sistema', 'descricao', 'status'].includes(campo) ? 1 : -1) };
+    document.querySelectorAll('.pn-sort').forEach((b) => {
+      const th = b.closest('th');
+      if (!th) return;
+      if (b.dataset.sort === campo) th.setAttribute('aria-sort', ordem.dir > 0 ? 'ascending' : 'descending');
+      else th.removeAttribute('aria-sort');
+    });
+    dash.draw('sistemas');
+  }));
+  const abrir = (tr) => {
+    const key = tr && tr.dataset.key;
+    if (!key) return;
+    dash.setParams({ sistema: key });
+    document.querySelectorAll('#matriz').forEach((el) => el.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    dash.setLink('matriz');
+  };
+  document.querySelectorAll('.pn-sis').forEach((t) => {
+    t.addEventListener('click', (ev) => abrir(ev.target.closest('tbody tr')));
+    t.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') abrir(ev.target.closest('tbody tr')); });
+  });
+
+  // Listas dos filtros: abrem no botão e fecham ao clicar fora, ao apertar Esc ou ao abrir outra lista.
+  const fecharListas = (exceto) => document.querySelectorAll('.pn-multi').forEach((m) => {
+    if (m === exceto) return;
+    m.querySelectorAll('.pn-multi-list').forEach((l) => { l.hidden = true; });
+    m.querySelectorAll('.pn-multi-btn').forEach((b) => b.setAttribute('aria-expanded', 'false'));
+  });
+  document.querySelectorAll('.pn-multi-btn').forEach((b) => b.addEventListener('click', () => {
+    const m = b.closest('.pn-multi');
+    const aberto = b.getAttribute('aria-expanded') === 'true';
+    fecharListas(m);
+    m.querySelectorAll('.pn-multi-list').forEach((l) => { l.hidden = aberto; });
+    b.setAttribute('aria-expanded', String(!aberto));
+  }));
+  // composedPath guarda o caminho do clique mesmo se a lista for redesenhada depois de marcar uma opção.
+  document.addEventListener('click', (ev) => {
+    if (!ev.composedPath().some((n) => n.classList && n.classList.contains('pn-multi'))) fecharListas(null);
+  });
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') fecharListas(null); });
+
+  dash.onData(() => {
+    const p = P();
+    // Se os filtros deixarem o sistema selecionado sem nenhum registro, o painel volta para todos os sistemas.
+    const rows = p.s ? filtradas(p, true) : null;
+    if (rows && !rows.length) { dash.setParams({ sistema: null, subsistema: null }); return; }
+    // O subsistema escolhido só vale dentro do sistema aberto e enquanto tiver registros com os filtros.
+    if (p.sub && (!p.s || !p.sub.startsWith(p.s + '|') || !rows.some((r) => doSubsistema(p, r)))) { dash.setParams({ subsistema: null }); return; }
+    const sets = { disciplinas: p.dSet, etapas: p.eSet, datas: p.tSet, fornecedores: p.fSet, skids: p.kSet, areas: p.aSet };
+    document.querySelectorAll('.pn-chk').forEach((c) => { c.checked = (sets[c.dataset.param] || new Set()).has(c.value); });
+    document.querySelectorAll('.pn-esc-sis').forEach((el) => { el.hidden = !p.s; });
+    document.querySelectorAll('.pn-esc-todos').forEach((el) => { el.hidden = !!p.s; });
+    document.querySelectorAll('.pn-esc-sub').forEach((el) => { el.hidden = !p.sub; });
+  });
+</script>
+
+</div>
+</body>
+</html>
