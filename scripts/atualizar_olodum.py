@@ -74,6 +74,17 @@ def retrato_bases():
     return retrato
 
 
+def quem_esta_com_a_olodum():
+    """Nome gravado pelo Excel no arquivo de trava ~$ ao lado da planilha (1º byte = tamanho do nome)."""
+    trava = PLANILHA_OLODUM.with_name("~$" + PLANILHA_OLODUM.name[2:])
+    try:
+        dados = trava.read_bytes()
+        nome = dados[1:1 + dados[0]].decode("latin-1").strip()
+        return "%s (trava %s)" % (nome or "alguém", trava.name)
+    except (OSError, IndexError):
+        return "outra pessoa"
+
+
 def atualizar_excel():
     """Abre a OLODUM escondida, roda o Atualizar Tudo até o fim, salva e fecha."""
     import pythoncom
@@ -88,7 +99,8 @@ def atualizar_excel():
         livro = excel.Workbooks.Open(str(PLANILHA_OLODUM), UpdateLinks=0, ReadOnly=False)
         if livro.ReadOnly:
             livro.Close(SaveChanges=False)
-            raise RuntimeError("a OLODUM está aberta por outra pessoa; tento de novo na próxima rodada")
+            raise RuntimeError("a OLODUM está aberta por %s; feche a planilha (ou o Excel escondido no "
+                               "Gerenciador de Tarefas) e tente de novo" % quem_esta_com_a_olodum())
         # Sem atualização em segundo plano, o RefreshAll só termina quando todas as consultas acabam.
         for conexao in livro.Connections:
             try:
