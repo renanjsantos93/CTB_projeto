@@ -22,6 +22,7 @@ Uso:
 Precisa de: pip install pywin32 openpyxl
 """
 import datetime
+import json
 import logging
 import os
 import shutil
@@ -137,6 +138,17 @@ def publicar_dados():
     return PASTA_PAINEL / ARQUIVO_HTML
 
 
+def atualizado_em_local():
+    """O "Atualizado em" que o painel acabou de ganhar, no horário deste computador."""
+    try:
+        with open(PASTA_PAINEL / ARQUIVO_PAINEL, encoding="utf-8") as f:
+            iso = json.load(f)[0]["atualizado_em"]
+        utc = datetime.datetime.fromisoformat(iso.rstrip("Z")).replace(tzinfo=datetime.timezone.utc)
+        return utc.astimezone().strftime("%d/%m/%Y às %H:%M")
+    except Exception:
+        return "?"
+
+
 def pegar_trava():
     """True se ninguém mais está atualizando; uma trava esquecida há mais de TRAVA_VALIDA_MINUTOS é ignorada."""
     try:
@@ -155,16 +167,27 @@ def soltar_trava():
         pass
 
 
-def atualizar(motivo):
+def atualizar(motivo, esperar=False):
+    """Uma atualização completa. Se outra já estiver rodando: a rodada automática pula; o botão
+    (esperar=True) espera a outra terminar e depois atualiza de novo, para o painel aberto ser o novo."""
     if not pegar_trava():
-        logging.info("Outra pessoa já está atualizando o painel; pulando (%s)", motivo)
-        return True
+        if not esperar:
+            logging.info("Outra atualização já está rodando; pulando (%s)", motivo)
+            return True
+        logging.info("Outra atualização já está rodando; esperando ela terminar...")
+        limite = time.time() + TRAVA_VALIDA_MINUTOS * 60
+        while not pegar_trava():
+            if time.time() > limite:
+                logging.error("A outra atualização não terminou em %d min", TRAVA_VALIDA_MINUTOS)
+                return False
+            time.sleep(10)
     logging.info("Atualizando (%s) por %s", motivo, os.environ.get("USERNAME", "?"))
     inicio = time.time()
     try:
         atualizar_excel()
         destino = publicar_dados()
         logging.info("Pronto em %.0f s: %s", time.time() - inicio, destino)
+        logging.info("O painel mostra: Atualizado em %s", atualizado_em_local())
         return True
     except Exception:
         logging.exception("Falha ao atualizar")
@@ -202,5 +225,5 @@ def observar():
 
 if __name__ == "__main__":
     if "--uma-vez" in sys.argv:
-        sys.exit(0 if atualizar("execução manual") else 1)
+        sys.exit(0 if atualizar("botão Atualizar_Painel", esperar=True) else 1)
     observar()
