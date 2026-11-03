@@ -9,7 +9,9 @@ Cada linha da saída é um par subsistema x atividade x data planejada x skid x 
   aprovado   = registros com DATA DA APROVAÇÃO (registro emitido)
   reprovado  = registros com DATA DA REPROVAÇÃO
 """
+import datetime
 import json
+import os
 import re
 import sys
 from collections import defaultdict
@@ -59,6 +61,9 @@ def preenchido(v):
 
 def main(planilha, saida):
     wb = openpyxl.load_workbook(planilha, read_only=True, data_only=True)
+    # Quando a planilha foi salva pela última vez (UTC); sem essa informação, a data do arquivo.
+    salvo = wb.properties.modified or datetime.datetime.utcfromtimestamp(os.path.getmtime(planilha))
+    atualizado_em = salvo.replace(microsecond=0).isoformat() + "Z"
     linhas = wb["PCP_ATIVIDADE"].iter_rows(values_only=True)
     cab = next(linhas)
     agg = defaultdict(lambda: dict(previsto=0, executado=0, verificado=0, aprovado=0, reprovado=0))
@@ -94,7 +99,7 @@ def main(planilha, saida):
     rows = [
         dict(id=f"{i + 1:05d}", sistema=s, descricao=descricoes[s], subsistema=sub,
              desc_subsistema=desc_sub[sub], sigla=sg, disciplina=d, etapa=e, atividade=at,
-             data_planejada=dp, skid=sk, area=ar, fornecedor=fo, pasta=pa,
+             data_planejada=dp, skid=sk, area=ar, fornecedor=fo, pasta=pa, atualizado_em=atualizado_em,
              **agg[(s, sub, sg, d, e, at, dp, sk, ar, fo, pa)])
         for i, (s, sub, sg, d, e, at, dp, sk, ar, fo, pa) in enumerate(chaves)
     ]
