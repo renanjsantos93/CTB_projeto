@@ -59,11 +59,25 @@ def preenchido(v):
     return v not in (None, "", 0, "-")
 
 
+def data_da_base(planilha, wb):
+    """Data (UTC) mostrada no "Atualizado em" do painel: quando o 01-PCPHMWEB foi salvo na pasta
+    01-Base de dados, ao lado da OLODUM. Sem esse arquivo, quando a própria OLODUM foi salva."""
+    pasta_bases = os.path.join(os.path.dirname(os.path.abspath(planilha)), "01-Base de dados")
+    try:
+        pcp = [os.path.join(pasta_bases, n) for n in os.listdir(pasta_bases)
+               if n.upper().startswith("01-PCPHMWEB") and ".xls" in n.lower() and not n.startswith("~$")]
+    except OSError:
+        pcp = []
+    if pcp:
+        ts = max(os.path.getmtime(p) for p in pcp)
+        return datetime.datetime.fromtimestamp(ts, datetime.timezone.utc).replace(tzinfo=None)
+    return wb.properties.modified or datetime.datetime.fromtimestamp(
+        os.path.getmtime(planilha), datetime.timezone.utc).replace(tzinfo=None)
+
+
 def main(planilha, saida):
     wb = openpyxl.load_workbook(planilha, read_only=True, data_only=True)
-    # Quando a planilha foi salva pela última vez (UTC); sem essa informação, a data do arquivo.
-    salvo = wb.properties.modified or datetime.datetime.utcfromtimestamp(os.path.getmtime(planilha))
-    atualizado_em = salvo.replace(microsecond=0).isoformat() + "Z"
+    atualizado_em = data_da_base(planilha, wb).replace(microsecond=0).isoformat() + "Z"
     linhas = wb["PCP_ATIVIDADE"].iter_rows(values_only=True)
     cab = next(linhas)
     agg = defaultdict(lambda: dict(previsto=0, executado=0, verificado=0, aprovado=0, reprovado=0))
