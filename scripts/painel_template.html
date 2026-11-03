@@ -88,7 +88,7 @@
   .pn-src { margin: 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
   .pn-filters { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); align-items: end; }
   .pn-field { display: flex; flex-direction: column; gap: var(--cds-gap-xs); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
-  .pn-field select, .pn-field input { font: inherit; font-size: var(--cds-font-size-body); color: var(--color-fg); background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); min-width: 12rem; max-width: 100%; }
+  .pn-field select, .pn-field input[type="search"] { font: inherit; font-size: var(--cds-font-size-body); color: var(--color-fg); background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); min-width: 12rem; max-width: 100%; }
   .pn-multi { position: relative; }
   .pn-multi-btn { list-style: none; cursor: pointer; font-size: var(--cds-font-size-body); color: var(--color-fg); background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); min-width: 14rem; display: flex; justify-content: space-between; gap: var(--cds-gap-sm); align-items: center; }
   .pn-multi-btn::-webkit-details-marker { display: none; }
@@ -192,7 +192,7 @@
   .pn-detail-actions { display: flex; gap: var(--cds-gap-sm); flex-wrap: wrap; }
   [data-dash-source-state=empty] { color: transparent; }
   [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
-  @media (max-width: 640px) { .pn-col-desc { display: none; } .pn-multi-btn { min-width: 0; } .pn-field select, .pn-field input { min-width: 0; width: 100%; } .pn-field { flex: 1 1 100%; } }
+  @media (max-width: 640px) { .pn-col-desc { display: none; } .pn-multi-btn { min-width: 0; } .pn-field select, .pn-field input[type="search"] { min-width: 0; width: 100%; } .pn-field { flex: 1 1 100%; } }
 </style>
 
 <div class="pn">
@@ -365,13 +365,8 @@
   const passa = (p, r, pular) => Object.keys(CAMPO).every((k) => k === pular || !p[SET[k]].size || p[SET[k]].has(r[CAMPO[k]]));
   const ehData = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v);
   const fmtData = (v) => (ehData(v) ? v.slice(8, 10) + '/' + v.slice(5, 7) + '/' + v.slice(0, 4) : v);
-  const hojeISO = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
-  // Datas da mais próxima de hoje para a mais distante; valores que não são data ficam no fim.
-  const ordemDatas = (vals) => {
-    const hoje = Date.parse(hojeISO());
-    const dist = (v) => Math.abs(Date.parse(v) - hoje);
-    return [...vals].sort((a, b) => (ehData(b) - ehData(a)) || (ehData(a) ? dist(a) - dist(b) || a.localeCompare(b) : a.localeCompare(b, 'pt-BR')));
-  };
+  // Datas da mais antiga para a mais nova; valores que não são data ficam no fim.
+  const ordemDatas = (vals) => [...vals].sort((a, b) => (ehData(b) - ehData(a)) || a.localeCompare(b, 'pt-BR'));
   const statusDe = (a) => (a.aprovado >= a.previsto ? 'Concluído' : a.executado > 0 || a.aprovado > 0 ? 'Em andamento' : 'Não iniciado');
   const somar = (rows) => {
     const a = { previsto: 0, executado: 0, aprovado: 0, reprovado: 0 };
