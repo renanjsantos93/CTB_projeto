@@ -546,7 +546,8 @@
     'Elétrica|Condicionamento': ['Teste de Cabos - Baixa Tensão', 'Teste de Cabo de Média Tensão - HI-POT', 'Resistência de Isolamento em Motor Elétrico', 'Teste de Painel', 'Lista de Verificação de Energização de Painel', 'Teste de Transformador', 'Teste de Cubículo', 'Teste da Chave Seccionadora', 'Teste de Gerador'],
     'Instrumentação|Condicionamento': ['Teste de Continuidade em Cabos de I&C', 'Calibração'],
   };
-  // Colunas da estrutura de tubulação que aparecem mesmo sem registro previsto na PCP_ATIVIDADE.
+  // Colunas da estrutura de tubulação que aparecem mesmo sem registro previsto na PCP_ATIVIDADE,
+  // desde que a etapa de tubulação tenha alguma atividade no que está sendo mostrado.
   const MX_FIXAS = { 'Tubulação|Montagem': 'TUB', 'Tubulação|Condicionamento': 'TUB' };
   // Faixas de avanço: 0% vermelho, abaixo de 80% amarelo, 80% ou mais verde.
   const corCelula = (pct) => (pct >= 0.8 ? 'var(--pn-sw-100)' : pct > 0 ? 'var(--pn-sw-50)' : 'var(--pn-sw-0)');
@@ -613,7 +614,8 @@
     }
     for (const [de, sigla] of Object.entries(MX_FIXAS)) {
       const [d, e] = de.split('|');
-      if (!colOk(d, e)) continue;
+      // Só completa o modelo quando a etapa tem alguma atividade com os filtros atuais.
+      if (!colOk(d, e) || ![...cols.keys()].some((k) => k.startsWith(de + '|'))) continue;
       for (const a of MX_ORDEM[de]) if (!cols.has(de + '|' + a)) cols.set(de + '|' + a, { d, e, a, sigla });
     }
     if (!cols.size && !temReceb) { el.textContent = 'Nenhuma atividade com esses filtros.'; return; }
