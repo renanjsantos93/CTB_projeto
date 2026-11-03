@@ -34,6 +34,7 @@
 <script>
   // Base embutida pelo gerar_painel_html.py a cada atualização.
   window.__DADOS__ = /*__DADOS__*/[];
+  window.__PEND__ = /*__PEND__*/[];
 </script>
 <script>
   // Versão mínima do "dash" do painel do claude.ai, para o mesmo código rodar num arquivo HTML comum.
@@ -58,7 +59,8 @@
     }).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['hidden'], attributeOldValue: true });
     document.addEventListener('DOMContentLoaded', agendar);
     return {
-      data: (id) => (id === 'pcp' ? { status: 'ok', data: window.__DADOS__, columns: [], meta: [], refreshing: false } : { status: 'missing', data: [] }),
+      data: (id) => (id === 'pcp' ? { status: 'ok', data: window.__DADOS__, columns: [], meta: [], refreshing: false }
+        : id === 'pend' ? { status: 'ok', data: window.__PEND__, columns: [], meta: [], refreshing: false } : { status: 'missing', data: [] }),
       draw: (nome, fn) => { if (fn) desenhos.set(nome, fn); else desenhar(document, nome); },
       onData: (fn) => { aoMudar.push(fn); },
       params: () => params,
@@ -169,6 +171,7 @@
   .pn-mx td { border-bottom: 1px solid var(--color-border-line); border-right: 1px solid var(--color-border-line); padding: 2px; text-align: center; background: var(--color-bg); }
   .pn-mx td.pn-mx-sub { background: var(--color-panel); padding: var(--cds-pad-xs) var(--cds-pad-sm); }
   .pn-mx td.pn-mx-tot { border-left: 2px solid var(--color-border-line); }
+  .pn-mx td.pn-mx-pend, .pn-mx th.pn-mx-pend { border-left: 2px solid var(--color-border-line); }
   .pn-mx tr.pn-mx-total td { border-bottom: 2px solid var(--color-border-line); font-weight: 600; }
   .pn-mx tr.pn-mx-nc td.pn-mx-sub { box-shadow: inset 3px 0 0 var(--color-bad); }
   .pn-mx tr.pn-mx-nc td { border-top: 2px solid var(--color-border-line); }
@@ -322,7 +325,7 @@
         <span class="pn-leg pn-leg-vazio" role="listitem"><b>·</b> sem atividade prevista</span>
       </div>
     </div>
-    <div class="pn-matriz" data-draw="matriz" data-source="pcp">—</div>
+    <div class="pn-matriz" data-draw="matriz" data-source="pcp pend">—</div>
   </section>
 
   <section class="pn-card" id="pastas">
@@ -612,13 +615,39 @@
       if (!cols.has(k)) cols.set(k, { d: r.disciplina, e: r.etapa, a: r.atividade, sigla: r.sigla });
       if (!linhas.has(r.linha)) linhas.set(r.linha, r);
     }
+    // Pendências (só no quadro de subsistemas): A, B e RNC, encerradas sobre o total, por linha.
+    // Valem os filtros de disciplina, etapa, skid e sistema; com filtro de data, fornecedor ou área
+    // (que as pendências não têm), só entram nas linhas que já existem pelas atividades.
+    const pend = new Map();
+    let comPend = false;
+    if (cfg.pendencias) {
+      const gp = dash.data('pend');
+      const soExistentes = p.T.length || p.F.length || p.A.length;
+      if (gp.status === 'ok') for (const r of gp.data) {
+        if (p.s && r.sistema !== p.s) continue;
+        if ((p.D.length && !p.dSet.has(r.disciplina)) || (p.E.length && !p.eSet.has(r.etapa)) || (p.K.length && !p.kSet.has(r.skid))) continue;
+        const lr = r.sistema + '|' + r.subsistema;
+        if (!linhas.has(lr)) {
+          if (soExistentes) continue;
+          linhas.set(lr, { linha: lr, sistema: r.sistema, chave: r.subsistema });
+          if (!descs.has(lr)) descs.set(lr, r.desc_subsistema || '');
+        }
+        for (const linha of [lr, 'Total|' + (p.s || 'Todos')]) {
+          const id = linha + '|' + r.categoria;
+          let x = pend.get(id);
+          if (!x) pend.set(id, (x = { previsto: 0, aprovado: 0 }));
+          x.previsto += Number(r.total); x.aprovado += Number(r.encerradas);
+        }
+        comPend = true;
+      }
+    }
     for (const [de, sigla] of Object.entries(MX_FIXAS)) {
       const [d, e] = de.split('|');
       // Só completa o modelo quando a etapa tem alguma atividade com os filtros atuais.
       if (!colOk(d, e) || ![...cols.keys()].some((k) => k.startsWith(de + '|'))) continue;
       for (const a of MX_ORDEM[de]) if (!cols.has(de + '|' + a)) cols.set(de + '|' + a, { d, e, a, sigla });
     }
-    if (!cols.size && !temReceb) { el.textContent = 'Nenhuma atividade com esses filtros.'; return; }
+    if (!cols.size && !temReceb && !comPend) { el.textContent = 'Nenhuma atividade com esses filtros.'; return; }
 
     const pos = (arr, v) => { const i = arr.indexOf(v); return i < 0 ? 99 : i; };
     const ordemAtv = (c) => pos(MX_ORDEM[c.d + '|' + c.e] || MX_ORDEM[c.e] || [], c.a);
@@ -651,8 +680,14 @@
     }, []);
     for (const gd of grupos((c) => c.d)) th(h1, gd.c.d, null, { colspan: gd.n });
     th(h1, 'Total', 'pn-mx-atv', { rowspan: 3 });
+    if (comPend) th(h1, 'Pendências', 'pn-mx-pend', { colspan: PEND_CAT.length });
     for (const ge of grupos((c) => c.d + '|' + c.e)) th(h2, MX_ROTULO[ge.c.e] + ' - ' + ge.c.sigla, null, { colspan: ge.n });
     for (const c of colunas) th(h3, c.a, 'pn-mx-atv');
+    // As linhas 2 e 3 do cabeçalho das pendências vêm depois das de atividades, para ficarem embaixo do seu grupo.
+    if (comPend) {
+      th(h2, 'Encerradas / total', 'pn-mx-pend', { colspan: PEND_CAT.length });
+      PEND_CAT.forEach(([, nome], i) => th(h3, nome, 'pn-mx-atv' + (i ? '' : ' pn-mx-pend')));
+    }
 
     // Células visíveis de uma linha (recebimento primeiro) e o total delas.
     const celulasDa = (linha) => {
@@ -687,7 +722,8 @@
         const code = document.createElement('b');
         code.textContent = info.chave;
         const desc = document.createElement('span');
-        desc.textContent = info.chave === cfg.vazio ? cfg.textoVazio : desc0;
+        desc.textContent = info.chave === cfg.vazio
+          ? (typeof cfg.textoVazio === 'function' ? cfg.textoVazio(info) : cfg.textoVazio) : desc0;
         b.append(code, desc);
         // O clique faz o que o quadro pede (cfg.aoClicar); só vale quando a linha é de um sistema só.
         if (umSistema) b.addEventListener('click', () => cfg.aoClicar(info, linha));
@@ -696,6 +732,10 @@
       const cel = celulasDa(linha);
       for (const r of cel) celula(tr, r);
       celula(tr, totalDa(cel), 'pn-mx-tot');
+      if (comPend) PEND_CAT.forEach(([cat], i) => {
+        const x = pend.get(linha + '|' + cat);
+        celula(tr, x ? { ...x, pct: x.previsto ? x.aprovado / x.previsto : 0 } : null, i ? '' : 'pn-mx-pend');
+      });
     };
     desenhaLinha(linhaTotal, null, true);
     // Subsistemas do maior para o menor avanço da coluna Total.
@@ -710,6 +750,7 @@
     el.append(t);
   };
   const SEM_PASTA = 'Pasta não cadastrada';
+  const PEND_CAT = [['A', 'Pendência A'], ['B', 'Pendência B'], ['RNC', 'RNC']];
   const irPara = (id) => {
     document.querySelectorAll('#' + id).forEach((d) => d.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     dash.setLink(id);
@@ -717,7 +758,8 @@
   // O subsistema escolhido no quadro de subsistemas filtra o quadro de pastas ("sistema|subsistema").
   const doSubsistema = (p, r) => !p.sub || r.sistema + '|' + r.subsistema === p.sub;
   dash.draw('matriz', (el) => desenhaMatriz(el, {
-    titulo: 'Subsistema', singular: 'subsistema', plural: 'subsistemas', campo: 'subsistema', vazio: SEM_SUB, textoVazio: 'Atividades sem subsistema na PCP_ATIVIDADE',
+    titulo: 'Subsistema', singular: 'subsistema', plural: 'subsistemas', campo: 'subsistema', vazio: SEM_SUB, pendencias: true,
+    textoVazio: (info) => (info.sistema === SEM_SIS ? 'Sem sistema e sem subsistema cadastrados' : 'Sem subsistema · sistema ' + info.sistema),
     linha: (r) => r.sistema + '|' + r.subsistema, desc: (r) => r.desc_subsistema,
     selecionada: (p) => p.sub,
     aoClicar: (info, linha) => { dash.setParams({ sistema: info.sistema, subsistema: linha }); irPara('pastas'); },

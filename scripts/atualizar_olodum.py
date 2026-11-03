@@ -6,7 +6,8 @@ Fica rodando em segundo plano (o Agendador de Tarefas inicia ao ligar o computad
 
 Cada atualização:
   1. abre a OLODUM_BASEDADOS escondida, faz o "Atualizar Tudo", salva e fecha;
-  2. gera a base do painel (painel_sistema_pcp.py) e o Painel_OLODUM.html (gerar_painel_html.py);
+  2. gera a base do painel (painel_sistema_pcp.py), a de pendências da 05-Planilha_pendencia
+     (painel_pendencias.py) e o Painel_OLODUM.html (gerar_painel_html.py);
   3. grava os dois na pasta compartilhada do OneDrive.
 
 Pasta compartilhada (o "Painel OLODUM" do OneDrive):
@@ -35,6 +36,7 @@ from pathlib import Path
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
 import gerar_painel_html  # noqa: E402
+import painel_pendencias  # noqa: E402
 import painel_sistema_pcp  # noqa: E402
 
 # ---- Ajuste estes caminhos -------------------------------------------------------------
@@ -48,6 +50,7 @@ if AQUI.name.lower() == "sistema":
 else:
     PASTA_PAINEL = Path(os.environ.get("OneDriveCommercial", Path.home() / "OneDrive")) / "Painel OLODUM"
 ARQUIVO_PAINEL = "pcp_painel.json"
+ARQUIVO_PENDENCIAS = "pendencias_painel.json"
 ARQUIVO_HTML = "Painel_OLODUM.html"
 # Evita duas atualizações ao mesmo tempo (o botão de alguém e a rodada automática, por exemplo).
 TRAVA = PASTA_PAINEL / "atualizando.lock"
@@ -125,15 +128,30 @@ def gravar(origem, destino):
     os.replace(provisorio, destino)
 
 
+def planilha_de_pendencias():
+    """A 05-Planilha_pendencia da pasta de bases (a mais recente, se houver mais de uma)."""
+    achadas = [a for a in PASTA_BASES.glob("05-Planilha_pendencia*.xls*") if not a.name.startswith("~$")]
+    return max(achadas, key=lambda a: a.stat().st_mtime) if achadas else None
+
+
 def publicar_dados():
     """Gera a base e o Painel_OLODUM.html a partir da OLODUM salva e grava na pasta compartilhada."""
     PASTA_PAINEL.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
         base = Path(tmp) / ARQUIVO_PAINEL
+        pend = Path(tmp) / ARQUIVO_PENDENCIAS
         html = Path(tmp) / ARQUIVO_HTML
         painel_sistema_pcp.main(str(PLANILHA_OLODUM), str(base))
-        gerar_painel_html.gerar(base, html)
+        planilha_pend = planilha_de_pendencias()
+        if planilha_pend:
+            painel_pendencias.main(str(planilha_pend), str(pend), str(base))
+        else:
+            logging.warning("Sem a 05-Planilha_pendencia em %s; o painel sai sem pendências", PASTA_BASES)
+            pend = None
+        gerar_painel_html.gerar(base, html, pend)
         gravar(base, PASTA_PAINEL / ARQUIVO_PAINEL)
+        if pend:
+            gravar(pend, PASTA_PAINEL / ARQUIVO_PENDENCIAS)
         gravar(html, PASTA_PAINEL / ARQUIVO_HTML)
     return PASTA_PAINEL / ARQUIVO_HTML
 
