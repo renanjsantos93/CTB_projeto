@@ -2,24 +2,26 @@
 
 Uso: python painel_juntas.py <01.Situacao_Geral_de_Juntas.xlsx> <OLODUM_BASEDADOS.xlsx> <saida.json>
 
-Cada linha da saída é um par sistema x subsistema x pasta, com:
+Duas somas na mesma saída, cada linha com:
   previstas   = juntas da planilha
   executadas  = juntas com Situação "Junta Liberada"
-Subsistema: a coluna SUBSOP da planilha de juntas; sem ela, o da linha na aba BASE_DADOS da OLODUM.
-Pasta: a malha da linha na aba Item de Malha da OLODUM (é o Nº DA PASTA, 421-M-TU-...).
-A linha é comparada pela TAG padronizada DN-CLASSE-SERVIÇO-NÚMERO (sem ", sem a zona -Z01 e sem sufixos).
+tipo "sub":   por sistema x subsistema, para o avanço por subsistema. Subsistema: a coluna SUBSOP da
+              planilha de juntas; sem ela, o da linha na aba BASE_DADOS da OLODUM (a linha é comparada pela
+              TAG padronizada DN-CLASSE-SERVIÇO-NÚMERO, sem ", sem a zona -Z01 e sem sufixos).
+tipo "pasta": por pasta, para o avanço por pasta. Pasta: a coluna STH (onde fica o Nº da pasta).
+              Junta sem STH vai para "Pasta não cadastrada" com "Sistema não cadastrado".
 """
 import json
 import re
 import sys
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 import openpyxl
 
 SEM_SISTEMA = "Sistema não cadastrado"
 SEM_SUBSISTEMA = "Subsistema não cadastrado"
 SEM_PASTA = "Pasta não cadastrada"
-COL_LINHA, COL_SOP, COL_SUBSOP, COL_SITUACAO = 2, 4, 6, 93  # colunas da aba SGJ (0 = coluna A)
+COL_LINHA, COL_SOP, COL_SUBSOP, COL_STH, COL_SITUACAO = 2, 4, 6, 7, 93  # colunas da aba SGJ (0 = coluna A)
 LINHA_INICIAL = 11  # dados começam depois das duas linhas de cabeçalho
 
 
@@ -36,7 +38,7 @@ def sistema_do_subsistema(sub):
 
 
 def ler_olodum(olodum):
-    """Linha -> (sistema, subsistema) pela BASE_DADOS e linha -> pasta pela Item de Malha."""
+    """Linha de tubulação -> (sistema, subsistema), pela aba BASE_DADOS da OLODUM."""
     wb = openpyxl.load_workbook(olodum, read_only=True, data_only=True)
     linhas = wb["BASE_DADOS"].iter_rows(values_only=True)
     cab = next(linhas)
@@ -45,17 +47,11 @@ def ler_olodum(olodum):
         r = dict(zip(cab, valores))
         if r.get("Cod Familia") == "LL" and r.get("Tag do Item") and r.get("Cod SubSistema"):
             sub_da_linha.setdefault(chave_linha(r["Tag do Item"]), (r["Cod Sistema"], r["Cod SubSistema"]))
-    malhas = defaultdict(Counter)
-    for valores in wb["Item de Malha"].iter_rows(min_row=2, values_only=True):
-        if valores and len(valores) > 2 and valores[1] and valores[2]:
-            malhas[chave_linha(valores[1])][str(valores[2]).strip()] += 1
-    # Linha em mais de uma malha: fica na mais frequente (empate: a de menor código), para não contar a junta duas vezes.
-    pasta_da_linha = {k: sorted(c.items(), key=lambda kv: (-kv[1], kv[0]))[0][0] for k, c in malhas.items()}
-    return sub_da_linha, pasta_da_linha
+    return sub_da_linha
 
 
 def main(sgj, olodum, saida):
-    sub_da_linha, pasta_da_linha = ler_olodum(olodum)
+    sub_da_linha = ler_olodum(olodum)
     wb = openpyxl.load_workbook(sgj, read_only=True, data_only=True)
     agg = defaultdict(lambda: dict(previstas=0, executadas=0))
     sem_ligacao = 0
@@ -71,14 +67,19 @@ def main(sgj, olodum, saida):
         else:
             sistema, subsistema = SEM_SISTEMA, SEM_SUBSISTEMA
             sem_ligacao += 1
-        pasta = pasta_da_linha.get(linha, SEM_PASTA)
-        a = agg[(sistema, subsistema, pasta)]
-        a["previstas"] += 1
-        a["executadas"] += str(r[COL_SITUACAO] or "").strip().lower() == "junta liberada"
-    rows = [dict(sistema=s, subsistema=sub, pasta=pa, **agg[(s, sub, pa)]) for (s, sub, pa) in sorted(agg)]
+        liberada = str(r[COL_SITUACAO] or "").strip().lower() == "junta liberada"
+        sth = str(r[COL_STH]).strip() if r[COL_STH] else ""
+        if sth:
+            chave_pasta = ("pasta", sistema, subsistema, sth)
+        else:
+            chave_pasta = ("pasta", SEM_SISTEMA, SEM_SUBSISTEMA, SEM_PASTA)
+        for k in (("sub", sistema, subsistema, ""), chave_pasta):
+            agg[k]["previstas"] += 1
+            agg[k]["executadas"] += liberada
+    rows = [dict(tipo=t, sistema=s, subsistema=sub, pasta=pa, **agg[(t, s, sub, pa)]) for (t, s, sub, pa) in sorted(agg)]
     with open(saida, "w", encoding="utf-8") as f:
         json.dump(rows, f, ensure_ascii=False)
-    total = sum(r["previstas"] for r in rows)
+    total = sum(r["previstas"] for r in rows if r["tipo"] == "sub")
     print(f"{len(rows)} linhas, {total} juntas ({sem_ligacao} sem subsistema)")
 
 

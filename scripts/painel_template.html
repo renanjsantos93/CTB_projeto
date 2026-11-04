@@ -697,7 +697,8 @@
     if (cfg.juntas && tubOk && (!soExistJ || [...cols.values()].some((c) => c.d === 'Tubulação'))) {
       const gj = dash.data('juntas');
       if (gj.status === 'ok') for (const r of gj.data) {
-        if ((p.s && r.sistema !== p.s) || (cfg.filtro && !cfg.filtro(p, r))) continue;
+        // cfg.juntas diz qual soma usar: "sub" (por subsistema) ou "pasta" (pela coluna STH).
+        if (r.tipo !== cfg.juntas || (p.s && r.sistema !== p.s) || (cfg.filtro && !cfg.filtro(p, r))) continue;
         const lr = cfg.linha(r);
         if (!linhas.has(lr)) {
           if (soExistJ) continue;
@@ -842,14 +843,14 @@
   // O subsistema escolhido no quadro de subsistemas filtra o quadro de pastas ("sistema|subsistema").
   const doSubsistema = (p, r) => !p.sub || r.sistema + '|' + r.subsistema === p.sub;
   dash.draw('matriz', (el) => desenhaMatriz(el, {
-    titulo: 'Subsistema', singular: 'subsistema', plural: 'subsistemas', campo: 'subsistema', vazio: SEM_SUB, pendencias: true, juntas: true,
+    titulo: 'Subsistema', singular: 'subsistema', plural: 'subsistemas', campo: 'subsistema', vazio: SEM_SUB, pendencias: true, juntas: 'sub',
     textoVazio: 'Atividades e pendências sem subsistema cadastrado',
     linha: (r) => r.sistema + '|' + r.subsistema, desc: (r) => r.desc_subsistema,
     selecionada: (p) => p.sub,
     aoClicar: (info, linha) => { dash.setParams({ sistema: info.sistema, subsistema: linha }); irPara('pastas'); },
   }));
   dash.draw('matriz-pasta', (el) => desenhaMatriz(el, {
-    titulo: 'Pasta', singular: 'pasta', plural: 'pastas', campo: 'pasta', juntas: true, vazio: SEM_PASTA, textoVazio: 'Atividades sem Nº da pasta na PCP_ATIVIDADE',
+    titulo: 'Pasta', singular: 'pasta', plural: 'pastas', campo: 'pasta', juntas: 'pasta', vazio: SEM_PASTA, textoVazio: 'Atividades sem Nº da pasta na PCP_ATIVIDADE',
     linha: (r) => 'P|' + r.pasta, desc: (r) => r.sistema, varios: 'Vários sistemas',
     // Atividades sem pasta válida (pasta vazia: o Nº DA PASTA trazia um código de subsistema ou sistema) ficam fora.
     filtro: (p, r) => r.pasta !== '' && doSubsistema(p, r),
