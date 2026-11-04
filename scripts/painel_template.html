@@ -35,6 +35,8 @@
   // Base embutida pelo gerar_painel_html.py a cada atualização.
   window.__DADOS__ = /*__DADOS__*/[];
   window.__PEND__ = /*__PEND__*/[];
+  window.__PENDLISTA__ = /*__PENDLISTA__*/[];
+  window.__PAINEL_ARQUIVO__ = true;
 </script>
 <script>
   // Versão mínima do "dash" do painel do claude.ai, para o mesmo código rodar num arquivo HTML comum.
@@ -60,7 +62,8 @@
     document.addEventListener('DOMContentLoaded', agendar);
     return {
       data: (id) => (id === 'pcp' ? { status: 'ok', data: window.__DADOS__, columns: [], meta: [], refreshing: false }
-        : id === 'pend' ? { status: 'ok', data: window.__PEND__, columns: [], meta: [], refreshing: false } : { status: 'missing', data: [] }),
+        : id === 'pend' ? { status: 'ok', data: window.__PEND__, columns: [], meta: [], refreshing: false }
+        : id === 'pendlista' ? { status: 'ok', data: window.__PENDLISTA__, columns: [], meta: [], refreshing: false } : { status: 'missing', data: [] }),
       draw: (nome, fn) => { if (fn) desenhos.set(nome, fn); else desenhar(document, nome); },
       onData: (fn) => { aoMudar.push(fn); },
       params: () => params,
@@ -176,6 +179,18 @@
   .pn-mx tr.pn-mx-nc td.pn-mx-sub { box-shadow: inset 3px 0 0 var(--color-bad); }
   .pn-mx tr.pn-mx-nc td { border-top: 2px solid var(--color-border-line); }
   .pn-mx tr.is-sel td.pn-mx-sub { box-shadow: inset 4px 0 0 var(--color-fg); background: var(--color-bg); }
+  .pn-lp-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm); }
+  .pn-lp-scroll { max-height: 40rem; }
+  .pn-lp td { vertical-align: top; white-space: normal; line-height: 1.35; }
+  .pn-lp td:nth-child(1) { white-space: nowrap; font-weight: 600; }
+  .pn-lp td:nth-child(2) { min-width: 18rem; max-width: 34rem; }
+  .pn-lp td:nth-child(4) { min-width: 14rem; max-width: 26rem; color: var(--color-fg-muted); }
+  .pn-lp td:nth-child(3), .pn-lp td:nth-child(5) { white-space: nowrap; }
+  .pn-lp tr.pn-lp-grupo td { background: var(--color-bg); border-top: 2px solid var(--color-border-line); padding-top: var(--cds-pad-sm); font-weight: 400; white-space: normal; }
+  .pn .pn-lp tr.pn-lp-grupo b { font-weight: 600; margin-right: var(--cds-gap-sm); }
+  .pn-lp tr.pn-lp-grupo span { color: var(--color-fg-muted); }
+  .pn-lp .pn-lp-cat-a { color: var(--color-bad); }
+  .pn-lp .pn-lp-cat-rnc { color: var(--color-warn); }
   .pn-sub-filtro { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm); font-size: var(--cds-font-size-caption); color: var(--color-fg); }
   .pn .pn-sub-filtro b { font-weight: 600; }
   .pn-nc { margin: 0; font-size: var(--cds-font-size-caption); color: var(--color-fg); display: flex; gap: var(--cds-gap-sm); align-items: baseline; flex-wrap: wrap; }
@@ -326,6 +341,33 @@
       </div>
     </div>
     <div class="pn-matriz" data-draw="matriz" data-source="pcp pend">—</div>
+  </section>
+
+  <section class="pn-card" id="lista-pendencias">
+    <div class="pn-card-head">
+      <div>
+        <h2 class="pn-h2">Lista de pendências abertas <span class="pn-qtd" data-draw="lp-qtd" data-source="pendlista">—</span></h2>
+        <p class="pn-note pn-esc-sub" hidden>Só as pendências do subsistema <b data-draw="sub-nome">—</b>.</p>
+      </div>
+      <div class="pn-lp-acoes">
+        <button type="button" class="pn-btn pn-chip pn-lp-gerar">Gerar lista de pendências (Excel)</button>
+        <span class="pn-note pn-lp-aviso" hidden>Para baixar a lista aqui, use Fontes › Lista de pendências abertas.</span>
+      </div>
+    </div>
+    <div class="pn-scroll pn-lp-scroll">
+      <table class="pn-lp" data-source="pendlista">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Descrição</th>
+            <th>Categoria</th>
+            <th>Solução proposta</th>
+            <th>Tipo</th>
+          </tr>
+        </thead>
+        <tbody data-draw="lista-pend"></tbody>
+      </table>
+    </div>
   </section>
 
   <section class="pn-card" id="pastas">
@@ -841,6 +883,78 @@
       tdStatus(tr, r.status);
     }
   });
+
+  // ---- Lista de pendências abertas ----------------------------------------------------------------
+  // Mesmos filtros das pendências do quadro de subsistemas (sistema, subsistema clicado, disciplina, etapa, skid).
+  const ORDEM_CAT = ['A - Impeditiva', 'B - Não impeditiva', 'RNC - Não conformidade'];
+  const listaPendencias = () => {
+    const g = dash.data('pendlista');
+    if (g.status !== 'ok') return null;
+    const p = P();
+    const rows = g.data.filter((r) => (!p.s || r.sistema === p.s) && doSubsistema(p, r)
+      && (!p.D.length || p.dSet.has(r.disciplina)) && (!p.E.length || p.eSet.has(r.etapa)) && (!p.K.length || p.kSet.has(r.skid)));
+    const pos = (v) => { const i = ORDEM_CAT.indexOf(v); return i < 0 ? 9 : i; };
+    return rows.sort((a, b) => (a.subsistema === SEM_SUB) - (b.subsistema === SEM_SUB)
+      || a.subsistema.localeCompare(b.subsistema, 'pt-BR') || a.sistema.localeCompare(b.sistema, 'pt-BR')
+      || pos(a.categoria) - pos(b.categoria) || (Number(a.numero) || 0) - (Number(b.numero) || 0));
+  };
+  dash.draw('lp-qtd', (el) => {
+    const rows = listaPendencias();
+    el.textContent = rows ? nf.format(rows.length) + (rows.length === 1 ? ' pendência' : ' pendências') : '—';
+  });
+  dash.draw('lista-pend', (tb) => {
+    tb.replaceChildren();
+    const rows = listaPendencias();
+    if (!rows) return;
+    let grupo = null;
+    const porGrupo = new Map();
+    for (const r of rows) porGrupo.set(r.sistema + '|' + r.subsistema, (porGrupo.get(r.sistema + '|' + r.subsistema) || 0) + 1);
+    for (const r of rows) {
+      const chave = r.sistema + '|' + r.subsistema;
+      if (chave !== grupo) {
+        grupo = chave;
+        const tr = tb.insertRow();
+        tr.className = 'pn-lp-grupo';
+        const c = tr.insertCell();
+        c.colSpan = 5;
+        const b = document.createElement('b');
+        b.textContent = r.subsistema;
+        const s = document.createElement('span');
+        const n = porGrupo.get(chave);
+        s.textContent = (r.subsistema === SEM_SUB ? 'Pendências sem subsistema cadastrado' : r.desc_subsistema || r.sistema)
+          + ' · ' + nf.format(n) + (n === 1 ? ' pendência aberta' : ' pendências abertas');
+        c.append(b, s);
+      }
+      const tr = tb.insertRow();
+      td(tr, r.item || '—');
+      td(tr, r.descricao);
+      td(tr, r.categoria, r.categoria.startsWith('A') ? 'pn-lp-cat-a' : r.categoria.startsWith('RNC') ? 'pn-lp-cat-rnc' : '');
+      td(tr, r.solucao || '—');
+      td(tr, r.tipo || '—');
+    }
+  });
+  // Botão: baixa a lista que está na tela como planilha (CSV com ";" e acentos, que o Excel abre direto).
+  const csv = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  document.querySelectorAll('.pn-lp-gerar').forEach((btn) => btn.addEventListener('click', () => {
+    const rows = listaPendencias() || [];
+    const linhas = [['Subsistema', 'Nome do subsistema', 'Item', 'Descrição', 'Categoria', 'Solução proposta', 'Tipo'].map(csv).join(';')];
+    for (const r of rows) linhas.push([r.subsistema, r.desc_subsistema, r.item, r.descricao, r.categoria, r.solucao, r.tipo].map(csv).join(';'));
+    const p = P();
+    const escopo = (p.sub ? p.sub.slice(p.sub.indexOf('|') + 1) : p.s || 'todos').replace(/[^\w.-]+/g, '_');
+    const hoje = new Date();
+    const dia = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0') + '-' + String(hoje.getDate()).padStart(2, '0');
+    const arquivo = new Blob(['﻿' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(arquivo);
+    a.download = 'Pendencias_abertas_' + escopo + '_' + dia + '.csv';
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }));
+  // No painel do claude.ai o navegador não deixa a página baixar arquivos: lá o botão dá lugar ao aviso.
+  document.querySelectorAll('.pn-lp-gerar').forEach((b) => { b.hidden = !window.__PAINEL_ARQUIVO__; });
+  document.querySelectorAll('.pn-lp-aviso').forEach((s) => { s.hidden = !!window.__PAINEL_ARQUIVO__; });
 
   const marcados = (param) => {
     const v = [];

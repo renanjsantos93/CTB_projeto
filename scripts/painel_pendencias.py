@@ -1,12 +1,16 @@
 """Gera a base de pendências do painel a partir da 05-Planilha_pendencia.
 
-Uso: python painel_pendencias.py <05-Planilha_pendencia.xlsx> <saida.json> [<pcp_painel.json>]
+Uso: python painel_pendencias.py <05-Planilha_pendencia.xlsx> <saida.json> [<pcp_painel.json>] [<lista.json>]
 
 Cada linha da saída é um par subsistema x categoria (A, B, RNC) x disciplina x etapa x skid, com:
   total       = pendências cadastradas
   encerradas  = pendências com STATUS "FECHADA" (o avanço); as demais estão abertas
 O pcp_painel.json, quando dado, só serve para escrever o skid com o mesmo nome usado na base de atividades.
+
+Com <lista.json>, grava também a lista das pendências ABERTAS, uma por linha, com item, descrição,
+categoria, solução proposta e tipo (o que o painel mostra na "Lista de pendências abertas").
 """
+import re
 import json
 import sys
 from collections import defaultdict
@@ -38,6 +42,18 @@ def categoria(v):
     return None
 
 
+NOMES_CATEGORIA = {"A": "A - Impeditiva", "B": "B - Não impeditiva", "RNC": "RNC - Não conformidade"}
+
+
+def texto(v):
+    return re.sub(r"\s+", " ", str(v)).strip() if v is not None else ""
+
+
+def sem_codigo(v):
+    """'(8) Identificação' -> 'Identificação'."""
+    return re.sub(r"^\(\s*\d+\s*\)\s*", "", texto(v))
+
+
 def nomes_de_skid(pcp_json):
     """Código do skid -> nome usado na base de atividades (ex.: 'M07' -> 'M07 - MR High Pressure Compressor A')."""
     if not pcp_json:
@@ -46,13 +62,14 @@ def nomes_de_skid(pcp_json):
         return {codigo(r["skid"]): r["skid"] for r in json.load(f) if r["skid"] != SEM_SKID}
 
 
-def main(planilha, saida, pcp_json=None):
+def main(planilha, saida, pcp_json=None, saida_lista=None):
     skids = nomes_de_skid(pcp_json)
     wb = openpyxl.load_workbook(planilha, read_only=True, data_only=True)
     linhas = wb.worksheets[0].iter_rows(values_only=True)
     cab = next(linhas)
     agg = defaultdict(lambda: dict(total=0, encerradas=0))
     nomes = {}
+    abertas = []
     ignoradas = 0
     for valores in linhas:
         if not any(valores):
@@ -75,7 +92,14 @@ def main(planilha, saida, pcp_json=None):
         skid = skids.get(skid_cod, skid_cod) if skid_cod and skid_cod.upper() != "N/A" else SEM_SKID
         a = agg[(sistema, subsistema, cat, disciplina, etapa, skid)]
         a["total"] += 1
-        a["encerradas"] += str(r.get("STATUS") or "").strip().upper() == "FECHADA"
+        fechada = str(r.get("STATUS") or "").strip().upper() == "FECHADA"
+        a["encerradas"] += fechada
+        if not fechada:
+            abertas.append(dict(
+                numero=r.get("NÚMERO PENDÊNCIA"), sistema=sistema, subsistema=subsistema,
+                item=texto(r.get("ITEM")), descricao=texto(r.get("DESCRIÇÃO")), categoria=NOMES_CATEGORIA[cat],
+                solucao=texto(r.get("SOLUÇÃO PROPOSTA")), tipo=sem_codigo(r.get("TIPO")),
+                disciplina=disciplina, etapa=etapa, skid=skid))
 
     rows = [
         dict(sistema=s, subsistema=sub, desc_subsistema=nomes[(s, sub)], categoria=c,
@@ -84,9 +108,14 @@ def main(planilha, saida, pcp_json=None):
     ]
     with open(saida, "w", encoding="utf-8") as f:
         json.dump(rows, f, ensure_ascii=False)
+    if saida_lista:
+        for a in abertas:
+            a["desc_subsistema"] = nomes.get((a["sistema"], a["subsistema"]), "")
+        with open(saida_lista, "w", encoding="utf-8") as f:
+            json.dump(abertas, f, ensure_ascii=False)
     total = sum(r["total"] for r in rows)
     print(f"{len(rows)} linhas, {total} pendências" + (f" ({ignoradas} sem categoria A/B/RNC ignoradas)" if ignoradas else ""))
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:4])
+    main(*sys.argv[1:5])

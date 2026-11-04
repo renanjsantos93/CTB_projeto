@@ -51,6 +51,7 @@ else:
     PASTA_PAINEL = Path(os.environ.get("OneDriveCommercial", Path.home() / "OneDrive")) / "Painel OLODUM"
 ARQUIVO_PAINEL = "pcp_painel.json"
 ARQUIVO_PENDENCIAS = "pendencias_painel.json"
+ARQUIVO_LISTA = "lista_pendencias_painel.json"
 ARQUIVO_HTML = "Painel_OLODUM.html"
 # Evita duas atualizações ao mesmo tempo (o botão de alguém e a rodada automática, por exemplo).
 TRAVA = PASTA_PAINEL / "atualizando.lock"
@@ -184,18 +185,20 @@ def publicar_dados():
     with tempfile.TemporaryDirectory() as tmp:
         base = Path(tmp) / ARQUIVO_PAINEL
         pend = Path(tmp) / ARQUIVO_PENDENCIAS
+        lista = Path(tmp) / ARQUIVO_LISTA
         html = Path(tmp) / ARQUIVO_HTML
         painel_sistema_pcp.main(str(PLANILHA_OLODUM), str(base))
         planilha_pend = planilha_de_pendencias()
         if planilha_pend:
-            painel_pendencias.main(str(planilha_pend), str(pend), str(base))
+            painel_pendencias.main(str(planilha_pend), str(pend), str(base), str(lista))
         else:
             logging.warning("Sem a 05-Planilha_pendencia em %s; o painel sai sem pendências", PASTA_BASES)
-            pend = None
-        gerar_painel_html.gerar(base, html, pend)
+            pend = lista = None
+        gerar_painel_html.gerar(base, html, pend, lista)
         gravar(base, PASTA_PAINEL / ARQUIVO_PAINEL)
         if pend:
             gravar(pend, PASTA_PAINEL / ARQUIVO_PENDENCIAS)
+            gravar(lista, PASTA_PAINEL / ARQUIVO_LISTA)
         gravar(html, PASTA_PAINEL / ARQUIVO_HTML)
     return PASTA_PAINEL / ARQUIVO_HTML
 
