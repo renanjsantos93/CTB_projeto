@@ -27,6 +27,7 @@ ETAPAS = [
     ("TTAS", "TTAS"),
     ("Preservação", "Preservação"),
 ]
+SEM_PASTA = "Pasta não cadastrada"
 DISCIPLINAS = {
     "TUB": "Tubulação", "INS": "Instrumentação", "ELE": "Elétrica",
     "EQE": "Equipamento estático", "EQD": "Equipamento dinâmico",
@@ -100,13 +101,23 @@ def main(planilha, saida):
         skid = depara(r.get("DEPARA DE SKID"), "Skid não cadastrado")
         area = depara(r.get("DEPARA DE AREA"), "Área não cadastrada")
         fornecedor = depara(r.get("FORNECEDOR"), "Fornecedor não cadastrado")
-        pasta = depara(r.get("Nº DA PASTA"), "Pasta não cadastrada")
+        pasta = depara(r.get("Nº DA PASTA"), SEM_PASTA)
         a = agg[(sistema, subsistema, sigla, disciplina, etapa, atividade, planejada, skid, area, fornecedor, pasta)]
         a["previsto"] += 1
         a["executado"] += preenchido(r["DATA DA EXECUÇÃO"])
         a["verificado"] += preenchido(r["DATA DA VERIFICAÇÃO"])
         a["aprovado"] += preenchido(r["DATA DA APROVAÇÃO"])
         a["reprovado"] += preenchido(r["DATA DA REPROVAÇÃO"])
+
+    # Nº DA PASTA preenchido com o código de um subsistema ou sistema não é pasta: vai para "Pasta não cadastrada".
+    codigos = {k[0] for k in agg} | {k[1] for k in agg}
+    if any(k[10] in codigos for k in agg):
+        juntos = defaultdict(lambda: dict(previsto=0, executado=0, verificado=0, aprovado=0, reprovado=0))
+        for k, v in agg.items():
+            k2 = k[:10] + (SEM_PASTA if k[10] in codigos else k[10],)
+            for campo, n in v.items():
+                juntos[k2][campo] += n
+        agg = juntos
 
     ordem_etapa = {e: i for i, (_, e) in enumerate(ETAPAS)}
     chaves = sorted(agg, key=lambda k: (k[0], k[1], k[3], ordem_etapa.get(k[4], 99), k[5], k[6], k[7], k[8], k[9], k[10]))
