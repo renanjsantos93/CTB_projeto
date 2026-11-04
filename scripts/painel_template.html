@@ -229,6 +229,9 @@
     .pn-mx th.pn-mx-corner, .pn-mx td.pn-mx-sub { position: static; }
     .pn-mx tr { break-inside: avoid; }
     #pastas { break-before: page; }
+    /* Botão de um quadro: imprime só aquele quadro. */
+    .pn.pn-imprime-matriz #pastas, .pn.pn-imprime-pastas #matriz { display: none !important; }
+    .pn.pn-imprime-pastas #pastas { break-before: auto; }
   }
 </style>
 
@@ -356,7 +359,7 @@
         </label>
       </div>
       <div class="pn-print-acoes">
-        <button type="button" class="pn-btn pn-chip pn-imprimir">Imprimir / gerar PDF</button>
+        <button type="button" class="pn-btn pn-chip pn-imprimir" data-quadro="matriz">Imprimir / gerar PDF</button>
         <span class="pn-note pn-imprimir-aviso" hidden>Para imprimir, abra o Painel_OLODUM.html da pasta do OneDrive.</span>
       </div>
       <div class="pn-legend" role="list" aria-label="Legenda das cores de avanço">
@@ -373,6 +376,10 @@
     <div class="pn-card-head">
       <div>
         <h2 class="pn-h2">Avanço por pasta</h2>
+        <div class="pn-print-acoes">
+          <button type="button" class="pn-btn pn-chip pn-imprimir" data-quadro="pastas">Imprimir / gerar PDF</button>
+          <span class="pn-note pn-imprimir-aviso" hidden>Para imprimir, abra o Painel_OLODUM.html da pasta do OneDrive.</span>
+        </div>
         <label class="pn-field pn-busca-mx-campo" for="pn-busca-pasta">Buscar pasta
           <input id="pn-busca-pasta" class="pn-busca-mx" data-alvo="matriz-pasta" type="search" placeholder="Código ou descrição">
         </label>
@@ -1104,6 +1111,7 @@
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') fecharListas(null); });
 
   // ---- Impressão / PDF dos quadros de subsistema e de pasta --------------------------------------
+  // Cada quadro tem o seu botão e imprime só ele; o Ctrl+P do navegador imprime os dois.
   // Cada quadro é reduzido para caber na largura de uma folha A3 deitada (margens de 8 mm). Com muitas
   // colunas a letra fica pequena: filtrar por disciplina ou etapa antes de imprimir deixa o PDF legível.
   const LARGURA_A3_PX = ((420 - 16) / 25.4) * 96;
@@ -1111,11 +1119,15 @@
     const fator = Math.min(1, LARGURA_A3_PX / Math.max(1, t.scrollWidth));
     t.style.zoom = String(Math.round(fator * 1000) / 1000);
   });
-  const voltarDaImpressao = () => document.querySelectorAll('.pn-mx').forEach((t) => { t.style.zoom = ''; });
+  const voltarDaImpressao = () => {
+    document.querySelectorAll('.pn-mx').forEach((t) => { t.style.zoom = ''; });
+    document.querySelectorAll('.pn').forEach((el) => el.classList.remove('pn-imprime-matriz', 'pn-imprime-pastas'));
+  };
   window.addEventListener('beforeprint', ajustarParaImpressao);
   window.addEventListener('afterprint', voltarDaImpressao);
   document.querySelectorAll('.pn-imprimir').forEach((b) => b.addEventListener('click', () => {
     fecharListas(null);
+    document.querySelectorAll('.pn').forEach((el) => el.classList.add('pn-imprime-' + b.dataset.quadro));
     ajustarParaImpressao();
     window.print();
   }));
