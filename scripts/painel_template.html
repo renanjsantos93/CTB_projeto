@@ -886,7 +886,7 @@
       }
       // Células de atividade e o Total abrem o detalhe dos protocolos pendentes (menos na linha de total da busca).
       const cel = celulasDa(linha);
-      const rotulo = total ? (p.s ? 'Sistema ' + p.s : 'Todos os ' + cfg.plural) : info.chave;
+      const rotulo = total ? (p.s ? 'Sistema ' + p.s : cfg.todos) : info.chave;
       const abre = (sel) => (linha === 'Busca|' ? null : () => abrirDetalhe({ quadro: cfg.alvo, linha, rotulo, ...sel }));
       cel.forEach((r, i) => {
         const col = temReceb ? (i ? colunas[i - 1] : null) : colunas[i];
@@ -955,14 +955,14 @@
   // O subsistema escolhido no quadro de subsistemas filtra o quadro de pastas ("sistema|subsistema").
   const doSubsistema = (p, r) => !p.sub || r.sistema + '|' + r.subsistema === p.sub;
   dash.draw('matriz', (el) => desenhaMatriz(el, {
-    alvo: 'matriz', titulo: 'Subsistema', singular: 'subsistema', plural: 'subsistemas', campo: 'subsistema', vazio: SEM_SUB, pendencias: true, juntas: 'sub',
+    alvo: 'matriz', todos: 'Todos os subsistemas', titulo: 'Subsistema', singular: 'subsistema', plural: 'subsistemas', campo: 'subsistema', vazio: SEM_SUB, pendencias: true, juntas: 'sub',
     textoVazio: 'Atividades e pendências sem subsistema cadastrado',
     linha: (r) => r.sistema + '|' + r.subsistema, desc: (r) => r.desc_subsistema,
     selecionada: (p) => p.sub,
     aoClicar: (info, linha) => { dash.setParams({ sistema: info.sistema, subsistema: linha }); irPara('pastas'); },
   }));
   dash.draw('matriz-pasta', (el) => desenhaMatriz(el, {
-    alvo: 'matriz-pasta', titulo: 'Pasta', singular: 'pasta', plural: 'pastas', campo: 'pasta', juntas: 'pasta', vazio: SEM_PASTA, textoVazio: 'Atividades sem Nº da pasta na PCP_ATIVIDADE',
+    alvo: 'matriz-pasta', todos: 'Todas as pastas', titulo: 'Pasta', singular: 'pasta', plural: 'pastas', campo: 'pasta', juntas: 'pasta', vazio: SEM_PASTA, textoVazio: 'Atividades sem Nº da pasta na PCP_ATIVIDADE',
     linha: (r) => 'P|' + r.pasta, desc: (r) => r.sistema, varios: 'Vários sistemas',
     // Atividades sem pasta válida (pasta vazia: o Nº DA PASTA trazia um código de subsistema ou sistema) ficam fora.
     filtro: (p, r) => r.pasta !== '' && doSubsistema(p, r),
