@@ -7,7 +7,8 @@ Fica rodando em segundo plano (o Agendador de Tarefas inicia ao ligar o computad
 Cada atualização:
   1. abre a OLODUM_BASEDADOS escondida, faz o "Atualizar Tudo", salva e fecha;
   2. gera a base do painel (painel_sistema_pcp.py), a de pendências da 05-Planilha_pendencia
-     (painel_pendencias.py) e o Painel_OLODUM.html (gerar_painel_html.py);
+     (painel_pendencias.py), a de juntas do ControlTub (painel_juntas.py) e o Painel_OLODUM.html
+     (gerar_painel_html.py);
   3. grava os dois na pasta compartilhada do OneDrive.
 
 Pasta compartilhada (o "Painel OLODUM" do OneDrive):
@@ -36,6 +37,7 @@ from pathlib import Path
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
 import gerar_painel_html  # noqa: E402
+import painel_juntas  # noqa: E402
 import painel_pendencias  # noqa: E402
 import painel_sistema_pcp  # noqa: E402
 
@@ -43,6 +45,8 @@ import painel_sistema_pcp  # noqa: E402
 PASTA_OLODUM = Path(r"J:\PARNAIBA - UGNL 2\04. QAQC\09. Matriz de rastreabilidade\07.OLODUM")
 PASTA_BASES = PASTA_OLODUM / "01-Base de dados"
 PLANILHA_OLODUM = PASTA_OLODUM / "OLODUM_BASEDADOS_Rev1.xlsx"
+# Situação Geral de Juntas do ControlTub (juntas previstas e liberadas por subsistema e pasta).
+PLANILHA_JUNTAS = Path(r"J:\PARNAIBA - UGNL 2\04. QAQC\09. Matriz de rastreabilidade\08.CONTROLTUB\BASE\01.Situacao_Geral_de_Juntas.xlsx")
 # Pasta compartilhada do painel: a que contém a pasta "sistema" destes scripts;
 # fora dela, a pasta "Painel OLODUM" do OneDrive de quem roda.
 if AQUI.name.lower() == "sistema":
@@ -52,6 +56,7 @@ else:
 ARQUIVO_PAINEL = "pcp_painel.json"
 ARQUIVO_PENDENCIAS = "pendencias_painel.json"
 ARQUIVO_LISTA = "lista_pendencias_painel.json"
+ARQUIVO_JUNTAS = "juntas_painel.json"
 ARQUIVO_HTML = "Painel_OLODUM.html"
 # Evita duas atualizações ao mesmo tempo (o botão de alguém e a rodada automática, por exemplo).
 TRAVA = PASTA_PAINEL / "atualizando.lock"
@@ -71,8 +76,10 @@ logging.basicConfig(
 
 
 def retrato_bases():
-    """Data de modificação de cada planilha da pasta de bases (sem arquivos temporários ~$)."""
+    """Data de modificação de cada planilha da pasta de bases e da de juntas (sem arquivos temporários ~$)."""
     retrato = {}
+    if PLANILHA_JUNTAS.exists():
+        retrato[PLANILHA_JUNTAS.name] = PLANILHA_JUNTAS.stat().st_mtime
     for arq in PASTA_BASES.glob("*.xls*"):
         if not arq.name.startswith("~$"):
             retrato[arq.name] = arq.stat().st_mtime
@@ -186,6 +193,7 @@ def publicar_dados():
         base = Path(tmp) / ARQUIVO_PAINEL
         pend = Path(tmp) / ARQUIVO_PENDENCIAS
         lista = Path(tmp) / ARQUIVO_LISTA
+        juntas = Path(tmp) / ARQUIVO_JUNTAS
         html = Path(tmp) / ARQUIVO_HTML
         painel_sistema_pcp.main(str(PLANILHA_OLODUM), str(base))
         planilha_pend = planilha_de_pendencias()
@@ -194,11 +202,18 @@ def publicar_dados():
         else:
             logging.warning("Sem a 05-Planilha_pendencia em %s; o painel sai sem pendências", PASTA_BASES)
             pend = lista = None
-        gerar_painel_html.gerar(base, html, pend, lista)
+        if PLANILHA_JUNTAS.exists():
+            painel_juntas.main(str(PLANILHA_JUNTAS), str(PLANILHA_OLODUM), str(juntas))
+        else:
+            logging.warning("Sem a %s; o painel sai sem as juntas do ControlTub", PLANILHA_JUNTAS)
+            juntas = None
+        gerar_painel_html.gerar(base, html, pend, lista, juntas)
         gravar(base, PASTA_PAINEL / ARQUIVO_PAINEL)
         if pend:
             gravar(pend, PASTA_PAINEL / ARQUIVO_PENDENCIAS)
             gravar(lista, PASTA_PAINEL / ARQUIVO_LISTA)
+        if juntas:
+            gravar(juntas, PASTA_PAINEL / ARQUIVO_JUNTAS)
         gravar(html, PASTA_PAINEL / ARQUIVO_HTML)
     return PASTA_PAINEL / ARQUIVO_HTML
 

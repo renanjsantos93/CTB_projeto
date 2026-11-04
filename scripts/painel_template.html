@@ -36,6 +36,7 @@
   window.__DADOS__ = /*__DADOS__*/[];
   window.__PEND__ = /*__PEND__*/[];
   window.__PENDLISTA__ = /*__PENDLISTA__*/[];
+  window.__JUNTAS__ = /*__JUNTAS__*/[];
   window.__PAINEL_ARQUIVO__ = true;
 </script>
 <script>
@@ -63,7 +64,8 @@
     return {
       data: (id) => (id === 'pcp' ? { status: 'ok', data: window.__DADOS__, columns: [], meta: [], refreshing: false }
         : id === 'pend' ? { status: 'ok', data: window.__PEND__, columns: [], meta: [], refreshing: false }
-        : id === 'pendlista' ? { status: 'ok', data: window.__PENDLISTA__, columns: [], meta: [], refreshing: false } : { status: 'missing', data: [] }),
+        : id === 'pendlista' ? { status: 'ok', data: window.__PENDLISTA__, columns: [], meta: [], refreshing: false }
+        : id === 'juntas' ? { status: 'ok', data: window.__JUNTAS__, columns: [], meta: [], refreshing: false } : { status: 'missing', data: [] }),
       draw: (nome, fn) => { if (fn) desenhos.set(nome, fn); else desenhar(document, nome); },
       onData: (fn) => { aoMudar.push(fn); },
       params: () => params,
@@ -174,6 +176,7 @@
   .pn-mx td { border-bottom: 1px solid var(--color-border-line); border-right: 1px solid var(--color-border-line); padding: 2px; text-align: center; background: var(--color-bg); }
   .pn-mx td.pn-mx-sub { background: var(--color-panel); padding: var(--cds-pad-xs) var(--cds-pad-sm); }
   .pn-mx td.pn-mx-tot { border-left: 2px solid var(--color-border-line); }
+  .pn-mx td.pn-mx-num { font-variant-numeric: tabular-nums; padding: 3px var(--cds-pad-sm); }
   .pn-mx td.pn-mx-pend, .pn-mx th.pn-mx-pend, .pn-mx td.pn-mx-pend-tot, .pn-mx th.pn-mx-pend-tot { border-left: 2px solid var(--color-border-line); }
   .pn-mx tr.pn-mx-total td { border-bottom: 2px solid var(--color-border-line); font-weight: 600; }
   .pn-mx tr.pn-mx-nc td.pn-mx-sub { box-shadow: inset 3px 0 0 var(--color-bad); }
@@ -340,7 +343,7 @@
         <span class="pn-leg pn-leg-vazio" role="listitem"><b>·</b> sem atividade prevista</span>
       </div>
     </div>
-    <div class="pn-matriz" data-draw="matriz" data-source="pcp pend">—</div>
+    <div class="pn-matriz" data-draw="matriz" data-source="pcp pend juntas">—</div>
   </section>
 
   <section class="pn-card" id="lista-pendencias">
@@ -386,7 +389,7 @@
         <span class="pn-leg pn-leg-vazio" role="listitem"><b>·</b> sem atividade prevista</span>
       </div>
     </div>
-    <div class="pn-matriz" data-draw="matriz-pasta" data-source="pcp">—</div>
+    <div class="pn-matriz" data-draw="matriz-pasta" data-source="pcp juntas">—</div>
   </section>
 </div>
 
@@ -683,13 +686,40 @@
         comPend = true;
       }
     }
+    // Juntas do ControlTub (tubulação): só aparecem quando há tubulação no que está na tela.
+    // Disciplina sem Tubulação ou etapa sem Construção e Montagem esconde o grupo; com filtro de data,
+    // fornecedor, skid ou área (que as juntas não têm), só entram nas linhas que já existem e só se há
+    // alguma coluna de tubulação visível.
+    const juntas = new Map();
+    let comJuntas = false;
+    const tubOk = (!p.D.length || p.dSet.has('Tubulação')) && (!p.E.length || p.eSet.has('Montagem'));
+    const soExistJ = p.T.length || p.F.length || p.A.length || p.K.length;
+    if (cfg.juntas && tubOk && (!soExistJ || [...cols.values()].some((c) => c.d === 'Tubulação'))) {
+      const gj = dash.data('juntas');
+      if (gj.status === 'ok') for (const r of gj.data) {
+        if ((p.s && r.sistema !== p.s) || (cfg.filtro && !cfg.filtro(p, r))) continue;
+        const lr = cfg.linha(r);
+        if (!linhas.has(lr)) {
+          if (soExistJ) continue;
+          linhas.set(lr, { linha: lr, sistema: r.sistema, chave: r[cfg.campo] });
+        }
+        const d1 = cfg.desc(r) || '';
+        if (!descs.has(lr)) descs.set(lr, d1); else if (cfg.varios && descs.get(lr) !== d1 && d1) descs.set(lr, cfg.varios);
+        for (const linha of [lr, 'Total|' + (p.s || 'Todos')]) {
+          let x = juntas.get(linha);
+          if (!x) juntas.set(linha, (x = { previsto: 0, aprovado: 0 }));
+          x.previsto += Number(r.previstas); x.aprovado += Number(r.executadas);
+        }
+        comJuntas = true;
+      }
+    }
     for (const [de, sigla] of Object.entries(MX_FIXAS)) {
       const [d, e] = de.split('|');
       // Só completa o modelo quando a etapa tem alguma atividade com os filtros atuais.
       if (!colOk(d, e) || ![...cols.keys()].some((k) => k.startsWith(de + '|'))) continue;
       for (const a of MX_ORDEM[de]) if (!cols.has(de + '|' + a)) cols.set(de + '|' + a, { d, e, a, sigla });
     }
-    if (!cols.size && !temReceb && !comPend) { el.textContent = 'Nenhuma atividade com esses filtros.'; return; }
+    if (!cols.size && !temReceb && !comPend && !comJuntas) { el.textContent = 'Nenhuma atividade com esses filtros.'; return; }
 
     const pos = (arr, v) => { const i = arr.indexOf(v); return i < 0 ? 99 : i; };
     const ordemAtv = (c) => pos(MX_ORDEM[c.d + '|' + c.e] || MX_ORDEM[c.e] || [], c.a);
@@ -722,10 +752,12 @@
     }, []);
     for (const gd of grupos((c) => c.d)) th(h1, gd.c.d, null, { colspan: gd.n });
     th(h1, 'Total', 'pn-mx-atv', { rowspan: 3 });
+    if (comJuntas) th(h1, 'ControlTub · juntas', 'pn-mx-pend', { colspan: JUNTAS_COL.length, rowspan: 2 });
     if (comPend) th(h1, 'Pendências', 'pn-mx-pend', { colspan: PEND_CAT.length, rowspan: 2 });
     for (const ge of grupos((c) => c.d + '|' + c.e)) th(h2, MX_ROTULO[ge.c.e] + ' - ' + ge.c.sigla, null, { colspan: ge.n });
     for (const c of colunas) th(h3, c.a, 'pn-mx-atv');
     // Nomes das colunas de pendência na 3ª linha, depois dos das atividades, para ficarem embaixo do seu grupo.
+    if (comJuntas) JUNTAS_COL.forEach((nome, i) => th(h3, nome, 'pn-mx-atv' + (i ? '' : ' pn-mx-pend')));
     if (comPend) PEND_CAT.forEach(([cat, nome], i) => th(h3, nome, 'pn-mx-atv' + (i ? '' : ' pn-mx-pend') + (cat === 'TOTAL' ? ' pn-mx-pend-tot' : '')));
 
     // Células visíveis de uma linha (recebimento primeiro) e o total delas.
@@ -771,6 +803,16 @@
       const cel = celulasDa(linha);
       for (const r of cel) celula(tr, r);
       celula(tr, totalDa(cel), 'pn-mx-tot');
+      if (comJuntas) {
+        const x = juntas.get(linha);
+        [x && x.previsto, x && x.aprovado, x && x.previsto - x.aprovado].forEach((v, i) => {
+          const c = tr.insertCell();
+          c.className = 'pn-mx-num' + (i ? '' : ' pn-mx-pend');
+          c.textContent = x ? nf.format(v) : '·';
+          if (!x) c.classList.add('pn-vazio');
+        });
+        celula(tr, x ? { ...x, pct: x.previsto ? x.aprovado / x.previsto : 0 } : null);
+      }
       if (comPend) PEND_CAT.forEach(([cat], i) => {
         const x = pend.get(linha + '|' + cat);
         celula(tr, x ? { ...x, pct: x.previsto ? x.aprovado / x.previsto : 0 } : null, i ? (cat === 'TOTAL' ? 'pn-mx-pend-tot' : '') : 'pn-mx-pend');
@@ -789,6 +831,8 @@
     el.append(t);
   };
   const SEM_PASTA = 'Pasta não cadastrada';
+  // Juntas do ControlTub: liberadas = Situação "Junta Liberada"; saldo = previstas menos liberadas.
+  const JUNTAS_COL = ['Juntas previstas', 'Juntas liberadas', 'Saldo de juntas', 'Avanço de juntas'];
   // Encerradas sobre o total de cada categoria; TOTAL soma as três.
   const PEND_CAT = [['A', 'Pendência A'], ['B', 'Pendência B'], ['RNC', 'RNC'], ['TOTAL', 'Total pendências']];
   const irPara = (id) => {
@@ -798,14 +842,14 @@
   // O subsistema escolhido no quadro de subsistemas filtra o quadro de pastas ("sistema|subsistema").
   const doSubsistema = (p, r) => !p.sub || r.sistema + '|' + r.subsistema === p.sub;
   dash.draw('matriz', (el) => desenhaMatriz(el, {
-    titulo: 'Subsistema', singular: 'subsistema', plural: 'subsistemas', campo: 'subsistema', vazio: SEM_SUB, pendencias: true,
+    titulo: 'Subsistema', singular: 'subsistema', plural: 'subsistemas', campo: 'subsistema', vazio: SEM_SUB, pendencias: true, juntas: true,
     textoVazio: 'Atividades e pendências sem subsistema cadastrado',
     linha: (r) => r.sistema + '|' + r.subsistema, desc: (r) => r.desc_subsistema,
     selecionada: (p) => p.sub,
     aoClicar: (info, linha) => { dash.setParams({ sistema: info.sistema, subsistema: linha }); irPara('pastas'); },
   }));
   dash.draw('matriz-pasta', (el) => desenhaMatriz(el, {
-    titulo: 'Pasta', singular: 'pasta', plural: 'pastas', campo: 'pasta', vazio: SEM_PASTA, textoVazio: 'Atividades sem Nº da pasta na PCP_ATIVIDADE',
+    titulo: 'Pasta', singular: 'pasta', plural: 'pastas', campo: 'pasta', juntas: true, vazio: SEM_PASTA, textoVazio: 'Atividades sem Nº da pasta na PCP_ATIVIDADE',
     linha: (r) => 'P|' + r.pasta, desc: (r) => r.sistema, varios: 'Vários sistemas',
     // Atividades sem pasta válida (pasta vazia: o Nº DA PASTA trazia um código de subsistema ou sistema) ficam fora.
     filtro: (p, r) => r.pasta !== '' && doSubsistema(p, r),
