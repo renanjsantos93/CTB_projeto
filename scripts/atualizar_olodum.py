@@ -57,6 +57,7 @@ ARQUIVO_PAINEL = "pcp_painel.json"
 ARQUIVO_PENDENCIAS = "pendencias_painel.json"
 ARQUIVO_LISTA = "lista_pendencias_painel.json"
 ARQUIVO_JUNTAS = "juntas_painel.json"
+ARQUIVO_PROTOCOLOS = "protocolos_pendentes_painel.json"
 ARQUIVO_HTML = "Painel_OLODUM.html"
 # Evita duas atualizações ao mesmo tempo (o botão de alguém e a rodada automática, por exemplo).
 TRAVA = PASTA_PAINEL / "atualizando.lock"
@@ -197,8 +198,9 @@ def publicar_dados():
         pend = Path(tmp) / ARQUIVO_PENDENCIAS
         lista = Path(tmp) / ARQUIVO_LISTA
         juntas = Path(tmp) / ARQUIVO_JUNTAS
+        protocolos = Path(tmp) / ARQUIVO_PROTOCOLOS
         html = Path(tmp) / ARQUIVO_HTML
-        painel_sistema_pcp.main(str(PLANILHA_OLODUM), str(base))
+        painel_sistema_pcp.main(str(PLANILHA_OLODUM), str(base), str(protocolos))
         planilha_pend = planilha_de_pendencias()
         if planilha_pend:
             painel_pendencias.main(str(planilha_pend), str(pend), str(base), str(lista))
@@ -210,8 +212,9 @@ def publicar_dados():
         else:
             logging.warning("Sem a %s; o painel sai sem as juntas do ControlTub", PLANILHA_JUNTAS)
             juntas = None
-        gerar_painel_html.gerar(base, html, pend, lista, juntas)
+        gerar_painel_html.gerar(base, html, pend, lista, juntas, protocolos)
         gravar(base, PASTA_PAINEL / ARQUIVO_PAINEL)
+        gravar(protocolos, PASTA_PAINEL / ARQUIVO_PROTOCOLOS)
         if pend:
             gravar(pend, PASTA_PAINEL / ARQUIVO_PENDENCIAS)
             gravar(lista, PASTA_PAINEL / ARQUIVO_LISTA)

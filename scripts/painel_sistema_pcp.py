@@ -76,7 +76,9 @@ def data_da_base(planilha, wb):
         os.path.getmtime(planilha), datetime.timezone.utc).replace(tzinfo=None)
 
 
-def main(planilha, saida):
+def main(planilha, saida, saida_pendentes=None):
+    """Com <saida_pendentes>, grava também cada protocolo ainda não aprovado (um registro da PCP_ATIVIDADE
+    sem DATA DA APROVAÇÃO), com a tag, o objeto e a situação, para o quadro "Atividades pendentes"."""
     wb = openpyxl.load_workbook(planilha, read_only=True, data_only=True)
     atualizado_em = data_da_base(planilha, wb).replace(microsecond=0).isoformat() + "Z"
     linhas = wb["PCP_ATIVIDADE"].iter_rows(values_only=True)
@@ -84,6 +86,7 @@ def main(planilha, saida):
     agg = defaultdict(lambda: dict(previsto=0, executado=0, verificado=0, aprovado=0, reprovado=0))
     descricoes = {}
     desc_sub = {}
+    pendentes = []
     for valores in linhas:
         if not any(valores):
             continue
@@ -108,6 +111,15 @@ def main(planilha, saida):
         a["verificado"] += preenchido(r["DATA DA VERIFICAÇÃO"])
         a["aprovado"] += preenchido(r["DATA DA APROVAÇÃO"])
         a["reprovado"] += preenchido(r["DATA DA REPROVAÇÃO"])
+        if saida_pendentes and not preenchido(r["DATA DA APROVAÇÃO"]):
+            situacao = ("Reprovada" if preenchido(r["DATA DA REPROVAÇÃO"])
+                        else "Executada, aguardando aprovação" if preenchido(r["DATA DA EXECUÇÃO"])
+                        else "Não executada")
+            pendentes.append(dict(
+                sistema=sistema, subsistema=subsistema, pasta=pasta, disciplina=disciplina, etapa=etapa,
+                atividade=atividade, data_planejada=planejada, skid=skid, area=area, fornecedor=fornecedor,
+                tag=str(r.get("COD IDENTIFICAÇÃO") or "").strip(), objeto=str(r.get("DESCRIÇÃO DO OBJETO") or "").strip(),
+                situacao=situacao))
 
     # Nº DA PASTA preenchido com o código de um subsistema ou sistema não é pasta: fica com pasta vazia ("")
     # e o quadro de avanço por pasta não conta essas atividades (no resto do painel elas contam normalmente).
@@ -131,8 +143,14 @@ def main(planilha, saida):
     ]
     with open(saida, "w", encoding="utf-8") as f:
         json.dump(rows, f, ensure_ascii=False)
+    if saida_pendentes:
+        for r in pendentes:
+            if r["pasta"] in codigos:
+                r["pasta"] = ""
+        with open(saida_pendentes, "w", encoding="utf-8") as f:
+            json.dump(pendentes, f, ensure_ascii=False, separators=(",", ":"))
     print(f"{len(rows)} linhas, {sum(r['previsto'] for r in rows)} registros")
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:3])
+    main(*sys.argv[1:4])

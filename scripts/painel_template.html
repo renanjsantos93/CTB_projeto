@@ -37,6 +37,7 @@
   window.__PEND__ = /*__PEND__*/[];
   window.__PENDLISTA__ = /*__PENDLISTA__*/[];
   window.__JUNTAS__ = /*__JUNTAS__*/[];
+  window.__PCPPEND__ = /*__PCPPEND__*/[];
   window.__PAINEL_ARQUIVO__ = true;
 </script>
 <script>
@@ -65,7 +66,8 @@
       data: (id) => (id === 'pcp' ? { status: 'ok', data: window.__DADOS__, columns: [], meta: [], refreshing: false }
         : id === 'pend' ? { status: 'ok', data: window.__PEND__, columns: [], meta: [], refreshing: false }
         : id === 'pendlista' ? { status: 'ok', data: window.__PENDLISTA__, columns: [], meta: [], refreshing: false }
-        : id === 'juntas' ? { status: 'ok', data: window.__JUNTAS__, columns: [], meta: [], refreshing: false } : { status: 'missing', data: [] }),
+        : id === 'juntas' ? { status: 'ok', data: window.__JUNTAS__, columns: [], meta: [], refreshing: false }
+        : id === 'pcppend' ? { status: 'ok', data: window.__PCPPEND__, columns: [], meta: [], refreshing: false } : { status: 'missing', data: [] }),
       draw: (nome, fn) => { if (fn) desenhos.set(nome, fn); else desenhar(document, nome); },
       onData: (fn) => { aoMudar.push(fn); },
       params: () => params,
@@ -185,10 +187,16 @@
   .pn-lp-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm); }
   .pn-lp-scroll { max-height: 40rem; }
   .pn-lp td { vertical-align: top; white-space: normal; line-height: 1.35; }
-  .pn-lp td:nth-child(1) { white-space: nowrap; font-weight: 600; }
-  .pn-lp td:nth-child(2) { min-width: 18rem; max-width: 34rem; }
-  .pn-lp td:nth-child(4) { min-width: 14rem; max-width: 26rem; color: var(--color-fg-muted); }
-  .pn-lp td:nth-child(3), .pn-lp td:nth-child(5) { white-space: nowrap; }
+  .pn-lp td:nth-child(1), .pn-lp td:nth-child(2) { white-space: nowrap; font-weight: 600; }
+  .pn-lp td:nth-child(3) { min-width: 18rem; max-width: 34rem; }
+  .pn-lp td:nth-child(5) { min-width: 14rem; max-width: 26rem; color: var(--color-fg-muted); }
+  .pn-lp td:nth-child(4), .pn-lp td:nth-child(6) { white-space: nowrap; }
+  .pn-det td { white-space: nowrap; font-weight: 400 !important; min-width: 0 !important; max-width: none !important; color: var(--color-fg) !important; }
+  .pn-det td:nth-child(1) { font-weight: 600 !important; }
+  .pn-det td:nth-child(2) { white-space: normal; min-width: 14rem !important; }
+  button.pn-cel { font: inherit; color: inherit; width: 100%; border: 1px solid transparent; cursor: pointer; }
+  button.pn-cel:hover { border-color: var(--color-fg); }
+  button.pn-cel:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 1px; }
   .pn-lp tr.pn-lp-grupo td { background: var(--color-bg); border-top: 2px solid var(--color-border-line); padding-top: var(--cds-pad-sm); font-weight: 400; white-space: normal; }
   .pn .pn-lp tr.pn-lp-grupo b { font-weight: 600; margin-right: var(--cds-gap-sm); }
   .pn-lp tr.pn-lp-grupo span { color: var(--color-fg-muted); }
@@ -220,7 +228,7 @@
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     #dash-root { padding: 0 !important; }
     .pn { gap: 10px; }
-    .pn-kpis, #sistemas, #lista-pendencias, .pn-multi-list, .pn-reset, .pn-fechar, .pn-print-acoes, .pn-fechar-sub, .pn-busca-mx-campo { display: none !important; }
+    .pn-kpis, #sistemas, #lista-pendencias, #atividades-pendentes, .pn-multi-list, .pn-reset, .pn-fechar, .pn-print-acoes, .pn-fechar-sub, .pn-busca-mx-campo { display: none !important; }
     .pn-multi-btn { border: 0; padding: 0; min-width: 0; background: none; }
     .pn-multi-btn::after { content: none; }
     .pn-card { border: 0; padding: 0; background: none; }
@@ -424,6 +432,7 @@
       <table class="pn-lp" data-source="pendlista">
         <thead>
           <tr>
+            <th>Nº</th>
             <th>Item</th>
             <th>Descrição</th>
             <th>Categoria</th>
@@ -432,6 +441,35 @@
           </tr>
         </thead>
         <tbody data-draw="lista-pend"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="pn-card" id="atividades-pendentes">
+    <div class="pn-card-head">
+      <div>
+        <h2 class="pn-h2">Atividades pendentes <span class="pn-qtd" data-draw="det-qtd" data-source="pcppend">—</span></h2>
+        <p class="pn-note pn-det-dica">Clique numa célula do avanço por subsistema ou por pasta para ver aqui os protocolos ainda não aprovados daquela atividade. Clique no Total de uma linha para ver todas as atividades pendentes dela.</p>
+        <p class="pn-note pn-det-sel" hidden><b data-draw="det-titulo" data-source="pcppend">—</b></p>
+      </div>
+      <div class="pn-lp-acoes pn-det-sel" hidden>
+        <button type="button" class="pn-btn pn-det-fechar">Limpar seleção</button>
+      </div>
+    </div>
+    <div class="pn-scroll pn-lp-scroll pn-det-sel" hidden>
+      <table class="pn-lp pn-det" data-source="pcppend">
+        <thead>
+          <tr>
+            <th>Tag</th>
+            <th>Descrição do objeto</th>
+            <th>Subsistema</th>
+            <th>Atividade</th>
+            <th>Etapa</th>
+            <th>Situação</th>
+            <th>Data planejada</th>
+          </tr>
+        </thead>
+        <tbody data-draw="detalhe-atv"></tbody>
       </table>
     </div>
   </section>
@@ -644,11 +682,12 @@
   // Faixas de avanço: 0% vermelho, abaixo de 80% amarelo, 80% ou mais verde.
   const corCelula = (pct) => (pct >= 0.8 ? 'var(--pn-sw-100)' : pct > 0 ? 'var(--pn-sw-50)' : 'var(--pn-sw-0)');
 
-  const celula = (tr, r, cls) => {
+  const celula = (tr, r, cls, aoClicar) => {
     const c = tr.insertCell();
     if (cls) c.className = cls;
     if (!r) { c.textContent = '·'; c.classList.add('pn-vazio'); return; }
-    const box = document.createElement('div');
+    const box = document.createElement(aoClicar ? 'button' : 'div');
+    if (aoClicar) { box.type = 'button'; box.addEventListener('click', aoClicar); }
     box.className = 'pn-cel';
     box.style.background = corCelula(r.pct);
     const v = document.createElement('b');
@@ -845,9 +884,16 @@
         if (umSistema) b.addEventListener('click', () => cfg.aoClicar(info, linha));
         c0.append(b);
       }
+      // Células de atividade e o Total abrem o detalhe dos protocolos pendentes (menos na linha de total da busca).
       const cel = celulasDa(linha);
-      for (const r of cel) celula(tr, r);
-      celula(tr, totalDa(cel), 'pn-mx-tot');
+      const rotulo = total ? (p.s ? 'Sistema ' + p.s : 'Todos os ' + cfg.plural) : info.chave;
+      const abre = (sel) => (linha === 'Busca|' ? null : () => abrirDetalhe({ quadro: cfg.alvo, linha, rotulo, ...sel }));
+      cel.forEach((r, i) => {
+        const col = temReceb ? (i ? colunas[i - 1] : null) : colunas[i];
+        celula(tr, r, '', r && abre(col ? { tipo: 'C', d: col.d, e: col.e, a: col.a } : { tipo: 'R' }));
+      });
+      const tot = totalDa(cel);
+      celula(tr, tot, 'pn-mx-tot', tot && abre({ tipo: 'T' }));
       if (comPend) PEND_CAT.forEach(([cat], i) => {
         const x = pend.get(linha + '|' + cat);
         celula(tr, x ? { ...x, pct: x.previsto ? x.aprovado / x.previsto : 0 } : null, i ? (cat === 'TOTAL' ? 'pn-mx-pend-tot' : '') : 'pn-mx-pend');
@@ -1027,7 +1073,7 @@
         const tr = tb.insertRow();
         tr.className = 'pn-lp-grupo';
         const c = tr.insertCell();
-        c.colSpan = 5;
+        c.colSpan = 6;
         const b = document.createElement('b');
         b.textContent = r.subsistema;
         const s = document.createElement('span');
@@ -1037,6 +1083,7 @@
         c.append(b, s);
       }
       const tr = tb.insertRow();
+      td(tr, r.numero == null ? '—' : String(r.numero));
       td(tr, r.item || '—');
       td(tr, r.descricao);
       td(tr, r.categoria, r.categoria.startsWith('A') ? 'pn-lp-cat-a' : r.categoria.startsWith('RNC') ? 'pn-lp-cat-rnc' : '');
@@ -1048,8 +1095,8 @@
   const csv = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
   document.querySelectorAll('.pn-lp-gerar').forEach((btn) => btn.addEventListener('click', () => {
     const rows = listaPendencias() || [];
-    const linhas = [['Subsistema', 'Nome do subsistema', 'Item', 'Descrição', 'Categoria', 'Solução proposta', 'Tipo'].map(csv).join(';')];
-    for (const r of rows) linhas.push([r.subsistema, r.desc_subsistema, r.item, r.descricao, r.categoria, r.solucao, r.tipo].map(csv).join(';'));
+    const linhas = [['Nº', 'Subsistema', 'Nome do subsistema', 'Item', 'Descrição', 'Categoria', 'Solução proposta', 'Tipo'].map(csv).join(';')];
+    for (const r of rows) linhas.push([r.numero, r.subsistema, r.desc_subsistema, r.item, r.descricao, r.categoria, r.solucao, r.tipo].map(csv).join(';'));
     const p = P();
     const escopo = (p.sub ? p.sub.slice(p.sub.indexOf('|') + 1) : p.s || 'todos').replace(/[^\w.-]+/g, '_');
     const hoje = new Date();
@@ -1066,6 +1113,74 @@
   // No painel do claude.ai o navegador não deixa a página baixar arquivos: lá o botão dá lugar ao aviso.
   document.querySelectorAll('.pn-lp-gerar').forEach((b) => { b.hidden = !window.__PAINEL_ARQUIVO__; });
   document.querySelectorAll('.pn-lp-aviso').forEach((s) => { s.hidden = !!window.__PAINEL_ARQUIVO__; });
+
+  // ---- Atividades pendentes (detalhe de uma célula dos quadros de avanço) ------------------------
+  // detalhe = { quadro: 'matriz' | 'matriz-pasta', linha, rotulo, tipo: 'C' (atividade) | 'R' (recebimento) | 'T' (total), d, e, a }
+  let detalhe = null;
+  const ORDEM_SITUACAO = ['Reprovada', 'Executada, aguardando aprovação', 'Não executada'];
+  const abrirDetalhe = (sel) => {
+    detalhe = sel;
+    document.querySelectorAll('.pn-det-dica').forEach((el) => { el.hidden = true; });
+    document.querySelectorAll('.pn-det-sel').forEach((el) => { el.hidden = false; });
+    ['det-titulo', 'det-qtd', 'detalhe-atv'].forEach((n) => dash.draw(n));
+    irPara('atividades-pendentes');
+  };
+  const fecharDetalhe = () => {
+    detalhe = null;
+    document.querySelectorAll('.pn-det-dica').forEach((el) => { el.hidden = false; });
+    document.querySelectorAll('.pn-det-sel').forEach((el) => { el.hidden = true; });
+    ['det-titulo', 'det-qtd', 'detalhe-atv'].forEach((n) => dash.draw(n));
+  };
+  document.querySelectorAll('.pn-det-fechar').forEach((b) => b.addEventListener('click', fecharDetalhe));
+  const pendentesDoDetalhe = () => {
+    const g = dash.data('pcppend');
+    if (g.status !== 'ok' || !detalhe) return null;
+    const p = P();
+    const x = detalhe;
+    const daLinha = (r) => (x.linha.startsWith('Total|') ? true
+      : x.quadro === 'matriz' ? r.sistema + '|' + r.subsistema === x.linha : 'P|' + r.pasta === x.linha);
+    const daColuna = (r) => (x.tipo === 'T' ? true : x.tipo === 'R' ? r.etapa === 'Recebimento'
+      : r.disciplina === x.d && r.etapa === x.e && r.atividade === x.a);
+    const pos = (arr, v) => { const i = arr.indexOf(v); return i < 0 ? 99 : i; };
+    return g.data.filter((r) => !FORA.has(r.etapa) && passa(p, r) && (!p.s || r.sistema === p.s)
+        && (x.quadro !== 'matriz-pasta' || (r.pasta !== '' && doSubsistema(p, r))) && daLinha(r) && daColuna(r))
+      .sort((a, b) => pos(MX_DISC, a.disciplina) - pos(MX_DISC, b.disciplina) || pos(ORDEM_ETAPA, a.etapa) - pos(ORDEM_ETAPA, b.etapa)
+        || a.atividade.localeCompare(b.atividade, 'pt-BR') || pos(ORDEM_SITUACAO, a.situacao) - pos(ORDEM_SITUACAO, b.situacao)
+        || a.tag.localeCompare(b.tag, 'pt-BR', { numeric: true }));
+  };
+  dash.draw('det-titulo', (el) => {
+    if (!detalhe) { el.textContent = '—'; return; }
+    const x = detalhe;
+    const col = x.tipo === 'T' ? 'todas as atividades (Total)' : x.tipo === 'R' ? 'Recebimento (todas as disciplinas)'
+      : x.a + ' · ' + (MX_ROTULO[x.e] || x.e) + ' · ' + x.d;
+    el.textContent = x.rotulo + ' — ' + col;
+  });
+  dash.draw('det-qtd', (el) => {
+    const rows = pendentesDoDetalhe();
+    el.textContent = rows ? nf.format(rows.length) + (rows.length === 1 ? ' protocolo pendente' : ' protocolos pendentes') : '—';
+  });
+  dash.draw('detalhe-atv', (tb) => {
+    tb.replaceChildren();
+    const rows = pendentesDoDetalhe();
+    if (!rows) return;
+    if (!rows.length) {
+      const tr = tb.insertRow();
+      const c = tr.insertCell();
+      c.colSpan = 7;
+      c.textContent = 'Nenhum protocolo pendente: tudo aprovado nesta seleção.';
+      return;
+    }
+    for (const r of rows) {
+      const tr = tb.insertRow();
+      td(tr, r.tag || '—');
+      td(tr, r.objeto || '—');
+      td(tr, r.subsistema);
+      td(tr, r.atividade);
+      td(tr, MX_ROTULO[r.etapa] || r.etapa);
+      td(tr, r.situacao, r.situacao === 'Reprovada' ? 'pn-lp-cat-a' : r.situacao.startsWith('Executada') ? 'pn-lp-cat-rnc' : '');
+      td(tr, fmtData(r.data_planejada));
+    }
+  });
 
   const marcados = (param) => {
     const v = [];
