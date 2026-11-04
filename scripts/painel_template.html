@@ -346,6 +346,25 @@
     <div class="pn-matriz" data-draw="matriz" data-source="pcp pend juntas">—</div>
   </section>
 
+  <section class="pn-card" id="pastas">
+    <div class="pn-card-head">
+      <div>
+        <h2 class="pn-h2">Avanço por pasta</h2>
+        <div class="pn-sub-filtro pn-esc-sub" hidden>
+          <span>Só as pastas do subsistema <b data-draw="sub-nome">—</b></span>
+          <button type="button" class="pn-btn pn-chip pn-fechar-sub" aria-label="Remover o subsistema selecionado">Ver todas as pastas <span aria-hidden="true">×</span></button>
+        </div>
+      </div>
+      <div class="pn-legend" role="list" aria-label="Legenda das cores de avanço">
+        <span class="pn-leg pn-leg-0" role="listitem"><b>0%</b> não iniciado</span>
+        <span class="pn-leg pn-leg-50" role="listitem"><b>1% a 79%</b> em andamento</span>
+        <span class="pn-leg pn-leg-100" role="listitem"><b>80% a 100%</b> avançado</span>
+        <span class="pn-leg pn-leg-vazio" role="listitem"><b>·</b> sem atividade prevista</span>
+      </div>
+    </div>
+    <div class="pn-matriz" data-draw="matriz-pasta" data-source="pcp juntas">—</div>
+  </section>
+
   <section class="pn-card" id="lista-pendencias">
     <div class="pn-card-head">
       <div>
@@ -371,25 +390,6 @@
         <tbody data-draw="lista-pend"></tbody>
       </table>
     </div>
-  </section>
-
-  <section class="pn-card" id="pastas">
-    <div class="pn-card-head">
-      <div>
-        <h2 class="pn-h2">Avanço por pasta</h2>
-        <div class="pn-sub-filtro pn-esc-sub" hidden>
-          <span>Só as pastas do subsistema <b data-draw="sub-nome">—</b></span>
-          <button type="button" class="pn-btn pn-chip pn-fechar-sub" aria-label="Remover o subsistema selecionado">Ver todas as pastas <span aria-hidden="true">×</span></button>
-        </div>
-      </div>
-      <div class="pn-legend" role="list" aria-label="Legenda das cores de avanço">
-        <span class="pn-leg pn-leg-0" role="listitem"><b>0%</b> não iniciado</span>
-        <span class="pn-leg pn-leg-50" role="listitem"><b>1% a 79%</b> em andamento</span>
-        <span class="pn-leg pn-leg-100" role="listitem"><b>80% a 100%</b> avançado</span>
-        <span class="pn-leg pn-leg-vazio" role="listitem"><b>·</b> sem atividade prevista</span>
-      </div>
-    </div>
-    <div class="pn-matriz" data-draw="matriz-pasta" data-source="pcp juntas">—</div>
   </section>
 </div>
 
@@ -753,13 +753,13 @@
     }, []);
     for (const gd of grupos((c) => c.d)) th(h1, gd.c.d, null, { colspan: gd.n });
     th(h1, 'Total', 'pn-mx-atv', { rowspan: 3 });
-    if (comJuntas) th(h1, 'ControlTub · juntas', 'pn-mx-pend', { colspan: JUNTAS_COL.length, rowspan: 2 });
     if (comPend) th(h1, 'Pendências', 'pn-mx-pend', { colspan: PEND_CAT.length, rowspan: 2 });
+    if (comJuntas) th(h1, 'ControlTub · juntas', 'pn-mx-pend', { colspan: JUNTAS_COL.length, rowspan: 2 });
     for (const ge of grupos((c) => c.d + '|' + c.e)) th(h2, MX_ROTULO[ge.c.e] + ' - ' + ge.c.sigla, null, { colspan: ge.n });
     for (const c of colunas) th(h3, c.a, 'pn-mx-atv');
     // Nomes das colunas de pendência na 3ª linha, depois dos das atividades, para ficarem embaixo do seu grupo.
-    if (comJuntas) JUNTAS_COL.forEach((nome, i) => th(h3, nome, 'pn-mx-atv' + (i ? '' : ' pn-mx-pend')));
     if (comPend) PEND_CAT.forEach(([cat, nome], i) => th(h3, nome, 'pn-mx-atv' + (i ? '' : ' pn-mx-pend') + (cat === 'TOTAL' ? ' pn-mx-pend-tot' : '')));
+    if (comJuntas) JUNTAS_COL.forEach((nome, i) => th(h3, nome, 'pn-mx-atv' + (i ? '' : ' pn-mx-pend')));
 
     // Células visíveis de uma linha (recebimento primeiro) e o total delas.
     const celulasDa = (linha) => {
@@ -804,6 +804,10 @@
       const cel = celulasDa(linha);
       for (const r of cel) celula(tr, r);
       celula(tr, totalDa(cel), 'pn-mx-tot');
+      if (comPend) PEND_CAT.forEach(([cat], i) => {
+        const x = pend.get(linha + '|' + cat);
+        celula(tr, x ? { ...x, pct: x.previsto ? x.aprovado / x.previsto : 0 } : null, i ? (cat === 'TOTAL' ? 'pn-mx-pend-tot' : '') : 'pn-mx-pend');
+      });
       if (comJuntas) {
         const x = juntas.get(linha);
         [x && x.previsto, x && x.aprovado, x && x.previsto - x.aprovado].forEach((v, i) => {
@@ -814,10 +818,6 @@
         });
         celula(tr, x ? { ...x, pct: x.previsto ? x.aprovado / x.previsto : 0 } : null);
       }
-      if (comPend) PEND_CAT.forEach(([cat], i) => {
-        const x = pend.get(linha + '|' + cat);
-        celula(tr, x ? { ...x, pct: x.previsto ? x.aprovado / x.previsto : 0 } : null, i ? (cat === 'TOTAL' ? 'pn-mx-pend-tot' : '') : 'pn-mx-pend');
-      });
     };
     desenhaLinha(linhaTotal, null, true);
     // Subsistemas do maior para o menor avanço da coluna Total.
