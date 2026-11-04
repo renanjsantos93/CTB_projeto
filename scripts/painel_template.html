@@ -232,6 +232,13 @@
     /* Botão de um quadro: imprime só aquele quadro. */
     .pn.pn-imprime-matriz #pastas, .pn.pn-imprime-pastas #matriz { display: none !important; }
     .pn.pn-imprime-pastas #pastas { break-before: auto; }
+    /* Botão da lista de pendências: imprime só a lista, inteira (sem a rolagem da tela). */
+    .pn.pn-imprime-lista #matriz, .pn.pn-imprime-lista #pastas, .pn.pn-imprime-lista .pn-lp-gerar { display: none !important; }
+    .pn.pn-imprime-lista #lista-pendencias { display: flex !important; }
+    .pn.pn-imprime-lista .pn-lp-scroll { max-height: none !important; overflow: visible !important; }
+    .pn.pn-imprime-lista .pn-lp th { position: static; }
+    .pn.pn-imprime-lista .pn-lp tr { break-inside: avoid; }
+    .pn.pn-imprime-lista .pn-lp thead { display: table-header-group; }
   }
 </style>
 
@@ -406,6 +413,10 @@
       </div>
       <div class="pn-lp-acoes">
         <button type="button" class="pn-btn pn-chip pn-lp-gerar">Gerar lista de pendências (Excel)</button>
+        <span class="pn-print-acoes">
+          <button type="button" class="pn-btn pn-chip pn-imprimir" data-quadro="lista">Imprimir / gerar PDF</button>
+          <span class="pn-note pn-imprimir-aviso" hidden>Para imprimir, abra o Painel_OLODUM.html da pasta do OneDrive.</span>
+        </span>
         <span class="pn-note pn-lp-aviso" hidden>Para baixar a lista aqui, use Fontes › Lista de pendências abertas.</span>
       </div>
     </div>
@@ -1111,7 +1122,8 @@
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') fecharListas(null); });
 
   // ---- Impressão / PDF dos quadros de subsistema e de pasta --------------------------------------
-  // Cada quadro tem o seu botão e imprime só ele; o Ctrl+P do navegador imprime os dois.
+  // Cada quadro (subsistema, pasta e lista de pendências) tem o seu botão e imprime só ele;
+  // o Ctrl+P do navegador imprime os dois quadros de avanço.
   // Cada quadro é reduzido para caber na largura de uma folha A3 deitada (margens de 8 mm). Com muitas
   // colunas a letra fica pequena: filtrar por disciplina ou etapa antes de imprimir deixa o PDF legível.
   const LARGURA_A3_PX = ((420 - 16) / 25.4) * 96;
@@ -1121,7 +1133,7 @@
   });
   const voltarDaImpressao = () => {
     document.querySelectorAll('.pn-mx').forEach((t) => { t.style.zoom = ''; });
-    document.querySelectorAll('.pn').forEach((el) => el.classList.remove('pn-imprime-matriz', 'pn-imprime-pastas'));
+    document.querySelectorAll('.pn').forEach((el) => el.classList.remove('pn-imprime-matriz', 'pn-imprime-pastas', 'pn-imprime-lista'));
   };
   window.addEventListener('beforeprint', ajustarParaImpressao);
   window.addEventListener('afterprint', voltarDaImpressao);
