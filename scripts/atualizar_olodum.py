@@ -79,14 +79,46 @@ def retrato_bases():
 
 
 def quem_esta_com_a_olodum():
-    """Nome gravado pelo Excel no arquivo de trava ~$ ao lado da planilha (1º byte = tamanho do nome)."""
+    """Quem está com a OLODUM, pelo arquivo de trava ~$ que o Excel deixa ao lado da planilha
+    (1º byte = tamanho do nome). Se a trava está em uso, um Excel a mantém aberta agora."""
     trava = PLANILHA_OLODUM.with_name("~$" + PLANILHA_OLODUM.name[2:])
+    if not trava.exists():
+        return "ninguém pela trava do Excel; confira se o arquivo não está marcado como somente leitura"
     try:
         dados = trava.read_bytes()
         nome = dados[1:1 + dados[0]].decode("latin-1").strip()
         return "%s (trava %s)" % (nome or "alguém", trava.name)
     except (OSError, IndexError):
-        return "outra pessoa"
+        return "um Excel aberto agora (a trava %s está em uso); se não é ninguém da equipe, é um Excel " \
+               "escondido: feche no Gerenciador de Tarefas" % trava.name
+
+
+def fechar_excels_esquecidos():
+    """Fecha os Excel invisíveis abertos por automação (como este script) que ficaram presos numa rodada
+    anterior e seguram a OLODUM. Só pega os iniciados com /automation, nunca um Excel aberto por alguém."""
+    import subprocess
+    comando = ("Get-CimInstance Win32_Process -Filter \"Name='EXCEL.EXE'\" | "
+               "Where-Object { $_.CommandLine -match '/automation' } | "
+               "ForEach-Object { Stop-Process -Id $_.ProcessId -Force; $_.ProcessId }")
+    try:
+        saida = subprocess.run(["powershell", "-NoProfile", "-Command", comando], capture_output=True,
+                               text=True, timeout=60, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        fechados = [linha for linha in saida.stdout.split() if linha.strip().isdigit()]
+        if fechados:
+            logging.info("Fechei %d Excel escondido(s) que tinha(m) ficado aberto(s): %s", len(fechados), ", ".join(fechados))
+            time.sleep(3)  # tempo para o Windows soltar a trava da planilha
+    except Exception:
+        logging.warning("Não consegui conferir se há Excel escondido aberto", exc_info=True)
+
+
+def encerrar_processo(pid):
+    """Garante que o Excel desta rodada não fique vivo depois do Quit."""
+    if not pid:
+        return
+    import subprocess
+    time.sleep(2)
+    subprocess.run(["taskkill", "/PID", str(pid), "/F"], capture_output=True,
+                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
 
 
 def atualizar_excel():
@@ -94,8 +126,15 @@ def atualizar_excel():
     import pythoncom
     import win32com.client
 
+    fechar_excels_esquecidos()
     pythoncom.CoInitialize()
     excel = win32com.client.DispatchEx("Excel.Application")
+    pid = None
+    try:
+        import win32process
+        pid = win32process.GetWindowThreadProcessId(excel.Hwnd)[1]
+    except Exception:
+        pass
     excel.Visible = False
     excel.DisplayAlerts = False
     excel.AskToUpdateLinks = False
@@ -117,8 +156,13 @@ def atualizar_excel():
         livro.Save()
         livro.Close(SaveChanges=False)
     finally:
-        excel.Quit()
+        try:
+            excel.Quit()
+        except Exception:
+            pass
+        del excel
         pythoncom.CoUninitialize()
+        encerrar_processo(pid)
 
 
 def gravar(origem, destino):
