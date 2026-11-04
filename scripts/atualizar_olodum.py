@@ -203,7 +203,7 @@ def publicar_dados():
             logging.warning("Sem a 05-Planilha_pendencia em %s; o painel sai sem pendências", PASTA_BASES)
             pend = lista = None
         if PLANILHA_JUNTAS.exists():
-            painel_juntas.main(str(PLANILHA_JUNTAS), str(PLANILHA_OLODUM), str(juntas))
+            painel_juntas.main(str(PLANILHA_JUNTAS), str(juntas))
         else:
             logging.warning("Sem a %s; o painel sai sem as juntas do ControlTub", PLANILHA_JUNTAS)
             juntas = None
