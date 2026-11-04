@@ -214,6 +214,22 @@
   [data-dash-source-state=empty] { color: transparent; }
   [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
   @media (max-width: 640px) { .pn-col-desc { display: none; } .pn-multi-btn { min-width: 0; } .pn-field select, .pn-field input[type="search"] { min-width: 0; width: 100%; } .pn-field { flex: 1 1 100%; } }
+  /* Impressão / PDF: título, filtros, avanço por subsistema e por pasta, em A3 deitado e com as cores. */
+  @media print {
+    @page { size: A3 landscape; margin: 8mm; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #dash-root { padding: 0 !important; }
+    .pn { gap: 10px; }
+    .pn-kpis, #sistemas, #lista-pendencias, .pn-multi-list, .pn-reset, .pn-fechar, .pn-print-acoes, .pn-fechar-sub { display: none !important; }
+    .pn-multi-btn { border: 0; padding: 0; min-width: 0; background: none; }
+    .pn-multi-btn::after { content: none; }
+    .pn-card { border: 0; padding: 0; background: none; }
+    .pn-matriz { max-height: none !important; overflow: visible !important; border: 0; }
+    .pn-mx thead { position: static; display: table-header-group; }
+    .pn-mx th.pn-mx-corner, .pn-mx td.pn-mx-sub { position: static; }
+    .pn-mx tr { break-inside: avoid; }
+    #pastas { break-before: page; }
+  }
 </style>
 
 <div class="pn">
@@ -335,6 +351,10 @@
     <div class="pn-card-head">
       <div>
         <h2 class="pn-h2">Avanço por subsistema</h2>
+      </div>
+      <div class="pn-print-acoes">
+        <button type="button" class="pn-btn pn-chip pn-imprimir">Imprimir / gerar PDF</button>
+        <span class="pn-note pn-imprimir-aviso" hidden>Para imprimir, abra o Painel_OLODUM.html da pasta do OneDrive.</span>
       </div>
       <div class="pn-legend" role="list" aria-label="Legenda das cores de avanço">
         <span class="pn-leg pn-leg-0" role="listitem"><b>0%</b> não iniciado</span>
@@ -1053,6 +1073,26 @@
     if (!ev.composedPath().some((n) => n.classList && n.classList.contains('pn-multi'))) fecharListas(null);
   });
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') fecharListas(null); });
+
+  // ---- Impressão / PDF dos quadros de subsistema e de pasta --------------------------------------
+  // Cada quadro é reduzido para caber na largura de uma folha A3 deitada (margens de 8 mm). Com muitas
+  // colunas a letra fica pequena: filtrar por disciplina ou etapa antes de imprimir deixa o PDF legível.
+  const LARGURA_A3_PX = ((420 - 16) / 25.4) * 96;
+  const ajustarParaImpressao = () => document.querySelectorAll('.pn-mx').forEach((t) => {
+    const fator = Math.min(1, LARGURA_A3_PX / Math.max(1, t.scrollWidth));
+    t.style.zoom = String(Math.round(fator * 1000) / 1000);
+  });
+  const voltarDaImpressao = () => document.querySelectorAll('.pn-mx').forEach((t) => { t.style.zoom = ''; });
+  window.addEventListener('beforeprint', ajustarParaImpressao);
+  window.addEventListener('afterprint', voltarDaImpressao);
+  document.querySelectorAll('.pn-imprimir').forEach((b) => b.addEventListener('click', () => {
+    fecharListas(null);
+    ajustarParaImpressao();
+    window.print();
+  }));
+  // No painel do claude.ai o navegador não deixa a página imprimir: lá o botão dá lugar ao aviso.
+  document.querySelectorAll('.pn-imprimir').forEach((b) => { b.hidden = !window.__PAINEL_ARQUIVO__; });
+  document.querySelectorAll('.pn-imprimir-aviso').forEach((s) => { s.hidden = !!window.__PAINEL_ARQUIVO__; });
 
   dash.onData(() => {
     const p = P();
