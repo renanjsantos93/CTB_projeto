@@ -171,7 +171,7 @@
   .pn-mx td { border-bottom: 1px solid var(--color-border-line); border-right: 1px solid var(--color-border-line); padding: 2px; text-align: center; background: var(--color-bg); }
   .pn-mx td.pn-mx-sub { background: var(--color-panel); padding: var(--cds-pad-xs) var(--cds-pad-sm); }
   .pn-mx td.pn-mx-tot { border-left: 2px solid var(--color-border-line); }
-  .pn-mx td.pn-mx-pend, .pn-mx th.pn-mx-pend { border-left: 2px solid var(--color-border-line); }
+  .pn-mx td.pn-mx-pend, .pn-mx th.pn-mx-pend, .pn-mx td.pn-mx-pend-tot, .pn-mx th.pn-mx-pend-tot { border-left: 2px solid var(--color-border-line); }
   .pn-mx tr.pn-mx-total td { border-bottom: 2px solid var(--color-border-line); font-weight: 600; }
   .pn-mx tr.pn-mx-nc td.pn-mx-sub { box-shadow: inset 3px 0 0 var(--color-bad); }
   .pn-mx tr.pn-mx-nc td { border-top: 2px solid var(--color-border-line); }
@@ -632,8 +632,8 @@
           linhas.set(lr, { linha: lr, sistema: r.sistema, chave: r.subsistema });
           if (!descs.has(lr)) descs.set(lr, r.desc_subsistema || '');
         }
-        for (const linha of [lr, 'Total|' + (p.s || 'Todos')]) {
-          const id = linha + '|' + r.categoria;
+        for (const linha of [lr, 'Total|' + (p.s || 'Todos')]) for (const cat of [r.categoria, 'TOTAL']) {
+          const id = linha + '|' + cat;
           let x = pend.get(id);
           if (!x) pend.set(id, (x = { previsto: 0, aprovado: 0 }));
           x.previsto += Number(r.total); x.aprovado += Number(r.encerradas);
@@ -680,14 +680,11 @@
     }, []);
     for (const gd of grupos((c) => c.d)) th(h1, gd.c.d, null, { colspan: gd.n });
     th(h1, 'Total', 'pn-mx-atv', { rowspan: 3 });
-    if (comPend) th(h1, 'Pendências', 'pn-mx-pend', { colspan: PEND_CAT.length });
+    if (comPend) th(h1, 'Pendências', 'pn-mx-pend', { colspan: PEND_CAT.length, rowspan: 2 });
     for (const ge of grupos((c) => c.d + '|' + c.e)) th(h2, MX_ROTULO[ge.c.e] + ' - ' + ge.c.sigla, null, { colspan: ge.n });
     for (const c of colunas) th(h3, c.a, 'pn-mx-atv');
-    // As linhas 2 e 3 do cabeçalho das pendências vêm depois das de atividades, para ficarem embaixo do seu grupo.
-    if (comPend) {
-      th(h2, 'Encerradas / total', 'pn-mx-pend', { colspan: PEND_CAT.length });
-      PEND_CAT.forEach(([, nome], i) => th(h3, nome, 'pn-mx-atv' + (i ? '' : ' pn-mx-pend')));
-    }
+    // Nomes das colunas de pendência na 3ª linha, depois dos das atividades, para ficarem embaixo do seu grupo.
+    if (comPend) PEND_CAT.forEach(([cat, nome], i) => th(h3, nome, 'pn-mx-atv' + (i ? '' : ' pn-mx-pend') + (cat === 'TOTAL' ? ' pn-mx-pend-tot' : '')));
 
     // Células visíveis de uma linha (recebimento primeiro) e o total delas.
     const celulasDa = (linha) => {
@@ -734,7 +731,7 @@
       celula(tr, totalDa(cel), 'pn-mx-tot');
       if (comPend) PEND_CAT.forEach(([cat], i) => {
         const x = pend.get(linha + '|' + cat);
-        celula(tr, x ? { ...x, pct: x.previsto ? x.aprovado / x.previsto : 0 } : null, i ? '' : 'pn-mx-pend');
+        celula(tr, x ? { ...x, pct: x.previsto ? x.aprovado / x.previsto : 0 } : null, i ? (cat === 'TOTAL' ? 'pn-mx-pend-tot' : '') : 'pn-mx-pend');
       });
     };
     desenhaLinha(linhaTotal, null, true);
@@ -750,7 +747,8 @@
     el.append(t);
   };
   const SEM_PASTA = 'Pasta não cadastrada';
-  const PEND_CAT = [['A', 'Pendência A'], ['B', 'Pendência B'], ['RNC', 'RNC']];
+  // Encerradas sobre o total de cada categoria; TOTAL soma as três.
+  const PEND_CAT = [['A', 'Pendência A'], ['B', 'Pendência B'], ['RNC', 'RNC'], ['TOTAL', 'Total pendências']];
   const irPara = (id) => {
     document.querySelectorAll('#' + id).forEach((d) => d.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     dash.setLink(id);
@@ -759,7 +757,7 @@
   const doSubsistema = (p, r) => !p.sub || r.sistema + '|' + r.subsistema === p.sub;
   dash.draw('matriz', (el) => desenhaMatriz(el, {
     titulo: 'Subsistema', singular: 'subsistema', plural: 'subsistemas', campo: 'subsistema', vazio: SEM_SUB, pendencias: true,
-    textoVazio: (info) => (info.sistema === SEM_SIS ? 'Sem sistema e sem subsistema cadastrados' : 'Sem subsistema · sistema ' + info.sistema),
+    textoVazio: 'Atividades e pendências sem subsistema cadastrado',
     linha: (r) => r.sistema + '|' + r.subsistema, desc: (r) => r.desc_subsistema,
     selecionada: (p) => p.sub,
     aoClicar: (info, linha) => { dash.setParams({ sistema: info.sistema, subsistema: linha }); irPara('pastas'); },

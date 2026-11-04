@@ -62,8 +62,12 @@ def main(planilha, saida, pcp_json=None):
         if not cat:
             ignoradas += 1
             continue
-        sistema = codigo(r["SISTEMA"]) if r.get("SISTEMA") else SEM_SISTEMA
-        subsistema = codigo(r["SUBSISTEMA"]) if r.get("SUBSISTEMA") else SEM_SUBSISTEMA
+        # Sem subsistema, a pendência vai para a linha única "Subsistema não cadastrado", sem ligar ao sistema.
+        if r.get("SUBSISTEMA"):
+            sistema = codigo(r["SISTEMA"]) if r.get("SISTEMA") else SEM_SISTEMA
+            subsistema = codigo(r["SUBSISTEMA"])
+        else:
+            sistema, subsistema = SEM_SISTEMA, SEM_SUBSISTEMA
         nomes.setdefault((sistema, subsistema), r.get("NOME DO SUBSISTEMA") or "")
         disciplina = DISCIPLINAS.get(str(r.get("DISCIPLINA") or "").strip().upper(), "Sem disciplina")
         etapa = etapa_da_fase(r.get("FASE")) if r.get("FASE") else "Sem etapa"
