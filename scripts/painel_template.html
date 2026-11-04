@@ -765,7 +765,8 @@
   dash.draw('matriz-pasta', (el) => desenhaMatriz(el, {
     titulo: 'Pasta', singular: 'pasta', plural: 'pastas', campo: 'pasta', vazio: SEM_PASTA, textoVazio: 'Atividades sem Nº da pasta na PCP_ATIVIDADE',
     linha: (r) => 'P|' + r.pasta, desc: (r) => r.sistema, varios: 'Vários sistemas',
-    filtro: doSubsistema,
+    // Atividades sem pasta válida (pasta vazia: o Nº DA PASTA trazia um código de subsistema ou sistema) ficam fora.
+    filtro: (p, r) => r.pasta !== '' && doSubsistema(p, r),
     aoClicar: (info) => { dash.setParams({ sistema: info.sistema, subsistema: null }); irPara('sistemas'); },
   }));
   dash.draw('sub-nome', (el) => {

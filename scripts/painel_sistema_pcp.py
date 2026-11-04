@@ -109,12 +109,13 @@ def main(planilha, saida):
         a["aprovado"] += preenchido(r["DATA DA APROVAÇÃO"])
         a["reprovado"] += preenchido(r["DATA DA REPROVAÇÃO"])
 
-    # Nº DA PASTA preenchido com o código de um subsistema ou sistema não é pasta: vai para "Pasta não cadastrada".
+    # Nº DA PASTA preenchido com o código de um subsistema ou sistema não é pasta: fica com pasta vazia ("")
+    # e o quadro de avanço por pasta não conta essas atividades (no resto do painel elas contam normalmente).
     codigos = {k[0] for k in agg} | {k[1] for k in agg}
     if any(k[10] in codigos for k in agg):
         juntos = defaultdict(lambda: dict(previsto=0, executado=0, verificado=0, aprovado=0, reprovado=0))
         for k, v in agg.items():
-            k2 = k[:10] + (SEM_PASTA if k[10] in codigos else k[10],)
+            k2 = k[:10] + ("" if k[10] in codigos else k[10],)
             for campo, n in v.items():
                 juntos[k2][campo] += n
         agg = juntos
