@@ -220,7 +220,7 @@
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     #dash-root { padding: 0 !important; }
     .pn { gap: 10px; }
-    .pn-kpis, #sistemas, #lista-pendencias, .pn-multi-list, .pn-reset, .pn-fechar, .pn-print-acoes, .pn-fechar-sub { display: none !important; }
+    .pn-kpis, #sistemas, #lista-pendencias, .pn-multi-list, .pn-reset, .pn-fechar, .pn-print-acoes, .pn-fechar-sub, .pn-busca-mx-campo { display: none !important; }
     .pn-multi-btn { border: 0; padding: 0; min-width: 0; background: none; }
     .pn-multi-btn::after { content: none; }
     .pn-card { border: 0; padding: 0; background: none; }
@@ -351,6 +351,9 @@
     <div class="pn-card-head">
       <div>
         <h2 class="pn-h2">Avanço por subsistema</h2>
+        <label class="pn-field pn-busca-mx-campo" for="pn-busca-sub">Buscar subsistema
+          <input id="pn-busca-sub" class="pn-busca-mx" data-alvo="matriz" type="search" placeholder="Código ou descrição">
+        </label>
       </div>
       <div class="pn-print-acoes">
         <button type="button" class="pn-btn pn-chip pn-imprimir">Imprimir / gerar PDF</button>
@@ -370,6 +373,9 @@
     <div class="pn-card-head">
       <div>
         <h2 class="pn-h2">Avanço por pasta</h2>
+        <label class="pn-field pn-busca-mx-campo" for="pn-busca-pasta">Buscar pasta
+          <input id="pn-busca-pasta" class="pn-busca-mx" data-alvo="matriz-pasta" type="search" placeholder="Código ou descrição">
+        </label>
         <div class="pn-sub-filtro pn-esc-sub" hidden>
           <span>Só as pastas do subsistema <b data-draw="sub-nome">—</b></span>
           <button type="button" class="pn-btn pn-chip pn-fechar-sub" aria-label="Remover o subsistema selecionado">Ver todas as pastas <span aria-hidden="true">×</span></button>
@@ -804,7 +810,7 @@
       const c0 = tr.insertCell();
       c0.className = 'pn-mx-sub';
       if (total) {
-        c0.textContent = p.s ? 'Total do sistema' : 'Total geral';
+        c0.textContent = linha === 'Busca|' ? 'Total da busca' : p.s ? 'Total do sistema' : 'Total geral';
       } else {
         const desc0 = descs.get(linha);
         const umSistema = desc0 !== cfg.varios;
@@ -839,11 +845,33 @@
         celula(tr, x ? { ...x, pct: x.previsto ? x.aprovado / x.previsto : 0 } : null);
       }
     };
-    desenhaLinha(linhaTotal, null, true);
     // Subsistemas do maior para o menor avanço da coluna Total.
-    const subs = [...linhas.values()]
+    let subs = [...linhas.values()]
       .map((r) => ({ r, tot: totalDa(celulasDa(r.linha)) }))
       .sort((x, y) => (y.tot ? y.tot.pct : -1) - (x.tot ? x.tot.pct : -1) || (y.tot ? y.tot.previsto : 0) - (x.tot ? x.tot.previsto : 0) || x.r.chave.localeCompare(y.r.chave, 'pt-BR'));
+    // Busca do quadro: só as linhas cujo código ou descrição contém o texto; o total passa a somar só elas.
+    let busca = '';
+    document.querySelectorAll('.pn-busca-mx').forEach((i) => { if (i.dataset.alvo === cfg.alvo) busca = i.value.trim().toLowerCase(); });
+    let linhaTot = linhaTotal;
+    if (busca) {
+      subs = subs.filter(({ r }) => (r.chave + ' ' + (descs.get(r.linha) || '')).toLowerCase().includes(busca));
+      linhaTot = 'Busca|';
+      const somarEm = (mapa, de, para) => {
+        const x = mapa.get(de);
+        if (!x) return;
+        let y = mapa.get(para);
+        if (!y) mapa.set(para, (y = { ...x, previsto: 0, aprovado: 0, executado: 0 }));
+        y.previsto += x.previsto; y.aprovado += x.aprovado; y.executado += x.executado || 0;
+        y.pct = y.previsto ? y.aprovado / y.previsto : 0;
+      };
+      for (const { r } of subs) {
+        somarEm(byId, 'R|' + r.linha, 'R|' + linhaTot);
+        for (const c of colunas) somarEm(byId, 'C|' + r.linha + '|' + c.d + '|' + c.e + '|' + c.a, 'C|' + linhaTot + '|' + c.d + '|' + c.e + '|' + c.a);
+        for (const [cat] of PEND_CAT) somarEm(pend, r.linha + '|' + cat, linhaTot + '|' + cat);
+        somarEm(juntas, r.linha, linhaTot);
+      }
+    }
+    desenhaLinha(linhaTot, null, true);
     // Quantidade de linhas mostradas, ao lado do título da primeira coluna.
     cantoQtd.textContent = nf.format(subs.length) + ' ' + (subs.length === 1 ? cfg.singular : cfg.plural);
     // A linha "não cadastrado" fica sempre por último.
@@ -863,14 +891,14 @@
   // O subsistema escolhido no quadro de subsistemas filtra o quadro de pastas ("sistema|subsistema").
   const doSubsistema = (p, r) => !p.sub || r.sistema + '|' + r.subsistema === p.sub;
   dash.draw('matriz', (el) => desenhaMatriz(el, {
-    titulo: 'Subsistema', singular: 'subsistema', plural: 'subsistemas', campo: 'subsistema', vazio: SEM_SUB, pendencias: true, juntas: 'sub',
+    alvo: 'matriz', titulo: 'Subsistema', singular: 'subsistema', plural: 'subsistemas', campo: 'subsistema', vazio: SEM_SUB, pendencias: true, juntas: 'sub',
     textoVazio: 'Atividades e pendências sem subsistema cadastrado',
     linha: (r) => r.sistema + '|' + r.subsistema, desc: (r) => r.desc_subsistema,
     selecionada: (p) => p.sub,
     aoClicar: (info, linha) => { dash.setParams({ sistema: info.sistema, subsistema: linha }); irPara('pastas'); },
   }));
   dash.draw('matriz-pasta', (el) => desenhaMatriz(el, {
-    titulo: 'Pasta', singular: 'pasta', plural: 'pastas', campo: 'pasta', juntas: 'pasta', vazio: SEM_PASTA, textoVazio: 'Atividades sem Nº da pasta na PCP_ATIVIDADE',
+    alvo: 'matriz-pasta', titulo: 'Pasta', singular: 'pasta', plural: 'pastas', campo: 'pasta', juntas: 'pasta', vazio: SEM_PASTA, textoVazio: 'Atividades sem Nº da pasta na PCP_ATIVIDADE',
     linha: (r) => 'P|' + r.pasta, desc: (r) => r.sistema, varios: 'Vários sistemas',
     // Atividades sem pasta válida (pasta vazia: o Nº DA PASTA trazia um código de subsistema ou sistema) ficam fora.
     filtro: (p, r) => r.pasta !== '' && doSubsistema(p, r),
@@ -1032,6 +1060,7 @@
   document.querySelectorAll('.pn-fechar').forEach((b) => b.addEventListener('click', () => dash.setParams({ sistema: null, subsistema: null })));
   document.querySelectorAll('.pn-fechar-sub').forEach((b) => b.addEventListener('click', () => dash.setParams({ subsistema: null })));
   document.querySelectorAll('.pn-busca').forEach((i) => i.addEventListener('input', () => { dash.draw('sistemas'); dash.draw('sis-qtd'); }));
+  document.querySelectorAll('.pn-busca-mx').forEach((i) => i.addEventListener('input', () => dash.draw(i.dataset.alvo)));
   document.querySelectorAll('.pn-sort').forEach((btn) => btn.addEventListener('click', () => {
     const campo = btn.dataset.sort;
     ordem = { campo, dir: ordem.campo === campo ? -ordem.dir : (['sistema', 'descricao', 'status'].includes(campo) ? 1 : -1) };
