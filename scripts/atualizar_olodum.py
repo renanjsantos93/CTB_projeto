@@ -147,6 +147,7 @@ def atualizar_excel():
     excel.DisplayAlerts = False
     excel.AskToUpdateLinks = False
     try:
+        logging.info("Abrindo a OLODUM...")
         livro = excel.Workbooks.Open(str(PLANILHA_OLODUM), UpdateLinks=0, ReadOnly=False)
         if livro.ReadOnly:
             livro.Close(SaveChanges=False)
@@ -158,9 +159,11 @@ def atualizar_excel():
                 conexao.OLEDBConnection.BackgroundQuery = False
             except Exception:
                 pass
+        logging.info("Atualizando as consultas da OLODUM (Atualizar Tudo)...")
         livro.RefreshAll()
         excel.CalculateUntilAsyncQueriesDone()
         excel.CalculateFull()
+        logging.info("Salvando a OLODUM...")
         livro.Save()
         livro.Close(SaveChanges=False)
     finally:
@@ -229,12 +232,43 @@ def atualizado_em_local():
         return "?"
 
 
+def processo_vivo(pid):
+    """True se o processo existe neste Windows (sem psutil: OpenProcess + GetExitCodeProcess)."""
+    try:
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        h = kernel32.OpenProcess(0x1000, False, int(pid))  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not h:
+            return False
+        codigo = ctypes.c_ulong()
+        kernel32.GetExitCodeProcess(h, ctypes.byref(codigo))
+        kernel32.CloseHandle(h)
+        return codigo.value == 259  # STILL_ACTIVE
+    except Exception:
+        return True  # sem conseguir conferir, considera vivo (a trava ainda expira pelo tempo)
+
+
+def trava_abandonada():
+    """A trava é deste computador e o processo que a criou já não existe (ex.: a tarefa foi reiniciada
+    no meio de uma atualização e não chegou a soltar a trava)."""
+    try:
+        partes = TRAVA.read_text(encoding="utf-8").split()
+        computador, pid = partes[1], partes[2]
+    except (OSError, IndexError):
+        return False
+    return computador == os.environ.get("COMPUTERNAME", "?") and not processo_vivo(pid)
+
+
 def pegar_trava():
-    """True se ninguém mais está atualizando; uma trava esquecida há mais de TRAVA_VALIDA_MINUTOS é ignorada."""
+    """True se ninguém mais está atualizando. Uma trava abandonada (processo morto neste computador) ou
+    esquecida há mais de TRAVA_VALIDA_MINUTOS é ignorada."""
     try:
         if TRAVA.exists() and time.time() - TRAVA.stat().st_mtime < TRAVA_VALIDA_MINUTOS * 60:
-            return False
-        TRAVA.write_text("%s %s" % (os.environ.get("USERNAME", "?"), datetime.datetime.now().isoformat()), encoding="utf-8")
+            if not trava_abandonada():
+                return False
+            logging.info("A trava da atualização anterior ficou presa (processo encerrado); liberando")
+        TRAVA.write_text("%s %s %d %s" % (os.environ.get("USERNAME", "?"), os.environ.get("COMPUTERNAME", "?"),
+                                          os.getpid(), datetime.datetime.now().isoformat()), encoding="utf-8")
         return True
     except OSError:
         return True  # sem conseguir criar a trava, atualiza assim mesmo
@@ -254,7 +288,7 @@ def atualizar(motivo, esperar=False):
         if not esperar:
             logging.info("Outra atualização já está rodando; pulando (%s)", motivo)
             return True
-        logging.info("Outra atualização já está rodando; esperando ela terminar...")
+        logging.info("Outra atualização já está rodando; esperando ela terminar (até %d min)...", TRAVA_VALIDA_MINUTOS)
         limite = time.time() + TRAVA_VALIDA_MINUTOS * 60
         while not pegar_trava():
             if time.time() > limite:
