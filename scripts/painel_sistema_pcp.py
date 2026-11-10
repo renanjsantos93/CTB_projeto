@@ -43,11 +43,31 @@ def etapa_da_fase(fase):
 
 
 def data_planejada(v):
-    """Data ISO (aaaa-mm-dd), ou o texto da célula quando não é data."""
+    """Data ISO (aaaa-mm-dd), ou o texto da célula quando não é data. Aceita data do Excel, número de série
+    do Excel (ex.: 46371) e texto dd/mm/aaaa ou aaaa-mm-dd."""
     if hasattr(v, "date"):
         return v.date().isoformat()
+    if isinstance(v, (int, float)) and 30000 < v < 80000:
+        return (datetime.date(1899, 12, 30) + datetime.timedelta(days=int(v))).isoformat()
     texto = str(v or "").strip()
-    return "Sem data planejada" if texto in ("", "#N/A") else texto
+    m = re.match(r"^(\d{1,2})/(\d{1,2})/(\d{4})", texto)
+    if m:
+        return "%s-%02d-%02d" % (m.group(3), int(m.group(2)), int(m.group(1)))
+    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})", texto)
+    if m:
+        return m.group(0)
+    return "Sem data planejada" if texto.upper() in ("", "#N/A", "#N/D", "#VALUE!", "#VALOR!", "#REF!", "0") else texto
+
+
+def coluna(cab, nome):
+    """Nome da coluna do cabeçalho igual a `nome`, ignorando espaços, acentos e maiúsculas
+    (ex.: "DATA PLANEJADA ", "Data Planejada", "DATAPLANEJADA")."""
+    import unicodedata
+    def chave(t):
+        t = unicodedata.normalize("NFKD", str(t or "")).encode("ascii", "ignore").decode()
+        return re.sub(r"[^A-Z0-9]", "", t.upper())
+    alvo = chave(nome)
+    return next((c for c in cab if chave(c) == alvo), nome)
 
 
 def depara(v, vazio):
@@ -83,6 +103,9 @@ def main(planilha, saida, saida_pendentes=None):
     atualizado_em = data_da_base(planilha, wb).replace(microsecond=0).isoformat() + "Z"
     linhas = wb["PCP_ATIVIDADE"].iter_rows(values_only=True)
     cab = next(linhas)
+    col_planejada = coluna(cab, "DATA PLANEJADA")
+    if col_planejada not in cab:
+        print("AVISO: a coluna DATA PLANEJADA não existe na PCP_ATIVIDADE; o painel fica sem datas planejadas")
     agg = defaultdict(lambda: dict(previsto=0, executado=0, verificado=0, aprovado=0, reprovado=0))
     descricoes = {}
     desc_sub = {}
@@ -100,7 +123,7 @@ def main(planilha, saida, saida_pendentes=None):
         etapa = etapa_da_fase(r["FASE"])
         atividade = re.sub(r"\s*\(\s*449\.[^)]*\)\s*$", "", r["ATIVIDADE"] or "").strip()
         atividade = re.sub(r"\s*-\s*$", "", atividade)
-        planejada = data_planejada(r.get("DATA PLANEJADA"))
+        planejada = data_planejada(r.get(col_planejada))
         skid = depara(r.get("DEPARA DE SKID"), "Skid não cadastrado")
         area = depara(r.get("DEPARA DE AREA"), "Área não cadastrada")
         fornecedor = depara(r.get("FORNECEDOR"), "Fornecedor não cadastrado")
@@ -149,7 +172,11 @@ def main(planilha, saida, saida_pendentes=None):
                 r["pasta"] = ""
         with open(saida_pendentes, "w", encoding="utf-8") as f:
             json.dump(pendentes, f, ensure_ascii=False, separators=(",", ":"))
-    print(f"{len(rows)} linhas, {sum(r['previsto'] for r in rows)} registros")
+    com_data = sum(r["previsto"] for r in rows if re.match(r"^\d{4}-\d{2}-\d{2}$", r["data_planejada"]))
+    print(f"{len(rows)} linhas, {sum(r['previsto'] for r in rows)} registros, {com_data} com data planejada")
+    if not com_data:
+        print("AVISO: nenhum registro com data planejada; confira a coluna DATA PLANEJADA da PCP_ATIVIDADE "
+              "(se está com #N/D, a consulta da 04-Dataplanejamento não atualizou)")
 
 
 if __name__ == "__main__":
