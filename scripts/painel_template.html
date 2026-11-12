@@ -781,8 +781,13 @@
       const gj = dash.data('juntas');
       if (gj.status === 'ok') for (const r of gj.data) {
         // cfg.juntas diz qual soma usar: "sub" (por subsistema) ou "pasta" (pela coluna STH).
-        if (r.tipo !== cfg.juntas || (p.s && r.sistema !== p.s) || (cfg.filtro && !cfg.filtro(p, r))) continue;
+        if (r.tipo !== cfg.juntas) continue;
         const lr = cfg.linha(r);
+        // No quadro de pastas, as juntas entram pela própria pasta (STH): com sistema ou subsistema
+        // selecionado, uma pasta que já está no quadro recebe as suas juntas mesmo que o SUBSOP delas
+        // seja outro subsistema (a pasta pode estar num subsistema na PCP e noutro no ControlTub).
+        const pelaPasta = cfg.juntas === 'pasta' && (p.s || p.sub) && r.pasta !== SEM_PASTA && linhas.has(lr);
+        if (!pelaPasta && ((p.s && r.sistema !== p.s) || (cfg.filtro && !cfg.filtro(p, r)))) continue;
         if (!linhas.has(lr)) {
           if (soExistJ) continue;
           linhas.set(lr, { linha: lr, sistema: r.sistema, chave: r[cfg.campo] });
