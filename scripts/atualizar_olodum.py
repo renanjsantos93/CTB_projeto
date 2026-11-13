@@ -186,6 +186,34 @@ def gravar(origem, destino):
     os.replace(provisorio, destino)
 
 
+def em_xlsx(planilha, pasta_tmp):
+    """O openpyxl não lê o formato antigo .xls (Excel 97-2003). Nesse caso o Excel abre a planilha só para
+    leitura e grava uma cópia .xlsx na pasta temporária; o arquivo original não é alterado."""
+    planilha = Path(planilha)
+    if planilha.suffix.lower() != ".xls":
+        return planilha
+    import pythoncom
+    import win32com.client
+
+    destino = Path(pasta_tmp) / (planilha.stem + ".xlsx")
+    pythoncom.CoInitialize()
+    excel = win32com.client.DispatchEx("Excel.Application")
+    excel.Visible = False
+    excel.DisplayAlerts = False
+    try:
+        livro = excel.Workbooks.Open(str(planilha), UpdateLinks=0, ReadOnly=True)
+        livro.SaveAs(str(destino), FileFormat=51)  # 51 = .xlsx
+        livro.Close(SaveChanges=False)
+    finally:
+        try:
+            excel.Quit()
+        except Exception:
+            pass
+        pythoncom.CoUninitialize()
+    logging.info("%s está no formato antigo .xls; convertida para .xlsx só para a leitura", planilha.name)
+    return destino
+
+
 def planilha_de_pendencias():
     """A 05-Planilha_pendencia da pasta de bases (a mais recente, se houver mais de uma)."""
     achadas = [a for a in PASTA_BASES.glob("05-Planilha_pendencia*.xls*") if not a.name.startswith("~$")]
@@ -212,18 +240,18 @@ def publicar_dados():
         painel_sistema_pcp.main(str(PLANILHA_OLODUM), str(base), str(protocolos))
         planilha_pend = planilha_de_pendencias()
         if planilha_pend:
-            painel_pendencias.main(str(planilha_pend), str(pend), str(base), str(lista))
+            painel_pendencias.main(str(em_xlsx(planilha_pend, tmp)), str(pend), str(base), str(lista))
         else:
             logging.warning("Sem a 05-Planilha_pendencia em %s; o painel sai sem pendências", PASTA_BASES)
             pend = lista = None
         if PLANILHA_JUNTAS.exists():
-            painel_juntas.main(str(PLANILHA_JUNTAS), str(juntas))
+            painel_juntas.main(str(em_xlsx(PLANILHA_JUNTAS, tmp)), str(juntas))
         else:
             logging.warning("Sem a %s; o painel sai sem as juntas do ControlTub", PLANILHA_JUNTAS)
             juntas = None
         planilha_pastas = planilha_de_pastas()
         if planilha_pastas:
-            painel_escopos.main(str(planilha_pastas), str(escopos))
+            painel_escopos.main(str(em_xlsx(planilha_pastas, tmp)), str(escopos))
         else:
             logging.warning("Sem a 06-Lista de Pastas_Milplan em %s; o painel sai sem o escopo das pastas", PASTA_BASES)
             escopos = None
