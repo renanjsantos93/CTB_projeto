@@ -224,6 +224,7 @@
   .pn-detail-actions { display: flex; gap: var(--cds-gap-sm); flex-wrap: wrap; }
   [data-dash-source-state=empty] { color: transparent; }
   [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+  .pn-col-data { white-space: nowrap; }
   @media (max-width: 640px) { .pn-col-desc { display: none; } .pn-multi-btn { min-width: 0; } .pn-field select, .pn-field input[type="search"] { min-width: 0; width: 100%; } .pn-field { flex: 1 1 100%; } }
   /* Impressão / PDF: título, filtros, avanço por subsistema e por pasta, em A3 deitado e com as cores. */
   @media print {
@@ -355,6 +356,7 @@
           <tr>
             <th><button type="button" class="pn-sort" data-sort="sistema">Sistema</button> <span class="pn-qtd" data-draw="sis-qtd" data-source="pcp">—</span></th>
             <th class="pn-col-desc"><button type="button" class="pn-sort" data-sort="descricao">Descrição</button></th>
+            <th class="pn-col-data"><button type="button" class="pn-sort" data-sort="data">Data planejada</button></th>
             <th class="num"><button type="button" class="pn-sort" data-sort="previsto">Previsto</button></th>
             <th class="num"><button type="button" class="pn-sort" data-sort="executado">Executado</button></th>
             <th class="num"><button type="button" class="pn-sort" data-sort="aprovado">Aprovado</button></th>
@@ -536,7 +538,21 @@
       if (!m.has(r.sistema)) m.set(r.sistema, []);
       m.get(r.sistema).push(r);
     }
-    return [...m.entries()].map(([sistema, rs]) => ({ sistema, descricao: rs[0].descricao, ...somar(rs) }));
+    return [...m.entries()].map(([sistema, rs]) => ({ sistema, descricao: rs[0].descricao, ...datasDoSistema(rs), ...somar(rs) }));
+  };
+  // Data planejada do sistema (dentro dos filtros): a data, ou "primeira a última" quando há mais de uma.
+  // Sem nenhuma data, mostra o texto da base (ex.: "Concluído"); "Sem data planejada" vira "—".
+  // `data` é a chave de ordenação: a última data; quem não tem data vai para o fim.
+  const datasDoSistema = (rs) => {
+    const vals = new Set(rs.map((r) => r.data_planejada));
+    const datas = [...vals].filter(ehData).sort();
+    const outros = ordemDatas([...vals].filter((v) => !ehData(v) && v !== 'Sem data planejada'));
+    const todas = ordemDatas([...vals]).map(fmtData).join(', ');
+    if (datas.length) {
+      const ini = fmtData(datas[0]), fim = fmtData(datas[datas.length - 1]);
+      return { data: datas[datas.length - 1], dataTexto: datas.length > 1 ? ini + ' a ' + fim : ini, dataTodas: todas };
+    }
+    return { data: '\uffff' + (outros[0] || ''), dataTexto: outros.join(', ') || '—', dataTodas: todas };
   };
   const STATUS = { 'Concluído': 'ok', 'Em andamento': 'and', 'Não iniciado': 'nao' };
   const corAvanco = (pct) => (pct >= 1 ? 'var(--color-ok)' : dash.colors[0]);
@@ -1059,6 +1075,7 @@
       if (r.sistema === p.s) tr.className = 'is-sel';
       td(tr, r.sistema, 'pn-code');
       td(tr, r.descricao, 'pn-desc pn-col-desc');
+      td(tr, r.dataTexto, 'pn-col-data').title = r.dataTodas;
       td(tr, nf.format(r.previsto), 'num');
       td(tr, nf.format(r.executado), 'num');
       td(tr, nf.format(r.aprovado), 'num');
@@ -1261,7 +1278,7 @@
   document.querySelectorAll('.pn-busca-mx').forEach((i) => i.addEventListener('input', () => dash.draw(i.dataset.alvo)));
   document.querySelectorAll('.pn-sort').forEach((btn) => btn.addEventListener('click', () => {
     const campo = btn.dataset.sort;
-    ordem = { campo, dir: ordem.campo === campo ? -ordem.dir : (['sistema', 'descricao', 'status'].includes(campo) ? 1 : -1) };
+    ordem = { campo, dir: ordem.campo === campo ? -ordem.dir : (['sistema', 'descricao', 'data', 'status'].includes(campo) ? 1 : -1) };
     document.querySelectorAll('.pn-sort').forEach((b) => {
       const th = b.closest('th');
       if (!th) return;
