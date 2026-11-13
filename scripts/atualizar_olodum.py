@@ -37,6 +37,7 @@ from pathlib import Path
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
 import gerar_painel_html  # noqa: E402
+import painel_escopos  # noqa: E402
 import painel_juntas  # noqa: E402
 import painel_pendencias  # noqa: E402
 import painel_sistema_pcp  # noqa: E402
@@ -58,6 +59,7 @@ ARQUIVO_PENDENCIAS = "pendencias_painel.json"
 ARQUIVO_LISTA = "lista_pendencias_painel.json"
 ARQUIVO_JUNTAS = "juntas_painel.json"
 ARQUIVO_PROTOCOLOS = "protocolos_pendentes_painel.json"
+ARQUIVO_ESCOPOS = "escopos_pastas_painel.json"
 ARQUIVO_HTML = "Painel_OLODUM.html"
 # Evita duas atualizações ao mesmo tempo (o botão de alguém e a rodada automática, por exemplo).
 TRAVA = PASTA_PAINEL / "atualizando.lock"
@@ -190,6 +192,12 @@ def planilha_de_pendencias():
     return max(achadas, key=lambda a: a.stat().st_mtime) if achadas else None
 
 
+def planilha_de_pastas():
+    """A 06-Lista de Pastas_Milplan da pasta de bases (a mais recente, se houver mais de uma)."""
+    achadas = [a for a in PASTA_BASES.glob("06-Lista*Pastas*.xls*") if not a.name.startswith("~$")]
+    return max(achadas, key=lambda a: a.stat().st_mtime) if achadas else None
+
+
 def publicar_dados():
     """Gera a base e o Painel_OLODUM.html a partir da OLODUM salva e grava na pasta compartilhada."""
     PASTA_PAINEL.mkdir(parents=True, exist_ok=True)
@@ -199,6 +207,7 @@ def publicar_dados():
         lista = Path(tmp) / ARQUIVO_LISTA
         juntas = Path(tmp) / ARQUIVO_JUNTAS
         protocolos = Path(tmp) / ARQUIVO_PROTOCOLOS
+        escopos = Path(tmp) / ARQUIVO_ESCOPOS
         html = Path(tmp) / ARQUIVO_HTML
         painel_sistema_pcp.main(str(PLANILHA_OLODUM), str(base), str(protocolos))
         planilha_pend = planilha_de_pendencias()
@@ -212,7 +221,13 @@ def publicar_dados():
         else:
             logging.warning("Sem a %s; o painel sai sem as juntas do ControlTub", PLANILHA_JUNTAS)
             juntas = None
-        gerar_painel_html.gerar(base, html, pend, lista, juntas, protocolos)
+        planilha_pastas = planilha_de_pastas()
+        if planilha_pastas:
+            painel_escopos.main(str(planilha_pastas), str(escopos))
+        else:
+            logging.warning("Sem a 06-Lista de Pastas_Milplan em %s; o painel sai sem o escopo das pastas", PASTA_BASES)
+            escopos = None
+        gerar_painel_html.gerar(base, html, pend, lista, juntas, protocolos, escopos)
         gravar(base, PASTA_PAINEL / ARQUIVO_PAINEL)
         gravar(protocolos, PASTA_PAINEL / ARQUIVO_PROTOCOLOS)
         if pend:
@@ -220,6 +235,8 @@ def publicar_dados():
             gravar(lista, PASTA_PAINEL / ARQUIVO_LISTA)
         if juntas:
             gravar(juntas, PASTA_PAINEL / ARQUIVO_JUNTAS)
+        if escopos:
+            gravar(escopos, PASTA_PAINEL / ARQUIVO_ESCOPOS)
         gravar(html, PASTA_PAINEL / ARQUIVO_HTML)
     return PASTA_PAINEL / ARQUIVO_HTML
 
