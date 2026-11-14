@@ -2,8 +2,7 @@
 
 Uso: python scripts/painel_sistema_pcp.py <planilha.xlsx> <saida.json>
 
-Cada linha da saída é um par subsistema x atividade x data planejada x skid x área x fornecedor x pasta x grupo
-(GRUPO DE SUBSISTEMA), com as contagens:
+Cada linha da saída é um par subsistema x atividade x data planejada x skid x área x fornecedor x pasta, com as contagens:
   previsto   = registros cadastrados na PCP_ATIVIDADE
   executado  = registros com DATA DA EXECUÇÃO
   verificado = registros com DATA DA VERIFICAÇÃO
@@ -29,7 +28,6 @@ ETAPAS = [
     ("Preservação", "Preservação"),
 ]
 SEM_PASTA = "Pasta não cadastrada"
-SEM_GRUPO = "Grupo não cadastrado"
 DISCIPLINAS = {
     "TUB": "Tubulação", "INS": "Instrumentação", "ELE": "Elétrica",
     "EQE": "Equipamento estático", "EQD": "Equipamento dinâmico",
@@ -106,7 +104,6 @@ def main(planilha, saida, saida_pendentes=None):
     linhas = wb["PCP_ATIVIDADE"].iter_rows(values_only=True)
     cab = next(linhas)
     col_planejada = coluna(cab, "DATA PLANEJADA")
-    col_grupo = coluna(cab, "GRUPO DE SUBSISTEMA")
     if col_planejada not in cab:
         print("AVISO: a coluna DATA PLANEJADA não existe na PCP_ATIVIDADE; o painel fica sem datas planejadas")
     agg = defaultdict(lambda: dict(previsto=0, executado=0, verificado=0, aprovado=0, reprovado=0))
@@ -131,8 +128,7 @@ def main(planilha, saida, saida_pendentes=None):
         area = depara(r.get("DEPARA DE AREA"), "Área não cadastrada")
         fornecedor = depara(r.get("FORNECEDOR"), "Fornecedor não cadastrado")
         pasta = depara(r.get("Nº DA PASTA"), SEM_PASTA)
-        grupo = depara(r.get(col_grupo), SEM_GRUPO)
-        a = agg[(sistema, subsistema, sigla, disciplina, etapa, atividade, planejada, skid, area, fornecedor, pasta, grupo)]
+        a = agg[(sistema, subsistema, sigla, disciplina, etapa, atividade, planejada, skid, area, fornecedor, pasta)]
         a["previsto"] += 1
         a["executado"] += preenchido(r["DATA DA EXECUÇÃO"])
         a["verificado"] += preenchido(r["DATA DA VERIFICAÇÃO"])
@@ -144,7 +140,7 @@ def main(planilha, saida, saida_pendentes=None):
                         else "Não executada")
             pendentes.append(dict(
                 sistema=sistema, subsistema=subsistema, pasta=pasta, disciplina=disciplina, etapa=etapa,
-                atividade=atividade, data_planejada=planejada, skid=skid, area=area, fornecedor=fornecedor, grupo=grupo,
+                atividade=atividade, data_planejada=planejada, skid=skid, area=area, fornecedor=fornecedor,
                 tag=str(r.get("COD IDENTIFICAÇÃO") or "").strip(), objeto=str(r.get("DESCRIÇÃO DO OBJETO") or "").strip(),
                 situacao=situacao))
 
@@ -154,19 +150,19 @@ def main(planilha, saida, saida_pendentes=None):
     if any(k[10] in codigos for k in agg):
         juntos = defaultdict(lambda: dict(previsto=0, executado=0, verificado=0, aprovado=0, reprovado=0))
         for k, v in agg.items():
-            k2 = k[:10] + ("" if k[10] in codigos else k[10],) + k[11:]
+            k2 = k[:10] + ("" if k[10] in codigos else k[10],)
             for campo, n in v.items():
                 juntos[k2][campo] += n
         agg = juntos
 
     ordem_etapa = {e: i for i, (_, e) in enumerate(ETAPAS)}
-    chaves = sorted(agg, key=lambda k: (k[0], k[1], k[3], ordem_etapa.get(k[4], 99), k[5], k[6], k[7], k[8], k[9], k[10], k[11]))
+    chaves = sorted(agg, key=lambda k: (k[0], k[1], k[3], ordem_etapa.get(k[4], 99), k[5], k[6], k[7], k[8], k[9], k[10]))
     rows = [
         dict(id=f"{i + 1:05d}", sistema=s, descricao=descricoes[s], subsistema=sub,
              desc_subsistema=desc_sub[sub], sigla=sg, disciplina=d, etapa=e, atividade=at,
-             data_planejada=dp, skid=sk, area=ar, fornecedor=fo, pasta=pa, grupo=gr, atualizado_em=atualizado_em,
-             **agg[(s, sub, sg, d, e, at, dp, sk, ar, fo, pa, gr)])
-        for i, (s, sub, sg, d, e, at, dp, sk, ar, fo, pa, gr) in enumerate(chaves)
+             data_planejada=dp, skid=sk, area=ar, fornecedor=fo, pasta=pa, atualizado_em=atualizado_em,
+             **agg[(s, sub, sg, d, e, at, dp, sk, ar, fo, pa)])
+        for i, (s, sub, sg, d, e, at, dp, sk, ar, fo, pa) in enumerate(chaves)
     ]
     with open(saida, "w", encoding="utf-8") as f:
         json.dump(rows, f, ensure_ascii=False)
