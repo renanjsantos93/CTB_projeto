@@ -44,7 +44,7 @@
 <script>
   // Versão mínima do "dash" do painel do claude.ai, para o mesmo código rodar num arquivo HTML comum.
   window.dash = (() => {
-    const PADRAO = { disciplinas: [], etapas: [], datas: [], fornecedores: [], skids: [], areas: [], escopos: [] };
+    const PADRAO = { disciplinas: [], etapas: [], datas: [], fornecedores: [], skids: [], areas: [], escopos: [], grupos: [], lq: [] };
     let params = { ...PADRAO };
     const desenhos = new Map();
     const aoMudar = [];
@@ -204,7 +204,14 @@
   .pn-lp tr.pn-lp-grupo span { color: var(--color-fg-muted); }
   .pn-lp .pn-lp-cat-a { color: var(--color-bad); }
   .pn-lp .pn-lp-cat-rnc { color: var(--color-warn); }
-  .pn-escopo-campo { display: flex; align-items: flex-end; }
+  .pn-card-head > .pn-escopo-campo { display: flex; flex-direction: row; flex-wrap: wrap; align-items: flex-end; gap: var(--cds-gap-sm) var(--cds-gap-md); }
+  /* Pasta com limpeza química (X na 06-Lista de Pastas_Milplan): fundo verde na célula da pasta. */
+  .pn { --pn-lq: color-mix(in srgb, var(--color-ok) 26%, var(--color-panel)); }
+  .pn-mx td.pn-mx-sub.pn-mx-lq { background: var(--pn-lq); }
+  .pn-mx tr.is-sel td.pn-mx-sub.pn-mx-lq { background: var(--pn-lq); }
+  .pn-leg-lq { background: var(--pn-lq); }
+  .pn-mx th.pn-mx-grupo { min-width: 9rem; max-width: 12rem; font-weight: 400; }
+  .pn-mx td.pn-mx-grupo { background: var(--color-panel); text-align: left; padding: 3px var(--cds-pad-sm); min-width: 9rem; max-width: 12rem; font-size: .85em; line-height: 1.25; color: var(--color-fg-muted); white-space: normal; }
   .pn-sub-filtro { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm); font-size: var(--cds-font-size-caption); color: var(--color-fg); }
   .pn .pn-sub-filtro b { font-weight: 600; }
   .pn-nc { margin: 0; font-size: var(--cds-font-size-caption); color: var(--color-fg); display: flex; gap: var(--cds-gap-sm); align-items: baseline; flex-wrap: wrap; }
@@ -420,12 +427,35 @@
             </div>
           </div>
         </div>
+        <div class="pn-field">Grupo
+          <div class="pn-multi" id="pn-grupos">
+            <button type="button" class="pn-multi-btn" aria-expanded="false"><span data-draw="filtro-grupo">—</span></button>
+            <div hidden class="pn-multi-list" role="group" aria-label="Grupo">
+              <div class="pn-multi-opcoes" data-draw="op-grupos" data-source="pcp juntas"></div>
+              <div class="pn-multi-acoes">
+                <button type="button" class="pn-btn pn-todos" data-param="grupos">Todos</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="pn-field">Limpeza química
+          <div class="pn-multi" id="pn-lq">
+            <button type="button" class="pn-multi-btn" aria-expanded="false"><span data-draw="filtro-lq">—</span></button>
+            <div hidden class="pn-multi-list" role="group" aria-label="Limpeza química">
+              <div class="pn-multi-opcoes" data-draw="op-lq" data-source="pcp juntas escopos"></div>
+              <div class="pn-multi-acoes">
+                <button type="button" class="pn-btn pn-todos" data-param="lq">Todas</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="pn-legend" role="list" aria-label="Legenda das cores de avanço">
         <span class="pn-leg pn-leg-0" role="listitem"><b>0%</b> não iniciado</span>
         <span class="pn-leg pn-leg-50" role="listitem"><b>1% a 79%</b> em andamento</span>
         <span class="pn-leg pn-leg-100" role="listitem"><b>80% a 100%</b> avançado</span>
         <span class="pn-leg pn-leg-vazio" role="listitem"><b>·</b> sem atividade prevista</span>
+        <span class="pn-leg pn-leg-lq" role="listitem"><b>Pasta</b> com limpeza química</span>
       </div>
     </div>
     <div class="pn-matriz" data-draw="matriz-pasta" data-source="pcp juntas escopos">—</div>
@@ -501,8 +531,8 @@
   // Filtro vazio vale como "todas".
   const P = () => {
     const p = dash.params();
-    const D = lista(p.disciplinas), E = lista(p.etapas), T = lista(p.datas), K = lista(p.skids), A = lista(p.areas), F = lista(p.fornecedores), EE = lista(p.escopos);
-    return { D, E, T, K, A, F, EE, dSet: new Set(D), eSet: new Set(E), tSet: new Set(T), kSet: new Set(K), aSet: new Set(A), fSet: new Set(F), eeSet: new Set(EE), s: p.sistema || null, sub: p.subsistema || null };
+    const D = lista(p.disciplinas), E = lista(p.etapas), T = lista(p.datas), K = lista(p.skids), A = lista(p.areas), F = lista(p.fornecedores), EE = lista(p.escopos), G = lista(p.grupos), LQ = lista(p.lq);
+    return { D, E, T, K, A, F, EE, G, LQ, dSet: new Set(D), eSet: new Set(E), tSet: new Set(T), kSet: new Set(K), aSet: new Set(A), fSet: new Set(F), eeSet: new Set(EE), gSet: new Set(G), lqSet: new Set(LQ), s: p.sistema || null, sub: p.subsistema || null };
   };
   // TTAS e preservação não entram em nenhuma parte do painel.
   const FORA = new Set(['TTAS', 'Preservação']);
@@ -740,6 +770,9 @@
     // Soma as linhas da PCP por subsistema e atividade; o recebimento vira uma coluna só.
     const grupos0 = new Map();
     const descs = new Map();
+    // Grupo (GRUPO DE SUBSISTEMA) de cada linha, só no quadro de pastas; o filtro de grupo vale atividade a atividade.
+    const gruposLinha = new Map();
+    const filtraGrupo = !!(cfg.grupo && p.G.length);
     const juntar = (id, base, r) => {
       let x = grupos0.get(id);
       if (!x) grupos0.set(id, (x = { ...base, previsto: 0, executado: 0, aprovado: 0 }));
@@ -747,8 +780,13 @@
     };
     for (const r of g.data) {
       if (FORA.has(r.etapa) || (p.s && r.sistema !== p.s) || !passa(p, r) || (cfg.filtro && !cfg.filtro(p, r))) continue;
+      if (filtraGrupo && !p.gSet.has(r.grupo || SEM_GRUPO)) continue;
       const info = { sistema: r.sistema, chave: r[cfg.campo] };
       const lr = cfg.linha(r);
+      if (cfg.grupo) {
+        if (!gruposLinha.has(lr)) gruposLinha.set(lr, new Set());
+        gruposLinha.get(lr).add(r.grupo || SEM_GRUPO);
+      }
       // Descrição de cada linha; uma pasta com atividades de mais de um sistema mostra "Vários sistemas".
       const d0 = descs.get(lr), d1 = cfg.desc(r);
       if (d0 === undefined) descs.set(lr, d1); else if (d0 !== d1) descs.set(lr, cfg.varios || d0);
@@ -809,6 +847,7 @@
     let comJuntas = false;
     const tubOk = (!p.D.length || p.dSet.has('Tubulação')) && (!p.E.length || p.eSet.has('Montagem'));
     const soExistJ = p.T.length || p.F.length || p.A.length || p.K.length;
+    const grupoSub = cfg.grupo ? grupoDoSubsistema() : null;
     if (cfg.juntas && tubOk && (!soExistJ || [...cols.values()].some((c) => c.d === 'Tubulação'))) {
       const gj = dash.data('juntas');
       if (gj.status === 'ok') for (const r of gj.data) {
@@ -818,11 +857,15 @@
         // No quadro de pastas, as juntas entram pela própria pasta (STH): com sistema ou subsistema
         // selecionado, uma pasta que já está no quadro recebe as suas juntas mesmo que o SUBSOP delas
         // seja outro subsistema (a pasta pode estar num subsistema na PCP e noutro no ControlTub).
-        const pelaPasta = cfg.juntas === 'pasta' && (p.s || p.sub) && r.pasta !== SEM_PASTA && linhas.has(lr);
+        const pelaPasta = cfg.juntas === 'pasta' && (p.s || p.sub || filtraGrupo) && r.pasta !== SEM_PASTA && linhas.has(lr);
         if (!pelaPasta && ((p.s && r.sistema !== p.s) || (cfg.filtro && !cfg.filtro(p, r)))) continue;
+        // Pasta só do ControlTub: o grupo vem do subsistema (SUBSOP) das juntas.
+        const gJ = grupoSub ? grupoSub.get(r.subsistema) || SEM_GRUPO : null;
+        if (filtraGrupo && !pelaPasta && !p.gSet.has(gJ)) continue;
         if (!linhas.has(lr)) {
           if (soExistJ) continue;
           linhas.set(lr, { linha: lr, sistema: r.sistema, chave: r[cfg.campo] });
+          if (gJ && r.pasta !== SEM_PASTA) gruposLinha.set(lr, new Set([gJ]));
         }
         const d1 = cfg.desc(r) || '';
         if (!descs.has(lr)) descs.set(lr, d1); else if (cfg.varios && descs.get(lr) !== d1 && d1) descs.set(lr, cfg.varios);
@@ -864,6 +907,7 @@
     const cantoQtd = document.createElement('span');
     cantoQtd.className = 'pn-mx-qtd';
     canto.append(cantoTitulo, cantoQtd);
+    if (cfg.grupo) th(h1, 'Grupo', 'pn-mx-grupo', { rowspan: 3 });
     if (temReceb) th(h1, 'Recebimento', 'pn-mx-atv', { rowspan: 3 });
     const grupos = (fn) => colunas.reduce((acc, c) => {
       const k = fn(c);
@@ -904,7 +948,7 @@
       const c0 = tr.insertCell();
       c0.className = 'pn-mx-sub';
       if (total) {
-        c0.textContent = linha === 'Busca|' ? (busca ? 'Total da busca' : 'Total do escopo') : p.s ? 'Total do sistema' : 'Total geral';
+        c0.textContent = linha === 'Busca|' ? (busca ? 'Total da busca' : 'Total do filtro') : p.s ? 'Total do sistema' : 'Total geral';
       } else {
         const desc0 = descs.get(linha);
         const umSistema = desc0 !== cfg.varios;
@@ -922,6 +966,15 @@
         // O clique faz o que o quadro pede (cfg.aoClicar); só vale quando a linha é de um sistema só.
         if (umSistema) b.addEventListener('click', () => cfg.aoClicar(info, linha));
         c0.append(b);
+        if (lq && info.chave !== cfg.vazio && temLQ(lq, info.chave)) {
+          c0.classList.add('pn-mx-lq');
+          c0.title = 'Pasta com limpeza química';
+        }
+      }
+      if (cfg.grupo) {
+        const cg = tr.insertCell();
+        cg.className = 'pn-mx-grupo';
+        cg.textContent = total ? '' : [...(gruposLinha.get(linha) || [])].sort((a, b) => a.localeCompare(b, 'pt-BR')).join(' / ') || '—';
       }
       // Células de atividade e o Total abrem o detalhe dos protocolos pendentes (menos na linha de total da busca).
       const cel = celulasDa(linha);
@@ -960,8 +1013,12 @@
     const escopos = cfg.escopo ? mapaEscopos() : null;
     const filtraEscopo = !!(cfg.escopo && p.EE.length);
     if (filtraEscopo) subs = subs.filter(({ r }) => escoposDa(escopos, r.chave).some((e) => p.eeSet.has(e)));
+    // Filtro de limpeza química (só no quadro de pastas): "Com" = X na coluna Limpeza Química da lista de pastas.
+    const lq = cfg.escopo ? pastasLQ() : null;
+    const filtraLQ = !!(cfg.escopo && p.LQ.length && p.LQ.length < 2);
+    if (filtraLQ) subs = subs.filter(({ r }) => r.chave !== cfg.vazio && p.lqSet.has(temLQ(lq, r.chave) ? LQ_SIM : LQ_NAO));
     if (busca) subs = subs.filter(({ r }) => (r.chave + ' ' + (descs.get(r.linha) || '')).toLowerCase().includes(busca));
-    if (busca || filtraEscopo) {
+    if (busca || filtraEscopo || filtraLQ) {
       linhaTot = 'Busca|';
       const somarEm = (mapa, de, para) => {
         const x = mapa.get(de);
@@ -987,6 +1044,7 @@
     el.append(t);
   };
   const SEM_PASTA = 'Pasta não cadastrada';
+  const SEM_GRUPO = 'Grupo não cadastrado';
   // Juntas do ControlTub: liberadas = Situação "Junta Liberada"; saldo = previstas menos liberadas.
   const JUNTAS_COL = ['Juntas previstas', 'Juntas liberadas', 'Saldo de juntas', 'Avanço de juntas'];
   // Encerradas sobre o total de cada categoria; TOTAL soma as três.
@@ -1005,7 +1063,7 @@
     aoClicar: (info, linha) => { dash.setParams({ sistema: info.sistema, subsistema: linha }); irPara('pastas'); },
   }));
   dash.draw('matriz-pasta', (el) => desenhaMatriz(el, {
-    alvo: 'matriz-pasta', todos: 'Todas as pastas', escopo: true, titulo: 'Pasta', singular: 'pasta', plural: 'pastas', campo: 'pasta', juntas: 'pasta', vazio: SEM_PASTA, textoVazio: 'Atividades sem Nº da pasta na PCP_ATIVIDADE',
+    alvo: 'matriz-pasta', todos: 'Todas as pastas', escopo: true, grupo: true, titulo: 'Pasta', singular: 'pasta', plural: 'pastas', campo: 'pasta', juntas: 'pasta', vazio: SEM_PASTA, textoVazio: 'Atividades sem Nº da pasta na PCP_ATIVIDADE',
     linha: (r) => 'P|' + r.pasta, desc: (r) => r.sistema, varios: 'Vários sistemas',
     // Atividades sem pasta válida (pasta vazia: o Nº DA PASTA trazia um código de subsistema ou sistema) ficam fora.
     filtro: (p, r) => r.pasta !== '' && doSubsistema(p, r),
@@ -1187,7 +1245,7 @@
       : r.disciplina === x.d && r.etapa === x.e && r.atividade === x.a);
     const pos = (arr, v) => { const i = arr.indexOf(v); return i < 0 ? 99 : i; };
     return g.data.filter((r) => !FORA.has(r.etapa) && passa(p, r) && (!p.s || r.sistema === p.s)
-        && (x.quadro !== 'matriz-pasta' || (r.pasta !== '' && doSubsistema(p, r))) && daLinha(r) && daColuna(r))
+        && (x.quadro !== 'matriz-pasta' || (r.pasta !== '' && doSubsistema(p, r) && (!p.G.length || p.gSet.has(r.grupo || SEM_GRUPO)))) && daLinha(r) && daColuna(r))
       .sort((a, b) => pos(MX_DISC, a.disciplina) - pos(MX_DISC, b.disciplina) || pos(ORDEM_ETAPA, a.etapa) - pos(ORDEM_ETAPA, b.etapa)
         || a.atividade.localeCompare(b.atividade, 'pt-BR') || pos(ORDEM_SITUACAO, a.situacao) - pos(ORDEM_SITUACAO, b.situacao)
         || a.tag.localeCompare(b.tag, 'pt-BR', { numeric: true }));
@@ -1262,6 +1320,76 @@
       lab.append(cb, document.createTextNode(' ' + v), n);
       el.append(lab);
     }
+  });
+
+  // ---- Limpeza química das pastas (coluna Limpeza Química da 06-Lista de Pastas_Milplan) -----------
+  const LQ_SIM = 'Com limpeza química', LQ_NAO = 'Sem limpeza química';
+  const pastasLQ = () => {
+    const g = dash.data('escopos');
+    const m = new Set();
+    if (g.status === 'ok') for (const r of g.data) if (r.limpeza_quimica) m.add(r.pasta);
+    return m;
+  };
+  const temLQ = (m, pasta) => m.has(pasta) || m.has(String(pasta).replace(/\.\d+$/, ''));
+  // Grupo de cada subsistema (na PCP, cada subsistema tem um grupo só).
+  const grupoDoSubsistema = () => {
+    const g = dash.data('pcp');
+    const m = new Map();
+    if (g.status === 'ok') for (const r of g.data) if (r.grupo && !m.has(r.subsistema)) m.set(r.subsistema, r.grupo);
+    return m;
+  };
+  // Pastas do quadro de pastas (atividades da PCP e juntas do ControlTub), com o grupo, sem os filtros do quadro.
+  const pastasDoQuadro = () => {
+    const out = [];
+    const g = dash.data('pcp');
+    if (g.status === 'ok') for (const r of g.data) if (!FORA.has(r.etapa) && r.pasta !== '' && r.pasta !== SEM_PASTA) out.push({ pasta: r.pasta, grupo: r.grupo || SEM_GRUPO });
+    const gj = dash.data('juntas');
+    const gs = grupoDoSubsistema();
+    const naPCP = new Set(out.map((x) => x.pasta));
+    if (gj.status === 'ok') for (const r of gj.data) if (r.tipo === 'pasta' && r.pasta !== SEM_PASTA && !naPCP.has(r.pasta)) out.push({ pasta: r.pasta, grupo: gs.get(r.subsistema) || SEM_GRUPO });
+    return out;
+  };
+  const opcoesLocais = (el, param, qtd, ordem) => {
+    el.replaceChildren();
+    const marcadosAgora = new Set(lista(dash.params()[param]));
+    for (const v of ordem) {
+      const lab = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'pn-chk';
+      cb.dataset.param = param;
+      cb.value = v;
+      cb.checked = marcadosAgora.has(v);
+      cb.addEventListener('change', () => dash.setParams({ [param]: marcados(param) }));
+      const n = document.createElement('small');
+      const q = qtd.get(v) || 0;
+      n.textContent = nf.format(q) + (q === 1 ? ' pasta' : ' pastas');
+      lab.append(cb, document.createTextNode(' ' + v), n);
+      el.append(lab);
+    }
+  };
+  dash.draw('filtro-grupo', (el) => {
+    el.textContent = resumoFiltro(P().G, 'Todos os grupos', 'grupos');
+  });
+  dash.draw('op-grupos', (el) => {
+    const porGrupo = new Map();
+    for (const r of pastasDoQuadro()) {
+      const gr = r.grupo;
+      if (!porGrupo.has(gr)) porGrupo.set(gr, new Set());
+      porGrupo.get(gr).add(r.pasta);
+    }
+    const qtd = new Map([...porGrupo].map(([k, v]) => [k, v.size]));
+    opcoesLocais(el, 'grupos', qtd, [...qtd.keys()].sort((a, b) => (a === SEM_GRUPO) - (b === SEM_GRUPO) || a.localeCompare(b, 'pt-BR')));
+  });
+  dash.draw('filtro-lq', (el) => {
+    el.textContent = resumoFiltro(P().LQ, 'Todas', 'opções');
+  });
+  dash.draw('op-lq', (el) => {
+    const lq = pastasLQ();
+    const todas = new Set(pastasDoQuadro().map((r) => r.pasta));
+    let com = 0;
+    for (const pa of todas) if (temLQ(lq, pa)) com++;
+    opcoesLocais(el, 'lq', new Map([[LQ_SIM, com], [LQ_NAO, todas.size - com]]), [LQ_SIM, LQ_NAO]);
   });
 
   const marcados = (param) => {
@@ -1351,7 +1479,7 @@
     if (rows && !rows.length) { dash.setParams({ sistema: null, subsistema: null }); return; }
     // O subsistema escolhido só vale dentro do sistema aberto e enquanto tiver registros com os filtros.
     if (p.sub && (!p.s || !p.sub.startsWith(p.s + '|') || !rows.some((r) => doSubsistema(p, r)))) { dash.setParams({ subsistema: null }); return; }
-    const sets = { disciplinas: p.dSet, etapas: p.eSet, datas: p.tSet, fornecedores: p.fSet, skids: p.kSet, areas: p.aSet, escopos: p.eeSet };
+    const sets = { disciplinas: p.dSet, etapas: p.eSet, datas: p.tSet, fornecedores: p.fSet, skids: p.kSet, areas: p.aSet, escopos: p.eeSet, grupos: p.gSet, lq: p.lqSet };
     document.querySelectorAll('.pn-chk').forEach((c) => { c.checked = (sets[c.dataset.param] || new Set()).has(c.value); });
     document.querySelectorAll('.pn-esc-sis').forEach((el) => { el.hidden = !p.s; });
     document.querySelectorAll('.pn-esc-todos').forEach((el) => { el.hidden = !!p.s; });
