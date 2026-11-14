@@ -44,7 +44,7 @@
 <script>
   // Versão mínima do "dash" do painel do claude.ai, para o mesmo código rodar num arquivo HTML comum.
   window.dash = (() => {
-    const PADRAO = { disciplinas: [], etapas: [], datas: [], fornecedores: [], skids: [], areas: [], escopos: [], grupos: [], lq: [] };
+    const PADRAO = { disciplinas: [], etapas: [], datas: [], fornecedores: [], skids: [], areas: [], escopos: [], grupos: [] };
     let params = { ...PADRAO };
     const desenhos = new Map();
     const aoMudar = [];
@@ -205,11 +205,6 @@
   .pn-lp .pn-lp-cat-a { color: var(--color-bad); }
   .pn-lp .pn-lp-cat-rnc { color: var(--color-warn); }
   .pn-card-head > .pn-escopo-campo { display: flex; flex-direction: row; flex-wrap: wrap; align-items: flex-end; gap: var(--cds-gap-sm) var(--cds-gap-md); }
-  /* Pasta com limpeza química (X na 06-Lista de Pastas_Milplan): fundo verde na célula da pasta. */
-  .pn { --pn-lq: color-mix(in srgb, var(--color-ok) 26%, var(--color-panel)); }
-  .pn-mx td.pn-mx-sub.pn-mx-lq { background: var(--pn-lq); }
-  .pn-mx tr.is-sel td.pn-mx-sub.pn-mx-lq { background: var(--pn-lq); }
-  .pn-leg-lq { background: var(--pn-lq); }
   .pn-mx th.pn-mx-grupo { min-width: 9rem; max-width: 12rem; font-weight: 400; }
   .pn-mx td.pn-mx-grupo { background: var(--color-panel); text-align: left; padding: 3px var(--cds-pad-sm); min-width: 9rem; max-width: 12rem; font-size: .85em; line-height: 1.25; color: var(--color-fg-muted); white-space: normal; }
   .pn-sub-filtro { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm); font-size: var(--cds-font-size-caption); color: var(--color-fg); }
@@ -438,24 +433,12 @@
             </div>
           </div>
         </div>
-        <div class="pn-field">Limpeza química
-          <div class="pn-multi" id="pn-lq">
-            <button type="button" class="pn-multi-btn" aria-expanded="false"><span data-draw="filtro-lq">—</span></button>
-            <div hidden class="pn-multi-list" role="group" aria-label="Limpeza química">
-              <div class="pn-multi-opcoes" data-draw="op-lq" data-source="pcp juntas escopos"></div>
-              <div class="pn-multi-acoes">
-                <button type="button" class="pn-btn pn-todos" data-param="lq">Todas</button>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
       <div class="pn-legend" role="list" aria-label="Legenda das cores de avanço">
         <span class="pn-leg pn-leg-0" role="listitem"><b>0%</b> não iniciado</span>
         <span class="pn-leg pn-leg-50" role="listitem"><b>1% a 79%</b> em andamento</span>
         <span class="pn-leg pn-leg-100" role="listitem"><b>80% a 100%</b> avançado</span>
         <span class="pn-leg pn-leg-vazio" role="listitem"><b>·</b> sem atividade prevista</span>
-        <span class="pn-leg pn-leg-lq" role="listitem"><b>Pasta</b> com limpeza química</span>
       </div>
     </div>
     <div class="pn-matriz" data-draw="matriz-pasta" data-source="pcp juntas escopos">—</div>
@@ -531,8 +514,8 @@
   // Filtro vazio vale como "todas".
   const P = () => {
     const p = dash.params();
-    const D = lista(p.disciplinas), E = lista(p.etapas), T = lista(p.datas), K = lista(p.skids), A = lista(p.areas), F = lista(p.fornecedores), EE = lista(p.escopos), G = lista(p.grupos), LQ = lista(p.lq);
-    return { D, E, T, K, A, F, EE, G, LQ, dSet: new Set(D), eSet: new Set(E), tSet: new Set(T), kSet: new Set(K), aSet: new Set(A), fSet: new Set(F), eeSet: new Set(EE), gSet: new Set(G), lqSet: new Set(LQ), s: p.sistema || null, sub: p.subsistema || null };
+    const D = lista(p.disciplinas), E = lista(p.etapas), T = lista(p.datas), K = lista(p.skids), A = lista(p.areas), F = lista(p.fornecedores), EE = lista(p.escopos), G = lista(p.grupos);
+    return { D, E, T, K, A, F, EE, G, dSet: new Set(D), eSet: new Set(E), tSet: new Set(T), kSet: new Set(K), aSet: new Set(A), fSet: new Set(F), eeSet: new Set(EE), gSet: new Set(G), s: p.sistema || null, sub: p.subsistema || null };
   };
   // TTAS e preservação não entram em nenhuma parte do painel.
   const FORA = new Set(['TTAS', 'Preservação']);
@@ -966,10 +949,6 @@
         // O clique faz o que o quadro pede (cfg.aoClicar); só vale quando a linha é de um sistema só.
         if (umSistema) b.addEventListener('click', () => cfg.aoClicar(info, linha));
         c0.append(b);
-        if (lq && info.chave !== cfg.vazio && temLQ(lq, info.chave)) {
-          c0.classList.add('pn-mx-lq');
-          c0.title = 'Pasta com limpeza química';
-        }
       }
       if (cfg.grupo) {
         const cg = tr.insertCell();
@@ -1013,12 +992,8 @@
     const escopos = cfg.escopo ? mapaEscopos() : null;
     const filtraEscopo = !!(cfg.escopo && p.EE.length);
     if (filtraEscopo) subs = subs.filter(({ r }) => escoposDa(escopos, r.chave).some((e) => p.eeSet.has(e)));
-    // Filtro de limpeza química (só no quadro de pastas): "Com" = X na coluna Limpeza Química da lista de pastas.
-    const lq = cfg.escopo ? pastasLQ() : null;
-    const filtraLQ = !!(cfg.escopo && p.LQ.length && p.LQ.length < 2);
-    if (filtraLQ) subs = subs.filter(({ r }) => r.chave !== cfg.vazio && p.lqSet.has(temLQ(lq, r.chave) ? LQ_SIM : LQ_NAO));
     if (busca) subs = subs.filter(({ r }) => (r.chave + ' ' + (descs.get(r.linha) || '')).toLowerCase().includes(busca));
-    if (busca || filtraEscopo || filtraLQ) {
+    if (busca || filtraEscopo) {
       linhaTot = 'Busca|';
       const somarEm = (mapa, de, para) => {
         const x = mapa.get(de);
@@ -1322,15 +1297,7 @@
     }
   });
 
-  // ---- Limpeza química das pastas (coluna Limpeza Química da 06-Lista de Pastas_Milplan) -----------
-  const LQ_SIM = 'Com limpeza química', LQ_NAO = 'Sem limpeza química';
-  const pastasLQ = () => {
-    const g = dash.data('escopos');
-    const m = new Set();
-    if (g.status === 'ok') for (const r of g.data) if (r.limpeza_quimica) m.add(r.pasta);
-    return m;
-  };
-  const temLQ = (m, pasta) => m.has(pasta) || m.has(String(pasta).replace(/\.\d+$/, ''));
+  // ---- Grupo das pastas (GRUPO DE SUBSISTEMA da PCP_ATIVIDADE) -----------------------------------
   // Grupo de cada subsistema (na PCP, cada subsistema tem um grupo só).
   const grupoDoSubsistema = () => {
     const g = dash.data('pcp');
@@ -1381,17 +1348,6 @@
     const qtd = new Map([...porGrupo].map(([k, v]) => [k, v.size]));
     opcoesLocais(el, 'grupos', qtd, [...qtd.keys()].sort((a, b) => (a === SEM_GRUPO) - (b === SEM_GRUPO) || a.localeCompare(b, 'pt-BR')));
   });
-  dash.draw('filtro-lq', (el) => {
-    el.textContent = resumoFiltro(P().LQ, 'Todas', 'opções');
-  });
-  dash.draw('op-lq', (el) => {
-    const lq = pastasLQ();
-    const todas = new Set(pastasDoQuadro().map((r) => r.pasta));
-    let com = 0;
-    for (const pa of todas) if (temLQ(lq, pa)) com++;
-    opcoesLocais(el, 'lq', new Map([[LQ_SIM, com], [LQ_NAO, todas.size - com]]), [LQ_SIM, LQ_NAO]);
-  });
-
   const marcados = (param) => {
     const v = [];
     document.querySelectorAll('.pn-chk').forEach((c) => { if (c.dataset.param === param && c.checked) v.push(c.value); });
@@ -1479,7 +1435,7 @@
     if (rows && !rows.length) { dash.setParams({ sistema: null, subsistema: null }); return; }
     // O subsistema escolhido só vale dentro do sistema aberto e enquanto tiver registros com os filtros.
     if (p.sub && (!p.s || !p.sub.startsWith(p.s + '|') || !rows.some((r) => doSubsistema(p, r)))) { dash.setParams({ subsistema: null }); return; }
-    const sets = { disciplinas: p.dSet, etapas: p.eSet, datas: p.tSet, fornecedores: p.fSet, skids: p.kSet, areas: p.aSet, escopos: p.eeSet, grupos: p.gSet, lq: p.lqSet };
+    const sets = { disciplinas: p.dSet, etapas: p.eSet, datas: p.tSet, fornecedores: p.fSet, skids: p.kSet, areas: p.aSet, escopos: p.eeSet, grupos: p.gSet };
     document.querySelectorAll('.pn-chk').forEach((c) => { c.checked = (sets[c.dataset.param] || new Set()).has(c.value); });
     document.querySelectorAll('.pn-esc-sis').forEach((el) => { el.hidden = !p.s; });
     document.querySelectorAll('.pn-esc-todos').forEach((el) => { el.hidden = !!p.s; });
