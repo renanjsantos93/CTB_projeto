@@ -87,7 +87,7 @@ def base_por_pasta(d):
 
     juntas = collections.defaultdict(lambda: [0, 0, None, None])
     for j in d["__JUNTAS__"]:
-        if j["tipo"] != "pasta" or not j["pasta"]:
+        if j["tipo"] != "pasta" or not str(j["pasta"]).startswith(PREFIXO_PASTA):
             continue
         x = juntas[j["pasta"]]
         x[0] += j["previstas"] or 0
@@ -194,7 +194,12 @@ LIN_CAB = 4          # linha do cabeçalho das abas de dados
 MAX_LIN = 600        # linhas com fórmula prontas no CONTROLE (cabem pastas novas)
 MAX_RESTR = 500
 
-STATUS_LISTA = ["P/TESTE", "P/REMONTAGEM", "EM MONTAGEM", "CONCLUÍDA", "SEM CTB", "NÃO ENCONTRADA"]
+STATUS_LISTA = ["EM MONTAGEM", "P/TESTE", "P/REMONTAGEM", "PRÉ WALKDOWN", "PENDENTE DOCUMENTAÇÃO HMSWEB",
+                "CONCLUÍDA", "SEM CTB", "SEM ESCOPO", "NÃO ENCONTRADA"]
+COR_STATUS = {"EM MONTAGEM": "FFEB9C", "P/TESTE": "C6EFCE", "P/REMONTAGEM": "DDEBF7", "PRÉ WALKDOWN": "B4C6E7",
+              "PENDENTE DOCUMENTAÇÃO HMSWEB": "F4B183", "CONCLUÍDA": "A9D08E", "SEM CTB": "EDEDED",
+              "SEM ESCOPO": "D9D9D9", "NÃO ENCONTRADA": "F8CBAD"}
+ESC_RADIX, ESC_FURUI, ESC_INTRA = "RADIX", "FURUI", "FURUI - INTRA SKID"
 PROG_LISTA = ["PRIORIDADE", "OPORTUNIDADE"]
 TIPOS_RESTR = ["Material", "Suporte", "Junta reprovada / END", "Pendência A (punch)", "Documentação / Isométrico",
                "Liberação de área / PT", "Andaime / Acesso", "Equipamento de teste", "Spool / Pré-fabricação",
@@ -246,12 +251,18 @@ def aba_parametros(wb):
     ws["A9"] = "REGRA DO STATUS CALCULADO (coluna STATUS CALCULADO do CONTROLE)"
     ws["A9"].font = F_H2
     regras = [
-        "1. CONCLUÍDA: certificado de teste aprovado no HMSWEB e remontagem aprovada.",
-        "2. P/REMONTAGEM: certificado de teste aprovado no HMSWEB, remontagem ainda não aprovada.",
-        "3. P/TESTE: sem certificado de teste e avanço ControlTub >= avanço mínimo (B4).",
-        "4. EM MONTAGEM: sem certificado de teste e avanço ControlTub < avanço mínimo.",
-        "5. SEM CTB: pasta existe na PCP mas não tem juntas no ControlTub.",
-        "6. NÃO ENCONTRADA: pasta do controle que não existe na base do Painel OLODUM.",
+        "ESCOPO RADIX e FURUI (e INTRA SKID com junta liberada no ControlTub):",
+        "  EM MONTAGEM: avanço ControlTub < avanço mínimo (B4).",
+        "  P/TESTE: avanço ControlTub >= avanço mínimo e sem certificado de teste aprovado no HMSWEB.",
+        "  P/REMONTAGEM: teste aprovado no HMSWEB e LV de montagem e/ou remontagem pendente.",
+        "  CONCLUÍDA: teste, LV de montagem e remontagem aprovados.",
+        "  SEM CTB: sem juntas no ControlTub e sem teste aprovado.",
+        "ESCOPO FURUI - INTRA SKID (sem junta liberada no ControlTub):",
+        "  PENDENTE DOCUMENTAÇÃO HMSWEB: algum certificado (exceto LV de montagem e remontagem) não aprovado.",
+        "  PRÉ WALKDOWN: demais certificados aprovados; pendente LV de montagem e/ou remontagem.",
+        "  CONCLUÍDA: todos os certificados aprovados.",
+        "OUTROS: SEM ESCOPO (pasta sem escopo na lista Milplan) e NÃO ENCONTRADA (fora do Painel OLODUM).",
+        "Atividade que não existe na PCP para a pasta (N/A) não é exigida.",
     ]
     for i, t in enumerate(regras):
         ws.cell(10 + i, 1, t).font = F_TXT
@@ -303,7 +314,7 @@ CTRL = [
     ("JUNTAS LIBERADAS CTB", "auto", 9), ("SALDO DE JUNTAS", "auto", 8), ("AVANÇO CTB", "auto", 10),
     ("MONTAGEM HMS (LVM)", "auto", 11), ("MAPA JUNTAS HMS", "auto", 11), ("CERTIFICADO TESTE HMSWEB", "auto", 10),
     ("LAVAGEM HMS", "auto", 11), ("REMONTAGEM HMS", "auto", 11), ("DATA PLANEJADA TH", "auto", 11),
-    ("PEND. A TUB. SUBSISTEMA", "auto", 9), ("STATUS CALCULADO", "auto", 14),
+    ("PEND. A TUB. SUBSISTEMA", "auto", 9), ("STATUS CALCULADO", "auto", 22),
     ("PROGRAMAÇÃO", "inp", 13), ("SEMANA PROG.", "inp", 9), ("STATUS SALA DE GUERRA", "inp", 14),
     ("CONFERÊNCIA STATUS", "auto", 22), ("AVANÇO FÍSICO MILPLAN", "inp", 10), ("DESVIO MILPLAN − CTB", "auto", 10),
     ("ANÁLISE AVANÇO", "auto", 14), ("RESTRIÇÕES ABERTAS", "auto", 10), ("LIBERAR P/ TESTE?", "auto", 11),
@@ -346,9 +357,19 @@ def f_controle(r, P, nb):
                              % (pasta, b("M"), m, b("M"), m),
         "PEND. A TUB. SUBSISTEMA": look("N", texto=False),
         "STATUS CALCULADO": (
-            '=IF(%(p)s="","",IF(ISNA(%(m)s),"NÃO ENCONTRADA",IF(AND(%(th)s="SIM",%(rem)s="APROVADA"),"CONCLUÍDA",'
-            'IF(%(th)s="SIM","P/REMONTAGEM",IF(%(av)s="","SEM CTB",IF(%(av)s>=%(min)s,"P/TESTE","EM MONTAGEM"))))))'
-            % {"p": pasta, "m": m, "th": x("CERTIFICADO TESTE HMSWEB"), "rem": x("REMONTAGEM HMS"),
+            '=IF(%(p)s="","",IF(ISNA(%(m)s),"NÃO ENCONTRADA",'
+            'IF(OR(%(e)s="%(radix)s",%(e)s="%(furui)s",AND(%(e)s="%(intra)s",N(%(lib)s)>0)),'
+            # critério RADIX / FURUI
+            'IF(%(th)s="SIM",IF(AND(%(lvm)s="APROVADA",%(rem)s="APROVADA"),"CONCLUÍDA","P/REMONTAGEM"),'
+            'IF(%(av)s="","SEM CTB",IF(%(av)s>=%(min)s,"P/TESTE","EM MONTAGEM"))),'
+            # critério FURUI - INTRA SKID
+            'IF(%(e)s="%(intra)s",IF(AND(OR(%(mj)s="APROVADA",%(mj)s="N/A"),%(th)s="SIM",'
+            'OR(%(lav)s="APROVADA",%(lav)s="N/A")),IF(AND(OR(%(lvm)s="APROVADA",%(lvm)s="N/A"),'
+            'OR(%(rem)s="APROVADA",%(rem)s="N/A")),"CONCLUÍDA","PRÉ WALKDOWN"),"PENDENTE DOCUMENTAÇÃO HMSWEB"),'
+            '"SEM ESCOPO"))))'
+            % {"p": pasta, "m": m, "e": x("ESCOPO"), "radix": ESC_RADIX, "furui": ESC_FURUI, "intra": ESC_INTRA,
+               "lib": x("JUNTAS LIBERADAS CTB"), "th": x("CERTIFICADO TESTE HMSWEB"), "rem": x("REMONTAGEM HMS"),
+               "lvm": x("MONTAGEM HMS (LVM)"), "mj": x("MAPA JUNTAS HMS"), "lav": x("LAVAGEM HMS"),
                "av": x("AVANÇO CTB"), "min": P["min"]}),
         "CONFERÊNCIA STATUS": '=IF(OR(%s="",%s=""),"",IF(%s=%s,"OK","DIVERGE: CALC. "&%s))'
                               % (pasta, x("STATUS SALA DE GUERRA"), x("STATUS SALA DE GUERRA"),
@@ -436,8 +457,7 @@ def aba_controle(wb, linhas, P, nb):
     dv.add(rng("AVANÇO FÍSICO MILPLAN"))
 
     # formatação condicional
-    cores = {"P/TESTE": "C6EFCE", "P/REMONTAGEM": "DDEBF7", "EM MONTAGEM": "FFEB9C", "CONCLUÍDA": "A9D08E",
-             "SEM CTB": "EDEDED", "NÃO ENCONTRADA": "F8CBAD"}
+    cores = COR_STATUS
     for nome in ("STATUS CALCULADO",):
         for st, cor in cores.items():
             ws.conditional_formatting.add(rng(nome), CellIsRule(operator="equal", formula=['"%s"' % st],
@@ -558,8 +578,7 @@ def aba_programacao(wb, ult_ctrl):
             if cols[j - 1] == "DATA PLAN. TH":
                 c.number_format = "dd/mm/yyyy"
     rng = lambda col: "%s%d:%s%d" % (col, LIN_CAB + 1, col, LIN_CAB + n)
-    cores = {"P/TESTE": "C6EFCE", "P/REMONTAGEM": "DDEBF7", "EM MONTAGEM": "FFEB9C", "CONCLUÍDA": "A9D08E",
-             "SEM CTB": "EDEDED", "NÃO ENCONTRADA": "F8CBAD"}
+    cores = COR_STATUS
     for st, cor in cores.items():
         ws.conditional_formatting.add(rng("F"), CellIsRule(operator="equal", formula=['"%s"' % st],
                                       fill=PatternFill("solid", fgColor=cor), font=Font(name=FONTE, size=9, bold=True)))
@@ -598,7 +617,7 @@ def aba_painel(wb, ult_ctrl, ult_restr, gerado_em):
         ("P/ TESTE (CTB ≥ MÍN.)", '=COUNTIF(%s,"P/TESTE")' % st),
         ("LIBERAR P/ TESTE (SEM RESTRIÇÃO)", '=COUNTIF(%s,"SIM")' % R("LIBERAR P/ TESTE?")),
         ("P/ REMONTAGEM", '=COUNTIF(%s,"P/REMONTAGEM")' % st),
-        ("EM MONTAGEM", '=COUNTIF(%s,"EM MONTAGEM")' % st),
+        ("PRÉ WALKDOWN (INTRA SKID)", '=COUNTIF(%s,"PRÉ WALKDOWN")' % st),
         ("RESTRIÇÕES ABERTAS", '=COUNTIFS(\'RESTRIÇÕES\'!$B$%d:$B$%d,"<>",\'RESTRIÇÕES\'!$I$%d:$I$%d,"<>ENCERRADA")'
          % (LIN_CAB + 1, ult_restr, LIN_CAB + 1, ult_restr)),
         ("STATUS DIVERGENTE", '=COUNTIF(%s,"DIVERG*")' % R("CONFERÊNCIA STATUS")),
@@ -651,8 +670,7 @@ def aba_painel(wb, ult_ctrl, ult_restr, gerado_em):
         if r == rt:
             for j in range(3, 10):
                 ws.cell(r, j).fill = FILL_KPI
-    cores = {"P/TESTE": "C6EFCE", "P/REMONTAGEM": "DDEBF7", "EM MONTAGEM": "FFEB9C", "CONCLUÍDA": "A9D08E",
-             "SEM CTB": "EDEDED", "NÃO ENCONTRADA": "F8CBAD"}
+    cores = COR_STATUS
     for i, s in enumerate(STATUS_LISTA):
         ws.cell(9 + i, 3).fill = PatternFill("solid", fgColor=cores[s])
 
@@ -667,7 +685,7 @@ def aba_painel(wb, ult_ctrl, ult_restr, gerado_em):
     for s, cor in zip(ch.series, ["1F3864", "5B9BD5", "BFBFBF"]):
         s.graphicalProperties.solidFill = cor
         s.graphicalProperties.line.solidFill = cor
-    ch.height, ch.width = 7.2, 15.5
+    ch.height, ch.width = 8.4, 15.5
     ch.roundedCorners = False
     ch.legend.position = "b"
     ch.legend.overlay = False
@@ -679,7 +697,7 @@ def aba_painel(wb, ult_ctrl, ult_restr, gerado_em):
     ws.add_chart(ch, "K7")
 
     # ---------------- Avanço Milplan x ControlTub
-    r0 = rt + 9  # abaixo do gráfico
+    r0 = rt + 7  # abaixo do gráfico
     ws.cell(r0, 2, "AVANÇO FÍSICO MILPLAN × CONTROLTUB").font = F_H2
     ws.cell(r0, 6, '="Tolerância: ±"&TEXT(\'PARÂMETROS\'!$B$5,"0%")').font = F_SUB
     for j, h in enumerate(["ANÁLISE", "", "TODAS", "NA PROGRAMAÇÃO"]):
