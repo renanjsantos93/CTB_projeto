@@ -7,8 +7,9 @@ INSTALACAO (uma vez)
    Se nao existir, instale o Python 3 (python.org ou Microsoft Store / Portal da TI),
    marcando "Add python.exe to PATH". O pacote openpyxl e instalado sozinho na primeira execucao
    (se a rede bloquear, peca a TI:  py -m pip install openpyxl).
-2. Copie TODOS os arquivos desta pasta para:
-   J:\PARNAIBA - UGNL 2\04. QAQC\09. Matriz de rastreabilidade\10-CONTROLE DE PASTA
+2. Descompacte e deixe TODOS os arquivos juntos, direto dentro de:
+   J:\PARNAIBA - UGNL 2\04. QAQC\09. Matriz de rastreabilidade\10-CONTROLE DE PASTA\PAINEL DE ATUALIZACAO
+   (a planilha, os .bat e o .py precisam ficar na mesma pasta; a pasta HISTORICO e criada ali).
 
 USO
 ---
@@ -26,7 +27,7 @@ O QUE A ATUALIZACAO FAZ
   AVANCO TESTE, AVANCO REMONTAGEM e AVANCO PRE WALK, na semana do calendario da obra.
 - MANTEM o que voce preencheu: categoria, semanas programadas, data de conclusao, responsavel,
   observacao, restricoes e a aba RESTRICOES.
-- Antes de gravar guarda uma copia em 10-CONTROLE DE PASTA\HISTORICO (com data e hora) e
+- Antes de gravar guarda uma copia em PAINEL DE ATUALIZACAO\HISTORICO (com data e hora) e
   o registro da ultima execucao em HISTORICO\ultima_atualizacao.log.
 
 IMPORTANTE
