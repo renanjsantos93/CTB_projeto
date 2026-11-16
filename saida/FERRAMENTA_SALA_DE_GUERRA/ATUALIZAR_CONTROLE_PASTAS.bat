@@ -3,30 +3,27 @@ chcp 65001 >nul
 set PYTHONIOENCODING=utf-8
 rem ==========================================================================
 rem  ATUALIZA O CONTROLE DE PASTAS - SALA DE GUERRA
-rem  Le o Painel OLODUM (.html mais recente) e a OLODUM_BASEDADOS (mais recente)
-rem  da pasta 07.OLODUM e atualiza a planilha de controle que esta NESTA pasta
-rem  (a mesma deste .bat, ex.: 10-CONTROLE DE PASTA\PAINEL DE ATUALIZACAO).
-rem  Se a pasta do OLODUM mudar, altere so a linha PASTA_OLODUM abaixo.
+rem  Le o Painel OLODUM (.html) e a OLODUM_BASEDADOS (.xlsx) mais recentes que
+rem  estiverem NESTA pasta (PAINEL DE ATUALIZACAO) e atualiza SOMENTE as colunas
+rem  automaticas (ITEM ate STATUS CALCULADO, AVANCO e PROGRAMACAO DA SEMANA) e a
+rem  aba BASE_OLODUM da planilha de controle que fica na pasta de cima.
+rem  Para trocar a planilha (ex.: REV5), altere so a linha NOME_CONTROLE.
 rem ==========================================================================
-set "BASE=J:\PARNAIBA - UGNL 2\04. QAQC\09. Matriz de rastreabilidade"
-set "PASTA_OLODUM=%BASE%\07.OLODUM"
-set "PASTA_CONTROLE=%~dp0"
-if "%PASTA_CONTROLE:~-1%"=="\" set "PASTA_CONTROLE=%PASTA_CONTROLE:~0,-1%"
-set "CONTROLE=%PASTA_CONTROLE%\CONTROLE_PASTAS_SALA_DE_GUERRA.xlsx"
-set "LOG=%PASTA_CONTROLE%\HISTORICO\ultima_atualizacao.log"
+set "NOME_CONTROLE=CONTROLE_PASTAS_SALA_DE_GUERRA_REV4.xlsx"
 
-if not exist "%PASTA_OLODUM%" (
-  echo ERRO: pasta do OLODUM nao encontrada: %PASTA_OLODUM%
-  echo Verifique se a unidade J: esta conectada.
-  if /i not "%~1"=="auto" pause
-  exit /b 1
-)
+set "PASTA_DADOS=%~dp0"
+if "%PASTA_DADOS:~-1%"=="\" set "PASTA_DADOS=%PASTA_DADOS:~0,-1%"
+for %%I in ("%PASTA_DADOS%\..") do set "PASTA_CONTROLE=%%~fI"
+set "CONTROLE=%PASTA_CONTROLE%\%NOME_CONTROLE%"
+set "LOG=%PASTA_DADOS%\HISTORICO\ultima_atualizacao.log"
+
 if not exist "%CONTROLE%" (
-  echo ERRO: CONTROLE_PASTAS_SALA_DE_GUERRA.xlsx nao esta na mesma pasta deste .bat.
+  echo ERRO: planilha nao encontrada: %CONTROLE%
+  echo Confira a linha NOME_CONTROLE neste .bat.
   if /i not "%~1"=="auto" pause
   exit /b 1
 )
-if not exist "%PASTA_CONTROLE%\HISTORICO" mkdir "%PASTA_CONTROLE%\HISTORICO"
+if not exist "%PASTA_DADOS%\HISTORICO" mkdir "%PASTA_DADOS%\HISTORICO"
 
 set "PY="
 where py >nul 2>nul && set "PY=py"
@@ -38,8 +35,8 @@ if not defined PY (
 )
 %PY% -c "import openpyxl" >nul 2>nul || %PY% -m pip install --user openpyxl
 
-echo Atualizando o controle de pastas...
-%PY% "%~dp0sala_guerra_pastas.py" "%PASTA_OLODUM%" "%CONTROLE%" "%CONTROLE%" --pcp "%PASTA_OLODUM%" --backup "%PASTA_CONTROLE%\HISTORICO" > "%LOG%" 2>&1
+echo Atualizando %NOME_CONTROLE% ...
+%PY% "%~dp0sala_guerra_pastas.py" "%PASTA_DADOS%" "%CONTROLE%" --atualizar --pcp "%PASTA_DADOS%" --backup "%PASTA_DADOS%\HISTORICO" > "%LOG%" 2>&1
 set ERRO=%ERRORLEVEL%
 type "%LOG%"
 echo.

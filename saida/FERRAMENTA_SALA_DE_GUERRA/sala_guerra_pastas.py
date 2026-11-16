@@ -37,6 +37,8 @@ import os
 import re
 import shutil
 import sys
+import zipfile
+from xml.sax.saxutils import escape as _esc
 
 import openpyxl
 from openpyxl.chart import BarChart, Reference
@@ -489,7 +491,7 @@ def aba_base(wb, base, gerado_em):
 
 
 def f_controle(r, P, nb):
-    b = lambda col: "'BASE_OLODUM'!$%s$%d:$%s$%d" % (col, LIN_CAB + 1, col, nb)
+    b = lambda col: "'BASE_OLODUM'!$%s:$%s" % (col, col)  # coluna inteira: a base pode crescer
     pasta = "$%s%d" % (C["Nº DA PASTA"], r)
     m = "MATCH(%s,%s,0)" % (pasta, b("A"))
     x = lambda nome: "%s%d" % (C[nome], r)
@@ -1101,11 +1103,311 @@ def gerar(painel, controle, saida, calendario=None, painel_anterior=None, pcp=No
     print("Gravado:", saida)
 
 
+
+# ----------------------------------------------------------------------------- modo ATUALIZAR (no próprio arquivo)
+# Altera só as células das colunas automáticas do CONTROLE e a aba BASE_OLODUM, editando o XML do .xlsx.
+# Gráficos, validações, formatação, abas e colunas manuais ficam exatamente como estão.
+_RE_ROW = re.compile(r'<row\b[^>]*?(?:/>|>.*?</row>)', re.S)
+_RE_C = re.compile(r'<c\b[^>]*?(?:/>|>.*?</c>)', re.S)
+_RE_ATTR = lambda nome: re.compile(r'\b%s="([^"]*)"' % nome)
+
+
+def _col_idx(letras):
+    n = 0
+    for ch in letras:
+        n = n * 26 + ord(ch) - 64
+    return n
+
+
+def _ref(cel):
+    m = re.match(r"([A-Z]+)(\d+)", cel)
+    return m.group(1), int(m.group(2))
+
+
+def _cel_formula(ref, s, formula):
+    f = formula[1:] if formula.startswith("=") else formula
+    return '<c r="%s"%s><f>%s</f></c>' % (ref, s, _esc(f))
+
+
+def _cel_valor(ref, s, v):
+    if v is None or v == "":
+        return '<c r="%s"%s/>' % (ref, s)
+    if isinstance(v, (dt.date, dt.datetime)):
+        d = v.date() if isinstance(v, dt.datetime) else v
+        v = (d - dt.date(1899, 12, 30)).days
+    if isinstance(v, bool):
+        v = int(v)
+    if isinstance(v, (int, float)):
+        return '<c r="%s"%s><v>%s</v></c>' % (ref, s, repr(v) if isinstance(v, float) else v)
+    return '<c r="%s"%s t="inlineStr"><is><t xml:space="preserve">%s</t></is></c>' % (ref, s, _esc(str(v)))
+
+
+def _patch_linhas(xml, novas, estilo_col, remover_apos=None):
+    """novas = {linha: {coluna: função(ref, s) -> xml da célula}}. remover_apos: apaga linhas > N que não estejam
+    em 'novas' (usado na BASE)."""
+    ini = xml.index("<sheetData")
+    abre = xml.index(">", ini) + 1
+    if xml[ini:abre].endswith("/>"):  # <sheetData/> vazio
+        corpo, depois = "", xml[abre:]
+    else:
+        fim = xml.index("</sheetData>")
+        corpo, depois = xml[abre:fim], xml[fim + len("</sheetData>"):]
+    linhas = {}
+    for m in _RE_ROW.finditer(corpo):
+        raw = m.group(0)
+        r = int(_RE_ATTR("r").search(raw).group(1))
+        linhas[r] = raw
+    for r in sorted(set(linhas) | set(novas)):
+        if remover_apos is not None and r > remover_apos and r not in novas:
+            del linhas[r]
+            continue
+        if r not in novas:
+            continue
+        raw = linhas.get(r, '<row r="%d"/>' % r)
+        tag = re.match(r"<row\b[^>]*?(?=/?>)", raw).group(0)
+        tag = re.sub(r'\sspans="[^"]*"', "", tag)
+        celulas = {}
+        for c in _RE_C.findall(raw[len(tag):]):
+            celulas[_ref(_RE_ATTR("r").search(c).group(1))[0]] = c
+        for col, fn in novas[r].items():
+            atual = celulas.get(col)
+            sm = _RE_ATTR("s").search(atual) if atual else None
+            s = ' s="%s"' % sm.group(1) if sm else (' s="%s"' % estilo_col[col] if estilo_col.get(col) else "")
+            celulas[col] = fn("%s%d" % (col, r), s)
+        corpo_row = "".join(celulas[c] for c in sorted(celulas, key=_col_idx))
+        linhas[r] = "%s>%s</row>" % (tag, corpo_row)
+    novo = "".join(linhas[r] for r in sorted(linhas))
+    return xml[:ini] + "<sheetData>" + novo + "</sheetData>" + depois
+
+
+def _estilos_linha(xml, r):
+    m = re.search(r'<row\b[^>]*\br="%d"[^>]*?(?:/>|>.*?</row>)' % r, xml, re.S)
+    est = {}
+    if m:
+        for c in _RE_C.findall(m.group(0)):
+            col = _ref(_RE_ATTR("r").search(c).group(1))[0]
+            sm = _RE_ATTR("s").search(c)
+            if sm:
+                est[col] = sm.group(1)
+    return est
+
+
+def _grupos_compartilhados(xml):
+    """{si: (colunas do ref)} das fórmulas compartilhadas (Excel grava assim ao arrastar fórmulas)."""
+    g = {}
+    for m in re.finditer(r'<f\b[^>]*\bt="shared"[^>]*\bref="([A-Z]+)\d+(?::([A-Z]+)\d+)?"[^>]*\bsi="(\d+)"', xml):
+        a, b = m.group(1), m.group(2) or m.group(1)
+        g[m.group(3)] = set(get_column_letter(i) for i in range(_col_idx(a), _col_idx(b) + 1))
+    for m in re.finditer(r'<f\b[^>]*\bsi="(\d+)"[^>]*\bref="([A-Z]+)\d+(?::([A-Z]+)\d+)?"', xml):
+        a, b = m.group(2), m.group(3) or m.group(2)
+        g[m.group(1)] = set(get_column_letter(i) for i in range(_col_idx(a), _col_idx(b) + 1))
+    return g
+
+
+def atualizar(painel, controle, pcp=None, backup=None, calendario=None):
+    painel = mais_recente(painel, ["*OLODUM*.html", "*olodum*.html"])
+    print("Painel OLODUM: %s (salvo em %s)" % (painel, _quando(painel)))
+    if pcp:
+        pcp = mais_recente(pcp, ["OLODUM_BASEDADOS*.xlsx", "OLODUM_BASEDADOS*.xlsm"])
+        print("Base PCP:      %s (salva em %s)" % (pcp, _quando(pcp)))
+    print("Controle:      %s" % controle)
+    d = ler_painel(painel)
+    base = base_por_pasta(d)
+
+    # leitura (somente leitura: nada é gravado pelo openpyxl)
+    wbr = openpyxl.load_workbook(controle, read_only=True, data_only=True)
+    for aba in ("CONTROLE", "BASE_OLODUM", "PARÂMETROS"):
+        if aba not in wbr.sheetnames:
+            raise SystemExit("A planilha não tem a aba %s" % aba)
+    cal = ler_calendario(calendario if calendario else wbr)
+    ws = wbr["CONTROLE"]
+    hdr, pastas, ult_lin = {}, {}, LIN_CAB
+    for row in ws.iter_rows(min_row=LIN_CAB):
+        for c in row:
+            if c.value is None or not hasattr(c, "column_letter"):
+                continue
+            if c.row == LIN_CAB:
+                hdr[_norm(c.value)] = c.column_letter
+        if row and hasattr(row[0], "row"):
+            ult_lin = max(ult_lin, row[0].row)
+    col_pasta = hdr.get("Nº DA PASTA")
+    if not col_pasta:
+        raise SystemExit("Cabeçalho 'Nº DA PASTA' não encontrado na linha %d do CONTROLE" % LIN_CAB)
+    for row in ws.iter_rows(min_row=LIN_CAB + 1, min_col=_col_idx(col_pasta), max_col=_col_idx(col_pasta)):
+        for c in row:
+            if c.value and "NÃO CADASTRADA" not in str(c.value).upper():
+                pastas[c.row] = str(c.value).strip()
+    avancos_ant = {}
+    if not pcp:
+        cols_av = [hdr.get(_norm(a)) for a in AVANCOS]
+        for row in ws.iter_rows(min_row=LIN_CAB + 1):
+            for c in row:
+                if hasattr(c, "column_letter") and c.column_letter in cols_av and c.row in pastas:
+                    avancos_ant.setdefault(c.row, {})[AVANCOS[cols_av.index(c.column_letter)]] = c.value
+    wp = wbr["PARÂMETROS"]
+    param_ok = "SEMANA VIGENTE" in _norm(wp["A8"].value) and "MÍNIMO" in _norm(wp["A4"].value)
+    wbr.close()
+
+    layout_ok = all(hdr.get(_norm(nome)) == C[nome] for nome, _, _ in CTRL)
+    if not layout_ok:
+        dif = [nome for nome, _, _ in CTRL if hdr.get(_norm(nome)) != C[nome]]
+        print("AVISO: colunas fora da posição original (%s). As fórmulas não serão reescritas; "
+              "só a BASE_OLODUM e as colunas de AVANÇO." % ", ".join(dif[:6]))
+    if not param_ok:
+        print("AVISO: aba PARÂMETROS diferente da original; as fórmulas não serão reescritas.")
+
+    # pastas novas do painel entram no fim
+    existentes = set(pastas.values())
+    prox = max(pastas) + 1 if pastas else LIN_CAB + 1
+    novas = []
+    for b in base:
+        if b["PASTA"] not in existentes:
+            pastas[prox] = b["PASTA"]
+            novas.append((prox, b))
+            prox += 1
+    ult_lin = max(ult_lin, prox - 1)
+
+    # avanços
+    linhas = [dict({"Nº DA PASTA": p}, **avancos_ant.get(r, {})) for r, p in sorted(pastas.items())]
+    if pcp:
+        av = avancos_pcp(ler_pcp(pcp), base, cal)
+        for l in linhas:
+            for col in AVANCOS:
+                l[col] = av.get(l["Nº DA PASTA"], {}).get(col)
+    else:
+        gravar_avancos(linhas, base, d, cal)
+    av_por_linha = dict(zip(sorted(pastas), linhas))
+
+    # ---- edição do XML
+    z = zipfile.ZipFile(controle)
+    arquivos = {n: z.read(n) for n in z.namelist()}
+    infos = {i.filename: i for i in z.infolist()}
+    z.close()
+    wbxml = arquivos["xl/workbook.xml"].decode("utf-8")
+    rels = arquivos["xl/_rels/workbook.xml.rels"].decode("utf-8")
+    alvo = {}
+    for m in re.finditer(r'<sheet\b[^>]*?name="([^"]+)"[^>]*?r:id="([^"]+)"', wbxml):
+        t = re.search(r'<Relationship\b[^>]*Id="%s"[^>]*Target="([^"]+)"' % m.group(2), rels) or \
+            re.search(r'<Relationship\b[^>]*Target="([^"]+)"[^>]*Id="%s"' % m.group(2), rels)
+        alvo[m.group(1).replace("&amp;", "&")] = "xl/" + t.group(1).lstrip("/").replace("xl/", "")
+    x_ctrl = arquivos[alvo["CONTROLE"]].decode("utf-8")
+    x_base = arquivos[alvo["BASE_OLODUM"]].decode("utf-8")
+
+    # BASE_OLODUM: substitui as linhas de dados
+    est_base = _estilos_linha(x_base, LIN_CAB + 1) or _estilos_linha(x_base, LIN_CAB)
+    letras_b = [get_column_letter(i) for i in range(1, len(BASE_COLS) + 1)]
+    novas_b = {}
+    for i, b in enumerate(base, LIN_CAB + 1):
+        novas_b[i] = {L: (lambda v: lambda ref, s: _cel_valor(ref, s, v))(b[k]) for L, k in zip(letras_b, BASE_COLS)}
+    x_base = _patch_linhas(x_base, novas_b, est_base, remover_apos=LIN_CAB)
+    ult_b = LIN_CAB + len(base)
+    x_base = re.sub(r'<dimension ref="[^"]*"/>', '<dimension ref="A1:%s%d"/>' % (letras_b[-1], ult_b), x_base)
+    x_base = re.sub(r'(<autoFilter\b[^>]*\bref=")[^"]*"', r'\g<1>A%d:%s%d"' % (LIN_CAB, letras_b[-1], ult_b), x_base)
+    x_base = re.sub(r"Importada do Painel OLODUM em [^.<]*", "Importada do Painel OLODUM em %s"
+                    % d["_data"].strftime("%d/%m/%Y %H:%M UTC"), x_base)
+
+    # CONTROLE: fórmulas das colunas automáticas + avanços + pastas novas
+    auto = [C[n] for n, t, _ in CTRL if t in ("auto", "progauto", "pcpauto", "aux")] if (layout_ok and param_ok) else []
+    grupos = _grupos_compartilhados(x_ctrl)
+    intocaveis = {si for si, cols in grupos.items() if not cols <= set(auto)}
+    if intocaveis:
+        # células de grupos compartilhados que atravessam colunas manuais: não mexer nessas fórmulas
+        cel_intoc = set()
+        for raw in _RE_C.findall(x_ctrl):
+            m = re.search(r'<f\b[^>]*\bsi="(\d+)"', raw)
+            if m and m.group(1) in intocaveis:
+                cel_intoc.add(_RE_ATTR("r").search(raw).group(1))
+    else:
+        cel_intoc = set()
+    est_ctrl = _estilos_linha(x_ctrl, LIN_CAB + 1)
+    P = {"min": "'PARÂMETROS'!$B$4", "hoje": "'PARÂMETROS'!$B$5", "sv": "'PARÂMETROS'!$B$8",
+         "svt": "'PARÂMETROS'!$B$9"}
+    nome_por_col = {C[n]: n for n, _, _ in CTRL}
+    edits, n_form = {}, 0
+    for r in range(LIN_CAB + 1, ult_lin + 1):
+        e = {}
+        if auto:
+            f = f_controle(r, P, 0)
+            for L in auto:
+                if "%s%d" % (L, r) in cel_intoc:
+                    continue
+                e[L] = (lambda fx: lambda ref, s: _cel_formula(ref, s, fx))(f[nome_por_col[L]])
+                n_form += 1
+        if r in av_por_linha:
+            for a in AVANCOS:
+                L = hdr.get(_norm(a))
+                if L:
+                    e[L] = (lambda v: lambda ref, s: _cel_valor(ref, s, v))(av_por_linha[r].get(a))
+        if e:
+            edits[r] = e
+    for r, b in novas:
+        edits.setdefault(r, {})
+        edits[r][col_pasta] = (lambda v: lambda ref, s: _cel_valor(ref, s, v))(b["PASTA"])
+        if hdr.get("SUBSOP HMS"):
+            edits[r][hdr["SUBSOP HMS"]] = (lambda v: lambda ref, s: _cel_valor(ref, s, v))(b["SUBSISTEMA"])
+    x_ctrl = _patch_linhas(x_ctrl, edits, est_ctrl)
+
+    arquivos[alvo["CONTROLE"]] = x_ctrl.encode("utf-8")
+    arquivos[alvo["BASE_OLODUM"]] = x_base.encode("utf-8")
+    # fórmulas que apontavam para um trecho fixo da BASE passam a usar a coluna inteira (todas as abas)
+    for nome, caminho in alvo.items():
+        x = arquivos[caminho].decode("utf-8")
+        x2 = re.sub(r"('?BASE_OLODUM'?!)\$([A-Z]+)\$\d+:\$\2\$\d+", r"\1$\2:$\2", x)
+        if nome == "PAINEL":
+            x2 = re.sub(r"Base Painel OLODUM: \d\d/\d\d/\d{4} \d\d:\d\d UTC",
+                        "Base Painel OLODUM: %s" % d["_data"].strftime("%d/%m/%Y %H:%M UTC"), x2)
+        if x2 != x:
+            arquivos[caminho] = x2.encode("utf-8")
+    # recálculo completo ao abrir; descarta a cadeia de cálculo antiga
+    if "<calcPr" in wbxml:
+        wbxml = re.sub(r"<calcPr\b([^>]*?)/?>", lambda m: "<calcPr%s fullCalcOnLoad=\"1\"/>"
+                       % re.sub(r'\sfullCalcOnLoad="[^"]*"', "", m.group(1)).rstrip("/"), wbxml, count=1)
+    else:
+        pos = wbxml.index("</definedNames>") + len("</definedNames>") if "</definedNames>" in wbxml \
+            else wbxml.index("</sheets>") + len("</sheets>")
+        wbxml = wbxml[:pos] + '<calcPr fullCalcOnLoad="1"/>' + wbxml[pos:]
+    arquivos["xl/workbook.xml"] = wbxml.encode("utf-8")
+    if "xl/calcChain.xml" in arquivos:
+        del arquivos["xl/calcChain.xml"]
+        arquivos["xl/_rels/workbook.xml.rels"] = re.sub(r'<Relationship\b[^>]*calcChain[^>]*/>', "", rels).encode("utf-8")
+        ct = arquivos["[Content_Types].xml"].decode("utf-8")
+        arquivos["[Content_Types].xml"] = re.sub(r'<Override\b[^>]*calcChain[^>]*/>', "", ct).encode("utf-8")
+
+    if backup:
+        os.makedirs(backup, exist_ok=True)
+        nome, ext = os.path.splitext(os.path.basename(controle))
+        copia = os.path.join(backup, "%s_%s%s" % (nome, dt.datetime.now().strftime("%Y%m%d_%H%M"), ext))
+        shutil.copy2(controle, copia)
+        print("Cópia de segurança: %s" % copia)
+    temp = controle + ".tmp.xlsx"
+    with zipfile.ZipFile(temp, "w", zipfile.ZIP_DEFLATED) as zo:
+        for n, data in arquivos.items():
+            zi = infos.get(n) or zipfile.ZipInfo(n)
+            zi.compress_type = zipfile.ZIP_DEFLATED
+            zo.writestr(zi, data)
+    try:
+        os.replace(temp, controle)
+    except PermissionError:
+        os.remove(temp)
+        raise SystemExit("ERRO: não consegui gravar %s. A planilha está aberta no Excel (sua ou de outra pessoa)? "
+                         "Feche e rode de novo." % controle)
+    sem = semana_da_data(d["_data"], cal)
+    cont = collections.Counter(a for l in linhas for a in AVANCOS if l.get(a))
+    print("Painel de %s (semana %s) | pastas: %d (%d novas: %s)" % (
+        d["_data"].strftime("%d/%m/%Y %H:%M UTC"), txt_semana(sem), len(pastas), len(novas),
+        ", ".join(b["PASTA"] for _, b in novas) or "-"))
+    print("Avanços: " + ", ".join("%s %d" % (a, cont[a]) for a in AVANCOS))
+    print("Fórmulas atualizadas: %d | BASE_OLODUM: %d pastas" % (n_form, len(base)))
+    print("Atualizado:", controle)
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("painel")
     ap.add_argument("controle")
-    ap.add_argument("saida")
+    ap.add_argument("saida", nargs="?", help="omitir com --atualizar")
+    ap.add_argument("--atualizar", action="store_true",
+                    help="atualiza só as colunas automáticas e a BASE_OLODUM no próprio CONTROLE (mantém o resto)")
     ap.add_argument("--calendario")
     ap.add_argument("--painel-anterior")
     ap.add_argument("--pcp")
@@ -1113,4 +1415,9 @@ if __name__ == "__main__":
     a = ap.parse_args()
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    gerar(a.painel, a.controle, a.saida, a.calendario, a.painel_anterior, a.pcp, a.backup)
+    if a.atualizar:
+        atualizar(a.painel, a.controle, a.pcp, a.backup, a.calendario)
+    else:
+        if not a.saida:
+            ap.error("informe SAIDA ou use --atualizar")
+        gerar(a.painel, a.controle, a.saida, a.calendario, a.painel_anterior, a.pcp, a.backup)
