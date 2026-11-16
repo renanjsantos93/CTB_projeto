@@ -7,9 +7,9 @@ rem  Le o Painel OLODUM (.html) e a OLODUM_BASEDADOS (.xlsx) mais recentes que
 rem  estiverem NESTA pasta (PAINEL DE ATUALIZACAO) e atualiza SOMENTE as colunas
 rem  automaticas (ITEM ate STATUS CALCULADO, AVANCO e PROGRAMACAO DA SEMANA) e a
 rem  aba BASE_OLODUM da planilha de controle que fica na pasta de cima.
-rem  Para trocar a planilha (ex.: REV5), altere so a linha NOME_CONTROLE.
+rem  Para trocar a planilha (outro nome de arquivo), altere so a linha NOME_CONTROLE.
 rem ==========================================================================
-set "NOME_CONTROLE=CONTROLE_PASTAS_SALA_DE_GUERRA_REV4.xlsx"
+set "NOME_CONTROLE=CONTROLE_PASTAS_SALA_DE_GUERRA.xlsx"
 
 set "PASTA_DADOS=%~dp0"
 if "%PASTA_DADOS:~-1%"=="\" set "PASTA_DADOS=%PASTA_DADOS:~0,-1%"

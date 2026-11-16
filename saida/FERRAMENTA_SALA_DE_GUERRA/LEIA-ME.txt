@@ -4,7 +4,7 @@ CONTROLE DE PASTAS - SALA DE GUERRA (tubulacao) - ATUALIZADOR
 ONDE FICA CADA COISA
 --------------------
 J:\PARNAIBA - UGNL 2\04. QAQC\09. Matriz de rastreabilidade\10-CONTROLE DE PASTA\
-    CONTROLE_PASTAS_SALA_DE_GUERRA_REV4.xlsx      <- a planilha de controle (a sua)
+    CONTROLE_PASTAS_SALA_DE_GUERRA.xlsx      <- a planilha de controle (a sua)
     PAINEL DE ATUALIZACAO\
         ATUALIZAR_CONTROLE_PASTAS.bat             <- de dois cliques para atualizar
         AGENDAR_ATUALIZACAO_DIARIA.bat            <- opcional (seg a sex, 07:40)
@@ -26,7 +26,7 @@ USO
 ---
 1. Substitua o Painel_OLODUM.html e a OLODUM_BASEDADOS_Rev1.xlsx na pasta PAINEL DE ATUALIZACAO
    (se houver mais de um, o mais recente e usado).
-2. FECHE a CONTROLE_PASTAS_SALA_DE_GUERRA_REV4.xlsx (todos que estiverem com ela aberta).
+2. FECHE a CONTROLE_PASTAS_SALA_DE_GUERRA.xlsx (todos que estiverem com ela aberta).
 3. De dois cliques em ATUALIZAR_CONTROLE_PASTAS.bat.
 
 O QUE E ATUALIZADO (e so isso)
@@ -48,4 +48,4 @@ CUIDADOS
 --------
 - Nao mude os cabecalhos da linha 4 do CONTROLE nem a posicao das colunas automaticas
   (se mudar, o atualizador avisa e atualiza so a BASE_OLODUM e os AVANCOS).
-- Para usar outra planilha (ex.: REV5), troque a linha NOME_CONTROLE no ATUALIZAR_CONTROLE_PASTAS.bat.
+- Para usar outra planilha (outro nome de arquivo), troque a linha NOME_CONTROLE no ATUALIZAR_CONTROLE_PASTAS.bat.
