@@ -4,13 +4,15 @@ Uso:
     python scripts/sala_guerra_pastas.py PAINEL_OLODUM.html CONTROLE.xlsx SAIDA.xlsx \
         --pcp OLODUM_BASEDADOS.xlsx [--calendario 03.CALENDARIO_SEMANAL.xlsx]
 
-PAINEL_OLODUM.html   painel exportado (PCP/HMSWEB, juntas do ControlTub, pendências e escopo).
+PAINEL_OLODUM.html   painel exportado (ou a pasta onde ele fica: usa o .html de OLODUM mais recente) (PCP/HMSWEB, juntas do ControlTub, pendências e escopo).
 CONTROLE.xlsx        controle anterior (gerado por este script, inclusive revisões editadas à mão
                      como a REV1). São preservados: Nº da pasta, SUBSOP, categoria de entrega, as
                      semanas programadas, data de conclusão, responsável, observação, restrições,
                      as semanas de avanço já gravadas e a aba RESTRIÇÕES.
 --calendario         calendário da obra (DATA x SEMANA). Se omitido, usa a aba CALENDÁRIO do controle.
---pcp                planilha OLODUM_BASEDADOS (a mesma que gera o painel), aba PCP_ATIVIDADE. Recomendado.
+--pcp                planilha OLODUM_BASEDADOS (a mesma que gera o painel), aba PCP_ATIVIDADE, ou a pasta
+                     onde ela fica (usa a OLODUM_BASEDADOS*.xlsx mais recente). Recomendado.
+--backup PASTA       guarda uma cópia datada do controle antes de sobrescrevê-lo.
 --painel-anterior    só sem --pcp: painel da atualização anterior (o que já estava aprovado nele recebe
                      "ATÉ S-xxx").
 
@@ -29,8 +31,12 @@ primeira vez no painel, e as semanas já gravadas no controle são mantidas.
 import argparse
 import collections
 import datetime as dt
+import glob
 import json
+import os
 import re
+import shutil
+import sys
 
 import openpyxl
 from openpyxl.chart import BarChart, Reference
@@ -1008,7 +1014,29 @@ def gravar_avancos(linhas, base, d, cal, anterior=None):
 
 
 # ----------------------------------------------------------------------------- principal
-def gerar(painel, controle, saida, calendario=None, painel_anterior=None, pcp=None):
+def mais_recente(caminho, padroes):
+    """Se 'caminho' é uma pasta, devolve o arquivo mais recente (com subpastas) que casa com os padrões."""
+    if not os.path.isdir(caminho):
+        return caminho
+    achados = []
+    for pad in padroes:
+        achados += glob.glob(os.path.join(caminho, "**", pad), recursive=True)
+    achados = [f for f in set(achados) if not os.path.basename(f).startswith("~$")]
+    if not achados:
+        raise SystemExit("Nenhum arquivo %s encontrado em %s" % (" / ".join(padroes), caminho))
+    return max(achados, key=os.path.getmtime)
+
+
+def _quando(f):
+    return dt.datetime.fromtimestamp(os.path.getmtime(f)).strftime("%d/%m/%Y %H:%M")
+
+
+def gerar(painel, controle, saida, calendario=None, painel_anterior=None, pcp=None, backup=None):
+    painel = mais_recente(painel, ["*OLODUM*.html", "*olodum*.html"])
+    print("Painel OLODUM: %s (salvo em %s)" % (painel, _quando(painel)))
+    if pcp:
+        pcp = mais_recente(pcp, ["OLODUM_BASEDADOS*.xlsx", "OLODUM_BASEDADOS*.xlsm"])
+        print("Base PCP:      %s (salva em %s)" % (pcp, _quando(pcp)))
     d = ler_painel(painel)
     base = base_por_pasta(d)
     gerado_em = d["_data"].strftime("%d/%m/%Y %H:%M UTC") if d["_data"] else ""
@@ -1055,7 +1083,20 @@ def gerar(painel, controle, saida, calendario=None, painel_anterior=None, pcp=No
     wb["PROGRAMAÇÃO"].sheet_properties.tabColor = "00B050"
     wb.active = 0
     wb.calculation.fullCalcOnLoad = True
-    wb.save(saida)
+    if backup and os.path.exists(saida):
+        os.makedirs(backup, exist_ok=True)
+        nome, ext = os.path.splitext(os.path.basename(saida))
+        copia = os.path.join(backup, "%s_%s%s" % (nome, dt.datetime.now().strftime("%Y%m%d_%H%M"), ext))
+        shutil.copy2(saida, copia)
+        print("Cópia de segurança: %s" % copia)
+    temp = saida + ".tmp.xlsx"
+    wb.save(temp)
+    try:
+        os.replace(temp, saida)
+    except PermissionError:
+        os.remove(temp)
+        raise SystemExit("ERRO: não consegui gravar %s. A planilha está aberta no Excel (sua ou de outra pessoa)? "
+                         "Feche e rode de novo." % saida)
     print("Painel de %s (semana %s) | pastas no controle: %d (%d novas)" % (gerado_em, txt_semana(sem), len(linhas), len(novas)))
     print("Gravado:", saida)
 
@@ -1068,5 +1109,8 @@ if __name__ == "__main__":
     ap.add_argument("--calendario")
     ap.add_argument("--painel-anterior")
     ap.add_argument("--pcp")
+    ap.add_argument("--backup", help="pasta onde guardar uma cópia do controle antes de sobrescrever")
     a = ap.parse_args()
-    gerar(a.painel, a.controle, a.saida, a.calendario, a.painel_anterior, a.pcp)
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    gerar(a.painel, a.controle, a.saida, a.calendario, a.painel_anterior, a.pcp, a.backup)

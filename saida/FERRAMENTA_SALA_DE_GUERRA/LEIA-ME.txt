@@ -1,0 +1,36 @@
+CONTROLE DE PASTAS - SALA DE GUERRA (tubulacao)
+================================================
+
+INSTALACAO (uma vez)
+--------------------
+1. Python no computador: abra o "Prompt de Comando" e digite  py --version
+   Se nao existir, instale o Python 3 (python.org ou Microsoft Store / Portal da TI),
+   marcando "Add python.exe to PATH". O pacote openpyxl e instalado sozinho na primeira execucao
+   (se a rede bloquear, peca a TI:  py -m pip install openpyxl).
+2. Copie TODOS os arquivos desta pasta para:
+   J:\PARNAIBA - UGNL 2\04. QAQC\09. Matriz de rastreabilidade\10-CONTROLE DE PASTA
+
+USO
+---
+- Salve o Painel OLODUM (.html) e a OLODUM_BASEDADOS_Rev1.xlsx atualizados na pasta 07.OLODUM
+  (o script pega o .html de OLODUM e a OLODUM_BASEDADOS mais recentes dessa pasta e subpastas).
+- FECHE a planilha CONTROLE_PASTAS_SALA_DE_GUERRA.xlsx (de todos que estiverem com ela aberta).
+- De dois cliques em ATUALIZAR_CONTROLE_PASTAS.bat.
+- Opcional: AGENDAR_ATUALIZACAO_DIARIA.bat agenda a atualizacao automatica de seg a sex as 07:40.
+
+O QUE A ATUALIZACAO FAZ
+-----------------------
+- Do Painel OLODUM: juntas do ControlTub, situacao das atividades no HMSWEB, escopo, pendencias
+  -> STATUS CALCULADO, rankings do PAINEL, pastas novas entram no fim do CONTROLE.
+- Da OLODUM_BASEDADOS (aba PCP_ATIVIDADE, coluna DATA DA EXECUCAO) -> colunas AVANCO MONTAGEM,
+  AVANCO TESTE, AVANCO REMONTAGEM e AVANCO PRE WALK, na semana do calendario da obra.
+- MANTEM o que voce preencheu: categoria, semanas programadas, data de conclusao, responsavel,
+  observacao, restricoes e a aba RESTRICOES.
+- Antes de gravar guarda uma copia em 10-CONTROLE DE PASTA\HISTORICO (com data e hora) e
+  o registro da ultima execucao em HISTORICO\ultima_atualizacao.log.
+
+IMPORTANTE
+----------
+- Preencha somente as colunas de fundo amarelo. As demais sao recalculadas a cada atualizacao.
+- Nao mude nomes de abas nem cabecalhos da linha 4 do CONTROLE.
+- Semana vigente: automatica pela data de hoje (aba PARAMETROS, celula B7 permite fixar outra).
