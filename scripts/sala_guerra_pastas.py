@@ -2,7 +2,7 @@
 
 Uso:
     python scripts/sala_guerra_pastas.py PAINEL_OLODUM.html CONTROLE.xlsx SAIDA.xlsx \
-        [--calendario 03.CALENDARIO_SEMANAL.xlsx] [--painel-anterior PAINEL_ANTERIOR.html]
+        --pcp OLODUM_BASEDADOS.xlsx [--calendario 03.CALENDARIO_SEMANAL.xlsx]
 
 PAINEL_OLODUM.html   painel exportado (PCP/HMSWEB, juntas do ControlTub, pendências e escopo).
 CONTROLE.xlsx        controle anterior (gerado por este script, inclusive revisões editadas à mão
@@ -10,13 +10,21 @@ CONTROLE.xlsx        controle anterior (gerado por este script, inclusive revis�
                      semanas programadas, data de conclusão, responsável, observação, restrições,
                      as semanas de avanço já gravadas e a aba RESTRIÇÕES.
 --calendario         calendário da obra (DATA x SEMANA). Se omitido, usa a aba CALENDÁRIO do controle.
---painel-anterior    painel da atualização anterior. Só é preciso na primeira carga: o que já estava
-                     aprovado nele recebe "ATÉ S-xxx" (semana do painel anterior) em vez da semana atual.
+--pcp                planilha OLODUM_BASEDADOS (a mesma que gera o painel), aba PCP_ATIVIDADE. Recomendado.
+--painel-anterior    só sem --pcp: painel da atualização anterior (o que já estava aprovado nele recebe
+                     "ATÉ S-xxx").
 
-AVANÇO (MONTAGEM, TESTE, REMONTAGEM, PRÉ WALK): o Painel OLODUM não traz a data em que a atividade foi
-aprovada na PCP. A semana é gravada quando o script vê a atividade aprovada pela primeira vez: a semana
-(do calendário da obra) da data de atualização do painel. Por isso o controle deve ser atualizado ao
-menos uma vez por semana, sempre partindo do controle anterior.
+AVANÇO (MONTAGEM, TESTE, REMONTAGEM, PRÉ WALK) = semana do calendário da obra da DATA DA EXECUÇÃO na
+PCP_ATIVIDADE:
+    MONTAGEM   -> Lista de Verificação de Montagem - Tubulação
+    TESTE      -> Teste Hidrostático em Tubulação
+    REMONTAGEM -> Remontagem
+    PRÉ WALK   -> só FURUI - INTRA SKID sem junta liberada no ControlTub: a última data de execução entre
+                  mapa de juntas, teste hidrostático e lavagem (as que existirem na PCP), quando todas
+                  estiverem executadas.
+Datas fora do calendário seguem a mesma numeração (semanas de segunda a domingo).
+Sem --pcp (método de contingência): a semana é gravada quando o script vê a atividade aprovada pela
+primeira vez no painel, e as semanas já gravadas no controle são mantidas.
 """
 import argparse
 import collections
@@ -141,6 +149,61 @@ def etapas_aprovadas(b):
     }
 
 
+def _atv_base(nome):
+    """'Remontagem (449.COM.FP.045)' -> 'REMONTAGEM'."""
+    return re.sub(r"\s*\(.*$", "", str(nome or "")).strip().upper()
+
+
+def ler_pcp(caminho):
+    """{pasta: {atividade normalizada: data da execução ou None}} da aba PCP_ATIVIDADE."""
+    wb = openpyxl.load_workbook(caminho, read_only=True, data_only=True)
+    ws = wb["PCP_ATIVIDADE"]
+    linhas = ws.iter_rows(values_only=True)
+    hdr = {_norm(h): i for i, h in enumerate(next(linhas))}
+    for k in ("ATIVIDADE", "DATA DA EXECUÇÃO", "Nº DA PASTA", "COD IDENTIFICAÇÃO"):
+        if k not in hdr:
+            raise SystemExit("PCP_ATIVIDADE sem a coluna %s" % k)
+    pcp = collections.defaultdict(dict)
+    for r in linhas:
+        p = r[hdr["Nº DA PASTA"]]
+        if not str(p or "").startswith(PREFIXO_PASTA):
+            p = r[hdr["COD IDENTIFICAÇÃO"]]
+        if not str(p or "").startswith(PREFIXO_PASTA):
+            continue
+        data = r[hdr["DATA DA EXECUÇÃO"]]
+        if isinstance(data, str):
+            try:
+                data = dt.datetime.strptime(data.strip()[:10], "%d/%m/%Y")
+            except ValueError:
+                data = None
+        atv = _atv_base(r[hdr["ATIVIDADE"]])
+        anterior = pcp[str(p).strip()].get(atv)
+        if atv not in pcp[str(p).strip()] or (data and (anterior is None or data > anterior)):
+            pcp[str(p).strip()][atv] = data if isinstance(data, dt.datetime) else None
+    wb.close()
+    return pcp
+
+
+def avancos_pcp(pcp, base, cal):
+    """{pasta: {coluna AVANÇO: 'S-xxx' ou None}} pela DATA DA EXECUÇÃO."""
+    info = {b["PASTA"]: b for b in base}
+    sem = lambda d: txt_semana(semana_da_data(d, cal)) if d else None
+    mapa = {"AVANÇO MONTAGEM": _atv_base(ATV_LVM), "AVANÇO TESTE": _atv_base(ATV_TH),
+            "AVANÇO REMONTAGEM": _atv_base(ATV_REM)}
+    exig_pre = [_atv_base(a) for a in (ATV_MJ, ATV_TH, ATV_LAV)]
+    out = {}
+    for p, atvs in pcp.items():
+        o = {col: sem(atvs.get(a)) for col, a in mapa.items()}
+        b = info.get(p)
+        o["AVANÇO PRÉ WALK"] = None
+        if b and b["ESCOPO"] == ESC_INTRA and not (b["JUNTAS LIBERADAS"] or 0) > 0:
+            datas = [atvs[a] for a in exig_pre if a in atvs]
+            if datas and all(datas):
+                o["AVANÇO PRÉ WALK"] = sem(max(datas))
+        out[p] = o
+    return out
+
+
 def ler_calendario(caminho_ou_wb):
     wb = caminho_ou_wb if not isinstance(caminho_ou_wb, str) else openpyxl.load_workbook(caminho_ou_wb, data_only=True)
     ws = wb["CALENDÁRIO"] if "CALENDÁRIO" in wb.sheetnames else wb.worksheets[0]
@@ -151,6 +214,18 @@ def ler_calendario(caminho_ou_wb):
     if not cal:
         raise SystemExit("Calendário vazio")
     return cal
+
+
+def semana_da_data(data, cal):
+    """Número da semana do calendário da obra; fora dele, continua a numeração semanal (segunda a domingo)."""
+    if isinstance(data, dt.datetime):
+        data = data.date()
+    if data in cal:
+        return num_semana(cal[data])
+    ref = min(cal)
+    while ref.weekday() != 0:  # primeira segunda-feira do calendário
+        ref += dt.timedelta(days=1)
+    return num_semana(cal[ref]) + (data - ref).days // 7
 
 
 def num_semana(v):
@@ -359,9 +434,9 @@ def aba_parametros(wb, ult_cal):
         "  MONTAGEM -> EM MONTAGEM | TESTE -> P/TESTE | REMONTAGEM -> P/REMONTAGEM | PRÉ WALK -> PRÉ WALKDOWN.",
         "  Se mais de uma etapa estiver na semana vigente, vale a mais adiantada.",
         "",
-        "AVANÇO (MONTAGEM/TESTE/REMONTAGEM/PRÉ WALK): semana do calendário em que a atividade apareceu",
-        "  aprovada na PCP (LV de montagem / teste hidrostático / remontagem / todos os certificados da",
-        "  INTRA SKID exceto LV e remontagem). 'ATÉ S-xxx' = já estava aprovada na primeira carga.",
+        "AVANÇO (MONTAGEM/TESTE/REMONTAGEM/PRÉ WALK): semana do calendário da DATA DA EXECUÇÃO na PCP_ATIVIDADE",
+        "  (OLODUM_BASEDADOS): LV de montagem / teste hidrostático / remontagem. PRÉ WALK (INTRA SKID): última",
+        "  execução entre mapa de juntas, teste hidrostático e lavagem, quando todas estiverem executadas.",
         "PROGRAMAÇÃO DA SEMANA: REALIZADA quando o avanço da etapa programada caiu na semana vigente.",
     ]
     for i, t in enumerate(regras):
@@ -469,7 +544,7 @@ def aba_controle(wb, linhas, P, nb):
     ws = wb.create_sheet("CONTROLE")
     titulo(ws, "CONTROLE DE PASTAS DE TUBULAÇÃO - SALA DE GUERRA",
            "Fundo amarelo = preenchimento manual. Azul = Painel OLODUM / ControlTub / HMSWEB. Verde = semana em que a "
-           "etapa avançou na PCP (gravada a cada atualização). Para incluir uma pasta, digite o número na coluna B.")
+           "etapa foi executada na PCP (DATA DA EXECUÇÃO). Para incluir uma pasta, digite o número na coluna B.")
     ws["A3"] = ('="Semana vigente: "&%s&"   |   Exemplo: CATEGORIA = PRIORIDADE | SEMANA PROG TESTE = S-062 '
                 '| DATA CONCLUSÃO = 20/11/2026 | RESTRIÇÕES ABERTAS = falta suporte S-12"' % P["svt"])
     ws["A3"].font = Font(name=FONTE, size=9, bold=True, color="C00000")
@@ -932,7 +1007,7 @@ def gravar_avancos(linhas, base, d, cal, anterior=None):
 
 
 # ----------------------------------------------------------------------------- principal
-def gerar(painel, controle, saida, calendario=None, painel_anterior=None):
+def gerar(painel, controle, saida, calendario=None, painel_anterior=None, pcp=None):
     d = ler_painel(painel)
     base = base_por_pasta(d)
     gerado_em = d["_data"].strftime("%d/%m/%Y %H:%M UTC") if d["_data"] else ""
@@ -947,8 +1022,21 @@ def gerar(painel, controle, saida, calendario=None, painel_anterior=None):
     novas = [b for b in base if b["PASTA"] not in vistos]
     for b in novas:
         linhas.append({"Nº DA PASTA": b["PASTA"], "SUBSOP HMS": b["SUBSISTEMA"]})
-    anterior = ler_painel(painel_anterior) if painel_anterior else None
-    sem, cont = gravar_avancos(linhas, base, d, cal, anterior)
+    if pcp:
+        av = avancos_pcp(ler_pcp(pcp), base, cal)
+        cont = collections.Counter()
+        for l in linhas:
+            a = av.get(l["Nº DA PASTA"], {})
+            for col in AVANCOS:
+                l[col] = a.get(col)
+                cont[col] += bool(l[col])
+        sem = semana_da_data(d["_data"], cal)
+        print("Avanço pela DATA DA EXECUÇÃO da PCP: " + ", ".join("%s %d" % (k, cont[k]) for k in AVANCOS))
+    else:
+        anterior = ler_painel(painel_anterior) if painel_anterior else None
+        sem, cont = gravar_avancos(linhas, base, d, cal, anterior)
+        print("Semanas de avanço: %d mantidas, %d 'ATÉ' (painel anterior), %d novas nesta semana"
+              % (cont["mantida"], cont["anterior"], cont["nova"]))
 
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
@@ -968,8 +1056,6 @@ def gerar(painel, controle, saida, calendario=None, painel_anterior=None):
     wb.calculation.fullCalcOnLoad = True
     wb.save(saida)
     print("Painel de %s (semana %s) | pastas no controle: %d (%d novas)" % (gerado_em, txt_semana(sem), len(linhas), len(novas)))
-    print("Semanas de avanço: %d mantidas, %d 'ATÉ' (painel anterior), %d novas nesta semana"
-          % (cont["mantida"], cont["anterior"], cont["nova"]))
     print("Gravado:", saida)
 
 
@@ -980,5 +1066,6 @@ if __name__ == "__main__":
     ap.add_argument("saida")
     ap.add_argument("--calendario")
     ap.add_argument("--painel-anterior")
+    ap.add_argument("--pcp")
     a = ap.parse_args()
-    gerar(a.painel, a.controle, a.saida, a.calendario, a.painel_anterior)
+    gerar(a.painel, a.controle, a.saida, a.calendario, a.painel_anterior, a.pcp)
