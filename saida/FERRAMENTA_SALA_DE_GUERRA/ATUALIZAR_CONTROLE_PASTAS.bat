@@ -25,11 +25,20 @@ if not exist "%CONTROLE%" (
 )
 if not exist "%PASTA_DADOS%\HISTORICO" mkdir "%PASTA_DADOS%\HISTORICO"
 
+rem testa se o Python funciona de verdade (o atalho "python" da Microsoft Store nao conta)
 set "PY="
-where py >nul 2>nul && set "PY=py"
-if not defined PY ( where python >nul 2>nul && set "PY=python" )
+py -c "import sys" >nul 2>nul && set "PY=py"
+if not defined PY ( python -c "import sys" >nul 2>nul && set "PY=python" )
 if not defined PY (
-  echo ERRO: Python nao encontrado. Veja o LEIA-ME.txt ^(passo 1^).
+  echo.
+  echo ERRO: o Python nao esta instalado neste computador.
+  echo.
+  echo Instale uma vez ^(nao precisa de administrador^):
+  echo   - Microsoft Store: procure "Python 3.12" e clique em Obter; ou
+  echo   - python.org/downloads: no instalador marque "Add python.exe to PATH"
+  echo     e clique em "Install Now".
+  echo Depois feche esta janela e rode este .bat de novo.
+  echo.
   if /i not "%~1"=="auto" pause
   exit /b 1
 )

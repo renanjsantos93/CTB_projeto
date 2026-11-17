@@ -17,8 +17,12 @@ J:\PARNAIBA - UGNL 2\04. QAQC\09. Matriz de rastreabilidade\10-CONTROLE DE PASTA
 INSTALACAO (uma vez)
 --------------------
 1. Python no computador: no Prompt de Comando digite  py --version
-   Se nao existir, instale o Python 3 (python.org, Microsoft Store ou portal da TI) marcando
-   "Add python.exe to PATH". O openpyxl e instalado sozinho na primeira execucao
+   Se aparecer "Python was not found" ou erro, instale o Python 3 (nao precisa de administrador):
+   - Microsoft Store: procure "Python 3.12" > Obter; ou
+   - python.org/downloads > Download Python 3.x > no instalador marque "Add python.exe to PATH"
+     > Install Now.
+   Feche e abra o Prompt e teste de novo: deve aparecer "Python 3.x.x".
+   O openpyxl e instalado sozinho na primeira execucao
    (se a rede bloquear, peca a TI:  py -m pip install openpyxl).
 2. Descompacte o zip direto dentro da pasta PAINEL DE ATUALIZACAO.
 
