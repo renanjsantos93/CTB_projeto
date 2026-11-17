@@ -3,53 +3,46 @@ CONTROLE DE PASTAS - SALA DE GUERRA (tubulacao) - ATUALIZADOR
 
 ONDE FICA CADA COISA
 --------------------
-J:\PARNAIBA - UGNL 2\04. QAQC\09. Matriz de rastreabilidade\10-CONTROLE DE PASTA\
-    CONTROLE_PASTAS_SALA_DE_GUERRA.xlsx      <- a planilha de controle (a sua)
-    PAINEL DE ATUALIZACAO\
-        ATUALIZAR_CONTROLE_PASTAS.bat             <- de dois cliques para atualizar
-        AGENDAR_ATUALIZACAO_DIARIA.bat            <- opcional (seg a sex, 07:40)
+C:\Users\renan.jesus\OneDrive - Eneva S.A\Painel OLODUM\
+    Painel_OLODUM.html                <- painel gerado (o mais recente da pasta e subpastas e usado)
+    OLODUM_BASEDADOS_Rev1.xlsx        <- base da PCP (a mais recente da pasta e subpastas e usada)
+    PAINEL DE ATUALIZACAO\            <- descompacte o zip AQUI
+        ATUALIZAR_CONTROLE_PASTAS.bat <- de dois cliques para atualizar
+        AGENDAR_ATUALIZACAO_DIARIA.bat
         sala_guerra_pastas.py
         LEIA-ME.txt
-        Painel_OLODUM.html                        <- coloque aqui o painel atualizado
-        OLODUM_BASEDADOS_Rev1.xlsx                <- coloque aqui a base atualizada
-        HISTORICO\                                <- copias de seguranca + ultima_atualizacao.log
+        HISTORICO\                    <- copias de seguranca da planilha + ultima_atualizacao.log
 
-INSTALACAO (uma vez)
---------------------
-1. Python no computador: no Prompt de Comando digite  py --version
-   Se aparecer "Python was not found" ou erro, instale o Python 3 (nao precisa de administrador):
-   - Microsoft Store: procure "Python 3.12" > Obter; ou
-   - python.org/downloads > Download Python 3.x > no instalador marque "Add python.exe to PATH"
-     > Install Now.
-   Feche e abra o Prompt e teste de novo: deve aparecer "Python 3.x.x".
-   O openpyxl e instalado sozinho na primeira execucao
-   (se a rede bloquear, peca a TI:  py -m pip install openpyxl).
-2. Descompacte o zip direto dentro da pasta PAINEL DE ATUALIZACAO.
+Planilha atualizada (na rede):
+J:\PARNAIBA - UGNL 2\04. QAQC\09. Matriz de rastreabilidade\10-CONTROLE DE PASTA\CONTROLE_PASTAS_SALA_DE_GUERRA.xlsx
+
+PYTHON
+------
+O .bat procura sozinho um Python que funcione: PATH, AppData\Local\Programs\Python, Anaconda/Miniconda,
+Arquivos de Programas e dentro da pasta Painel OLODUM. O atalho "python" da Microsoft Store e ignorado.
+O pacote openpyxl e instalado sozinho se faltar.
 
 USO
 ---
-1. Substitua o Painel_OLODUM.html e a OLODUM_BASEDADOS_Rev1.xlsx na pasta PAINEL DE ATUALIZACAO
-   (se houver mais de um, o mais recente e usado).
+1. Gere/atualize o Painel OLODUM e a OLODUM_BASEDADOS como de costume.
 2. FECHE a CONTROLE_PASTAS_SALA_DE_GUERRA.xlsx (todos que estiverem com ela aberta).
-3. De dois cliques em ATUALIZAR_CONTROLE_PASTAS.bat.
+3. De dois cliques em PAINEL DE ATUALIZACAO\ATUALIZAR_CONTROLE_PASTAS.bat.
 
 O QUE E ATUALIZADO (e so isso)
 ------------------------------
 - Aba BASE_OLODUM: refeita com o Painel OLODUM (juntas ControlTub, situacao HMSWEB, escopo...).
 - Aba CONTROLE, colunas automaticas: ITEM ate STATUS CALCULADO, STATUS PROGRAMACAO,
-  PROGRAMACAO DA SEMANA e as auxiliares cinza (formulas reescritas com a regra atual).
+  PROGRAMACAO DA SEMANA e as auxiliares cinza.
 - Aba CONTROLE, AVANCO MONTAGEM / TESTE / REMONTAGEM / PRE WALK: semana do calendario da obra
   da DATA DA EXECUCAO na aba PCP_ATIVIDADE da OLODUM_BASEDADOS.
 - Pastas novas do painel entram no fim da lista do CONTROLE.
 
 NAO E ALTERADO
 --------------
-Colunas manuais (categoria, semanas programadas, data de conclusao, responsavel, observacao,
-restricoes), formatacao, larguras, filtros, graficos, PAINEL, PROGRAMACAO, RESTRICOES,
-PARAMETROS e CALENDARIO. Antes de gravar e feita uma copia em PAINEL DE ATUALIZACAO\HISTORICO.
+Colunas manuais, formatacao, filtros, graficos, PAINEL, PROGRAMACAO, RESTRICOES, PARAMETROS e
+CALENDARIO. Antes de gravar e feita uma copia em PAINEL DE ATUALIZACAO\HISTORICO.
 
 CUIDADOS
 --------
-- Nao mude os cabecalhos da linha 4 do CONTROLE nem a posicao das colunas automaticas
-  (se mudar, o atualizador avisa e atualiza so a BASE_OLODUM e os AVANCOS).
-- Para usar outra planilha (outro nome de arquivo), troque a linha NOME_CONTROLE no ATUALIZAR_CONTROLE_PASTAS.bat.
+- Nao mude os cabecalhos da linha 4 do CONTROLE nem a posicao das colunas automaticas.
+- Se a planilha mudar de nome ou de pasta, troque a linha CONTROLE no ATUALIZAR_CONTROLE_PASTAS.bat.

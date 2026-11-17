@@ -3,49 +3,49 @@ chcp 65001 >nul
 set PYTHONIOENCODING=utf-8
 rem ==========================================================================
 rem  ATUALIZA O CONTROLE DE PASTAS - SALA DE GUERRA
-rem  Le o Painel OLODUM (.html) e a OLODUM_BASEDADOS (.xlsx) mais recentes que
-rem  estiverem NESTA pasta (PAINEL DE ATUALIZACAO) e atualiza SOMENTE as colunas
-rem  automaticas (ITEM ate STATUS CALCULADO, AVANCO e PROGRAMACAO DA SEMANA) e a
-rem  aba BASE_OLODUM da planilha de controle que fica na pasta de cima.
-rem  Para trocar a planilha (outro nome de arquivo), altere so a linha NOME_CONTROLE.
+rem  Esta pasta (PAINEL DE ATUALIZACAO) fica dentro da pasta "Painel OLODUM" do OneDrive.
+rem  Le o Painel OLODUM (.html) e a OLODUM_BASEDADOS (.xlsx) mais recentes da pasta
+rem  "Painel OLODUM" (e subpastas) e atualiza SOMENTE as colunas automaticas e a aba
+rem  BASE_OLODUM da planilha de controle na rede (CONTROLE abaixo).
 rem ==========================================================================
-set "NOME_CONTROLE=CONTROLE_PASTAS_SALA_DE_GUERRA.xlsx"
+set "CONTROLE=J:\PARNAIBA - UGNL 2\04. QAQC\09. Matriz de rastreabilidade\10-CONTROLE DE PASTA\CONTROLE_PASTAS_SALA_DE_GUERRA.xlsx"
 
-set "PASTA_DADOS=%~dp0"
-if "%PASTA_DADOS:~-1%"=="\" set "PASTA_DADOS=%PASTA_DADOS:~0,-1%"
-for %%I in ("%PASTA_DADOS%\..") do set "PASTA_CONTROLE=%%~fI"
-set "CONTROLE=%PASTA_CONTROLE%\%NOME_CONTROLE%"
-set "LOG=%PASTA_DADOS%\HISTORICO\ultima_atualizacao.log"
+set "PASTA_ATUALIZACAO=%~dp0"
+if "%PASTA_ATUALIZACAO:~-1%"=="\" set "PASTA_ATUALIZACAO=%PASTA_ATUALIZACAO:~0,-1%"
+for %%I in ("%PASTA_ATUALIZACAO%\..") do set "PASTA_OLODUM=%%~fI"
+set "LOG=%PASTA_ATUALIZACAO%\HISTORICO\ultima_atualizacao.log"
+if not exist "%PASTA_ATUALIZACAO%\HISTORICO" mkdir "%PASTA_ATUALIZACAO%\HISTORICO"
 
 if not exist "%CONTROLE%" (
-  echo ERRO: planilha nao encontrada: %CONTROLE%
-  echo Confira a linha NOME_CONTROLE neste .bat.
+  echo ERRO: planilha nao encontrada:
+  echo   %CONTROLE%
+  echo Verifique se a unidade J: esta conectada e o nome do arquivo ^(linha CONTROLE deste .bat^).
   if /i not "%~1"=="auto" pause
   exit /b 1
 )
-if not exist "%PASTA_DADOS%\HISTORICO" mkdir "%PASTA_DADOS%\HISTORICO"
 
-rem testa se o Python funciona de verdade (o atalho "python" da Microsoft Store nao conta)
+echo Procurando o Python...
 set "PY="
-py -c "import sys" >nul 2>nul && set "PY=py"
-if not defined PY ( python -c "import sys" >nul 2>nul && set "PY=python" )
+call :tentar "py"
+call :tentar "python"
+for /d %%D in ("%LOCALAPPDATA%\Programs\Python\Python3*") do call :tentar "%%~D\python.exe"
+for %%D in ("%USERPROFILE%\anaconda3" "%USERPROFILE%\miniconda3" "%LOCALAPPDATA%\anaconda3" "%ProgramData%\anaconda3" "%ProgramData%\miniconda3") do call :tentar "%%~D\python.exe"
+for /d %%D in ("%ProgramFiles%\Python3*") do call :tentar "%%~D\python.exe"
+if not defined PY for /f "delims=" %%P in ('where /r "%PASTA_OLODUM%" python.exe 2^>nul') do call :tentar "%%P"
 if not defined PY (
   echo.
-  echo ERRO: o Python nao esta instalado neste computador.
-  echo.
-  echo Instale uma vez ^(nao precisa de administrador^):
-  echo   - Microsoft Store: procure "Python 3.12" e clique em Obter; ou
-  echo   - python.org/downloads: no instalador marque "Add python.exe to PATH"
-  echo     e clique em "Install Now".
-  echo Depois feche esta janela e rode este .bat de novo.
-  echo.
+  echo ERRO: nenhum Python que funcione foi encontrado neste computador.
+  echo Procurei no PATH, em AppData\Local\Programs\Python, Anaconda e em:
+  echo   %PASTA_OLODUM%
+  echo Me envie o caminho do python.exe usado para gerar o Painel OLODUM.
   if /i not "%~1"=="auto" pause
   exit /b 1
 )
-%PY% -c "import openpyxl" >nul 2>nul || %PY% -m pip install --user openpyxl
+echo Python: %PY%
+"%PY%" -c "import openpyxl" >nul 2>nul || "%PY%" -m pip install --user openpyxl
 
-echo Atualizando %NOME_CONTROLE% ...
-%PY% "%~dp0sala_guerra_pastas.py" "%PASTA_DADOS%" "%CONTROLE%" --atualizar --pcp "%PASTA_DADOS%" --backup "%PASTA_DADOS%\HISTORICO" > "%LOG%" 2>&1
+echo Atualizando %CONTROLE% ...
+"%PY%" "%~dp0sala_guerra_pastas.py" "%PASTA_OLODUM%" "%CONTROLE%" --atualizar --pcp "%PASTA_OLODUM%" --backup "%PASTA_ATUALIZACAO%\HISTORICO" > "%LOG%" 2>&1
 set ERRO=%ERRORLEVEL%
 type "%LOG%"
 echo.
@@ -56,3 +56,9 @@ if not "%ERRO%"=="0" (
 )
 if /i not "%~1"=="auto" pause
 exit /b %ERRO%
+
+rem --- testa se o Python indicado executa de verdade (ignora o atalho da Microsoft Store)
+:tentar
+if defined PY exit /b 0
+"%~1" -c "import sys" >nul 2>nul && set "PY=%~1"
+exit /b 0
