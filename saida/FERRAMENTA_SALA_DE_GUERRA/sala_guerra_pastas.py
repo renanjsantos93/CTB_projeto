@@ -249,7 +249,10 @@ def txt_semana(n):
 
 
 def _norm(h):
-    return re.sub(r"\s+", " ", str(h or "")).strip().upper()
+    t = re.sub(r"\s+", " ", str(h or "")).strip().upper()
+    # variações de "Nº": N°, Nº, N.º, Nro, NO., N. -> Nº
+    t = re.sub(r"^N\s*(?:[°º˚O]|\.\s*[°º]?|RO\.?)?\s*(?=DA |DE |DO )", "Nº ", t)
+    return t
 
 
 # Colunas do CONTROLE (layout da REV1). tipo: inp = manual, auto = fórmula, pcp = semana de avanço
@@ -273,7 +276,7 @@ C = {nome: get_column_letter(i) for i, (nome, _, _) in enumerate(CTRL, 1)}
 MANUAIS = [n for n, t, _ in CTRL if t in ("inp", "prog")]
 AVANCOS = ["AVANÇO MONTAGEM", "AVANÇO TESTE", "AVANÇO REMONTAGEM", "AVANÇO PRÉ WALK"]
 LEGADO = {"PROGRAMAÇÃO": "CATEGORIA DE ENTREGA", "PRIORIDADE": "CATEGORIA DE ENTREGA",
-          "N° DA PASTA - PARA": "Nº DA PASTA", "DATA ENVIO": None}
+          "Nº DA PASTA - PARA": "Nº DA PASTA", "DATA ENVIO": None}
 
 LIN_CAB = 4
 MAX_LIN = 600
@@ -1215,38 +1218,54 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None):
     base = base_por_pasta(d)
 
     # leitura (somente leitura: nada é gravado pelo openpyxl)
-    wbr = openpyxl.load_workbook(controle, read_only=True, data_only=True)
+    import warnings
+    warnings.filterwarnings("ignore", module="openpyxl")
+    wbr = openpyxl.load_workbook(controle, data_only=True)  # só leitura: este objeto nunca é gravado
+    abas = {_norm(n): n for n in wbr.sheetnames}
     for aba in ("CONTROLE", "BASE_OLODUM", "PARÂMETROS"):
-        if aba not in wbr.sheetnames:
-            raise SystemExit("A planilha não tem a aba %s" % aba)
+        if _norm(aba) not in abas:
+            raise SystemExit("A planilha não tem a aba %s (abas: %s)" % (aba, ", ".join(wbr.sheetnames)))
     cal = ler_calendario(calendario if calendario else wbr)
-    ws = wbr["CONTROLE"]
-    hdr, pastas, ult_lin = {}, {}, LIN_CAB
-    for row in ws.iter_rows(min_row=LIN_CAB):
-        for c in row:
-            if c.value is None or not hasattr(c, "column_letter"):
-                continue
-            if c.row == LIN_CAB:
-                hdr[_norm(c.value)] = c.column_letter
-        if row and hasattr(row[0], "row"):
-            ult_lin = max(ult_lin, row[0].row)
-    col_pasta = hdr.get("Nº DA PASTA")
-    if not col_pasta:
-        raise SystemExit("Cabeçalho 'Nº DA PASTA' não encontrado na linha %d do CONTROLE" % LIN_CAB)
-    for row in ws.iter_rows(min_row=LIN_CAB + 1, min_col=_col_idx(col_pasta), max_col=_col_idx(col_pasta)):
-        for c in row:
-            if c.value and "NÃO CADASTRADA" not in str(c.value).upper():
-                pastas[c.row] = str(c.value).strip()
+    ws = wbr[abas["CONTROLE"]]
+    # linha do cabeçalho: a primeira (1 a 15) que tenha "Nº DA PASTA"
+    lin_hdr = None
+    for r in range(1, 16):
+        if any(_norm(ws.cell(r, c).value) == "Nº DA PASTA" for c in range(1, min(ws.max_column, 60) + 1)):
+            lin_hdr = r
+            break
+    if lin_hdr is None:
+        print("Não achei o cabeçalho 'Nº DA PASTA' no CONTROLE. Conteúdo das primeiras linhas:")
+        for r in range(1, 8):
+            vals = [str(ws.cell(r, c).value) for c in range(1, 8) if ws.cell(r, c).value is not None]
+            print("  linha %d: %s" % (r, " | ".join(v[:40] for v in vals)))
+        raise SystemExit("Cabeçalho 'Nº DA PASTA' não encontrado no CONTROLE")
+    if lin_hdr != LIN_CAB:
+        print("AVISO: cabeçalho na linha %d (o original é a linha %d)." % (lin_hdr, LIN_CAB))
+    hdr = {}
+    for c in range(1, ws.max_column + 1):
+        v = ws.cell(lin_hdr, c).value
+        if v is not None and _norm(v) not in hdr:
+            hdr[_norm(v)] = get_column_letter(c)
+    col_pasta = hdr["Nº DA PASTA"]
+    ult_lin = ws.max_row
+    pastas = {}
+    for r in range(lin_hdr + 1, ws.max_row + 1):
+        v = ws["%s%d" % (col_pasta, r)].value
+        if v and "NÃO CADASTRADA" not in str(v).upper():
+            pastas[r] = str(v).strip()
     avancos_ant = {}
     if not pcp:
-        cols_av = [hdr.get(_norm(a)) for a in AVANCOS]
-        for row in ws.iter_rows(min_row=LIN_CAB + 1):
-            for c in row:
-                if hasattr(c, "column_letter") and c.column_letter in cols_av and c.row in pastas:
-                    avancos_ant.setdefault(c.row, {})[AVANCOS[cols_av.index(c.column_letter)]] = c.value
-    wp = wbr["PARÂMETROS"]
+        for a in AVANCOS:
+            L = hdr.get(_norm(a))
+            if L:
+                for r in pastas:
+                    avancos_ant.setdefault(r, {})[a] = ws["%s%d" % (L, r)].value
+    wp = wbr[abas["PARÂMETROS"]]
     param_ok = "SEMANA VIGENTE" in _norm(wp["A8"].value) and "MÍNIMO" in _norm(wp["A4"].value)
+    alvo_nomes = {"CONTROLE": abas["CONTROLE"], "BASE_OLODUM": abas["BASE_OLODUM"]}
     wbr.close()
+    if lin_hdr != LIN_CAB:
+        param_ok = False  # fórmulas são escritas para o cabeçalho na linha 4
 
     layout_ok = all(hdr.get(_norm(nome)) == C[nome] for nome, _, _ in CTRL)
     if not layout_ok:
@@ -1290,6 +1309,7 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None):
         t = re.search(r'<Relationship\b[^>]*Id="%s"[^>]*Target="([^"]+)"' % m.group(2), rels) or \
             re.search(r'<Relationship\b[^>]*Target="([^"]+)"[^>]*Id="%s"' % m.group(2), rels)
         alvo[m.group(1).replace("&amp;", "&")] = "xl/" + t.group(1).lstrip("/").replace("xl/", "")
+    alvo["CONTROLE"], alvo["BASE_OLODUM"] = alvo[alvo_nomes["CONTROLE"]], alvo[alvo_nomes["BASE_OLODUM"]]
     x_ctrl = arquivos[alvo["CONTROLE"]].decode("utf-8")
     x_base = arquivos[alvo["BASE_OLODUM"]].decode("utf-8")
 
