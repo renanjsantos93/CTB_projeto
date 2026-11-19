@@ -9,7 +9,9 @@ Cada atualização:
   2. gera a base do painel (painel_sistema_pcp.py), a de pendências da 05-Planilha_pendencia
      (painel_pendencias.py), a de juntas do ControlTub (painel_juntas.py) e o Painel_OLODUM.html
      (gerar_painel_html.py);
-  3. grava os dois na pasta compartilhada do OneDrive.
+  3. grava os dois na pasta compartilhada do OneDrive;
+  4. confere se cada consulta da OLODUM atualizou e se a OLODUM e o painel estão iguais às bases
+     (verificar_bases.py); o que não confere sai no log e na janela do botão.
 
 Pasta compartilhada (o "Painel OLODUM" do OneDrive):
   Painel_OLODUM.html     o painel; abre em qualquer navegador
@@ -41,6 +43,7 @@ import painel_escopos  # noqa: E402
 import painel_juntas  # noqa: E402
 import painel_pendencias  # noqa: E402
 import painel_sistema_pcp  # noqa: E402
+import verificar_bases  # noqa: E402
 
 # ---- Ajuste estes caminhos -------------------------------------------------------------
 PASTA_OLODUM = Path(r"J:\PARNAIBA - UGNL 2\04. QAQC\09. Matriz de rastreabilidade\07.OLODUM")
@@ -64,6 +67,8 @@ ARQUIVO_HTML = "Painel_OLODUM.html"
 # Evita duas atualizações ao mesmo tempo (o botão de alguém e a rodada automática, por exemplo).
 TRAVA = PASTA_PAINEL / "atualizando.lock"
 TRAVA_VALIDA_MINUTOS = 20
+# Problemas achados na última atualização (consulta que não atualizou, base diferente da OLODUM...).
+PROBLEMAS = []
 
 INTERVALO_MINUTOS = 30       # atualização periódica, mesmo sem arquivo novo
 VERIFICAR_SEGUNDOS = 30      # de quanto em quanto tempo olha se algum arquivo foi salvo
@@ -163,9 +168,11 @@ def atualizar_excel():
             except Exception:
                 pass
         logging.info("Atualizando as consultas da OLODUM (Atualizar Tudo)...")
+        comeco = datetime.datetime.now() - datetime.timedelta(minutes=1)
         livro.RefreshAll()
         excel.CalculateUntilAsyncQueriesDone()
         excel.CalculateFull()
+        conferir_consultas(livro, comeco)
         logging.info("Salvando a OLODUM...")
         livro.Save()
         livro.Close(SaveChanges=False)
@@ -177,6 +184,28 @@ def atualizar_excel():
         del excel
         pythoncom.CoUninitialize()
         encerrar_processo(pid)
+
+
+def conferir_consultas(livro, comeco):
+    """Com os avisos do Excel desligados, uma consulta que falha no Atualizar Tudo não para nada: a tabela
+    fica com os dados antigos. Aqui cada consulta diz quando foi atualizada pela última vez."""
+    for conexao in livro.Connections:
+        try:
+            quando = conexao.OLEDBConnection.RefreshDate
+        except Exception:
+            continue
+        try:
+            # O Excel guarda a hora local sem fuso; o pywin32 marca como UTC. Tira o fuso e compara como local.
+            quando = datetime.datetime(quando.year, quando.month, quando.day, quando.hour, quando.minute, quando.second)
+        except Exception:
+            logging.info("Consulta %s: atualizada em %s", conexao.Name, quando)
+            continue
+        if quando < comeco:
+            PROBLEMAS.append("a consulta %s da OLODUM não atualizou (última atualização: %s)"
+                             % (conexao.Name, quando.strftime("%d/%m/%Y %H:%M")))
+            logging.warning("PROBLEMA: %s", PROBLEMAS[-1])
+        else:
+            logging.info("OK  consulta %s atualizada às %s", conexao.Name, quando.strftime("%H:%M:%S"))
 
 
 def gravar(origem, destino):
@@ -239,6 +268,10 @@ def publicar_dados():
         html = Path(tmp) / ARQUIVO_HTML
         painel_sistema_pcp.main(str(PLANILHA_OLODUM), str(base), str(protocolos))
         planilha_pend = planilha_de_pendencias()
+        for arq in (planilha_pend, PLANILHA_JUNTAS, planilha_de_pastas()):
+            if arq and Path(arq).exists():
+                logging.info("Lida direto pelo painel: %s (salva em %s)", Path(arq).name,
+                             datetime.datetime.fromtimestamp(Path(arq).stat().st_mtime).strftime("%d/%m/%Y %H:%M"))
         if planilha_pend:
             painel_pendencias.main(str(em_xlsx(planilha_pend, tmp)), str(pend), str(base), str(lista))
         else:
@@ -345,11 +378,24 @@ def atualizar(motivo, esperar=False):
             time.sleep(10)
     logging.info("Atualizando (%s) por %s", motivo, os.environ.get("USERNAME", "?"))
     inicio = time.time()
+    PROBLEMAS.clear()
     try:
         atualizar_excel()
         destino = publicar_dados()
+        logging.info("Conferindo a OLODUM e o painel contra as bases...")
+        try:
+            PROBLEMAS.extend(p for p in verificar_bases.verificar(PLANILHA_OLODUM, PASTA_PAINEL / ARQUIVO_PAINEL, log=logging.info)
+                             if p not in PROBLEMAS)
+        except Exception:
+            logging.warning("Não consegui conferir as bases", exc_info=True)
         logging.info("Pronto em %.0f s: %s", time.time() - inicio, destino)
         logging.info("O painel mostra: Atualizado em %s", atualizado_em_local())
+        if PROBLEMAS:
+            logging.warning("ATENÇÃO: o painel foi gerado, mas %d ponto(s) não conferem com as bases:", len(PROBLEMAS))
+            for p in PROBLEMAS:
+                logging.warning("  - %s", p)
+        else:
+            logging.info("Conferência: a OLODUM e o painel estão iguais às bases.")
         return True
     except Exception:
         logging.exception("Falha ao atualizar")
@@ -387,5 +433,7 @@ def observar():
 
 if __name__ == "__main__":
     if "--uma-vez" in sys.argv:
-        sys.exit(0 if atualizar("botão Atualizar_Painel", esperar=True) else 1)
+        ok = atualizar("botão Atualizar_Painel", esperar=True)
+        # 2 = o painel saiu, mas a conferência achou base que não entrou (o botão mostra e espera).
+        sys.exit(1 if not ok else 2 if PROBLEMAS else 0)
     observar()

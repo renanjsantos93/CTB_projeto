@@ -26,12 +26,21 @@ if not defined PYEXE for /d %%D in ("%LOCALAPPDATA%\Programs\Python\Python3*") d
 if not defined PYEXE goto sempython
 
 "!PYEXE!" "%~dp0sistema\atualizar_olodum.py" --uma-vez
+if errorlevel 2 goto aviso
 if errorlevel 1 goto erro
 
 echo.
 echo Painel atualizado. Abrindo...
 start "" "%~dp0Painel_OLODUM.html"
 timeout /t 5 >nul
+exit /b 0
+
+:aviso
+echo.
+echo ATENCAO: o painel foi atualizado, mas algumas bases nao entraram (veja os itens PROBLEMA acima).
+echo Corrija e clique de novo. Aperte uma tecla para abrir o painel.
+pause >nul
+start "" "%~dp0Painel_OLODUM.html"
 exit /b 0
 
 :sempython
