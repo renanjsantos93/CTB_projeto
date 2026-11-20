@@ -137,6 +137,48 @@ def encerrar_processo(pid):
                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
 
 
+def achar_olodum():
+    """Confere se a OLODUM está no caminho de PLANILHA_OLODUM; se o arquivo mudou de nome (ex.: Rev2), usa a
+    OLODUM_BASEDADOS mais recente da pasta 07.OLODUM. Sem nenhuma, explica o que há na pasta."""
+    global PLANILHA_OLODUM
+    try:
+        if PLANILHA_OLODUM.exists():
+            return PLANILHA_OLODUM
+    except OSError:
+        pass
+    if not PASTA_OLODUM.exists():
+        raise RuntimeError("não consigo acessar a pasta %s; confira se a unidade J: está conectada (abra a pasta "
+                           "no Explorador de Arquivos) e clique de novo" % PASTA_OLODUM)
+    achadas = [a for a in PASTA_OLODUM.glob("OLODUM_BASEDADOS*.xls*") if not a.name.startswith("~$")]
+    if not achadas:
+        nomes = sorted(a.name for a in PASTA_OLODUM.glob("*.xls*") if not a.name.startswith("~$"))
+        raise RuntimeError("não achei a %s em %s. Planilhas na pasta: %s" % (
+            PLANILHA_OLODUM.name, PASTA_OLODUM, ", ".join(nomes) or "nenhuma"))
+    nova = max(achadas, key=lambda a: a.stat().st_mtime)
+    logging.warning("A %s não está na pasta; usando %s", PLANILHA_OLODUM.name, nova.name)
+    PLANILHA_OLODUM = nova
+    return nova
+
+
+def abrir_olodum(excel, tentativas=4, espera=20):
+    """Abre a OLODUM para edição. Logo depois de fechar um Excel esquecido, a rede pode demorar a soltar o
+    arquivo: tenta de novo algumas vezes antes de desistir."""
+    for n in range(1, tentativas + 1):
+        planilha = achar_olodum()
+        logging.info("Abrindo a OLODUM (%s)...", planilha.name)
+        try:
+            return excel.Workbooks.Open(str(planilha), UpdateLinks=0, ReadOnly=False)
+        except Exception as erro:  # pywintypes.com_error
+            if n == tentativas:
+                raise RuntimeError(
+                    "o Excel não conseguiu abrir a %s depois de %d tentativas. Com a OLODUM: %s. Feche a "
+                    "planilha onde estiver aberta (e, no Gerenciador de Tarefas, qualquer Excel parado) e clique "
+                    "de novo. Erro do Excel: %s" % (planilha.name, tentativas, quem_esta_com_a_olodum(), erro)) from None
+            logging.warning("O Excel não abriu a OLODUM (tentativa %d de %d); tento de novo em %d s",
+                            n, tentativas, espera)
+            time.sleep(espera)
+
+
 def atualizar_excel():
     """Abre a OLODUM escondida, roda o Atualizar Tudo até o fim, salva e fecha."""
     import pythoncom
@@ -155,8 +197,7 @@ def atualizar_excel():
     excel.DisplayAlerts = False
     excel.AskToUpdateLinks = False
     try:
-        logging.info("Abrindo a OLODUM...")
-        livro = excel.Workbooks.Open(str(PLANILHA_OLODUM), UpdateLinks=0, ReadOnly=False)
+        livro = abrir_olodum(excel)
         if livro.ReadOnly:
             livro.Close(SaveChanges=False)
             raise RuntimeError("a OLODUM está aberta por %s; feche a planilha (ou o Excel escondido no "
