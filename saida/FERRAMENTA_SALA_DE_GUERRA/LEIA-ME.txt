@@ -41,6 +41,8 @@ O QUE E ATUALIZADO (e so isso)
   aprovadas por etapa HMSWEB, programadas na semana por etapa, executadas na semana, realizadas,
   com categoria e com restricao. As celulas X4 e Y4 (suas) nao sao alteradas.
 - Escopo: RADIX e FURUI seguem a regra padrao (CTB < 80% = EM MONTAGEM, P/TESTE, P/REMONTAGEM).
+  Com teste aprovado: remontagem pendente = P/REMONTAGEM; remontagem executada (ou aprovada com outro
+  certificado pendente) = QUALIDADE-REMONTAGEM; todas as atividades aprovadas = CONCLUIDA.
   FURUI - INTRA SKID e FURUI - LOOSE ITEM COM juntas no ControlTub tambem seguem a regra padrao.
   INTRA SKID SEM juntas no ControlTub: PENDENTE DOCUMENTACAO HMSWEB / PRE WALKDOWN / CONCLUIDA.
   LOOSE ITEM SEM juntas no ControlTub: sem certificado executado/aprovado = EM MONTAGEM;

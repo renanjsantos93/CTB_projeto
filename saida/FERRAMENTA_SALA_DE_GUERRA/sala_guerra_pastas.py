@@ -352,9 +352,9 @@ BORDA = Border(left=FINO, right=FINO, top=FINO, bottom=FINO)
 CENTRO = Alignment(horizontal="center", vertical="center", wrap_text=True)
 ESQ = Alignment(horizontal="left", vertical="center")
 
-STATUS_LISTA = ["EM MONTAGEM", "P/TESTE", "P/REMONTAGEM", "PRÉ WALKDOWN", "PENDENTE DOCUMENTAÇÃO HMSWEB",
+STATUS_LISTA = ["EM MONTAGEM", "P/TESTE", "P/REMONTAGEM", "QUALIDADE-REMONTAGEM", "PRÉ WALKDOWN", "PENDENTE DOCUMENTAÇÃO HMSWEB",
                 "CONCLUÍDA", "SEM CTB", "SEM ESCOPO", "NÃO ENCONTRADA"]
-COR_STATUS = {"EM MONTAGEM": "FFEB9C", "P/TESTE": "C6EFCE", "P/REMONTAGEM": "DDEBF7", "PRÉ WALKDOWN": "B4C6E7",
+COR_STATUS = {"EM MONTAGEM": "FFEB9C", "P/TESTE": "C6EFCE", "P/REMONTAGEM": "DDEBF7", "QUALIDADE-REMONTAGEM": "D9C3E9", "PRÉ WALKDOWN": "B4C6E7",
               "PENDENTE DOCUMENTAÇÃO HMSWEB": "F4B183", "CONCLUÍDA": "A9D08E", "SEM CTB": "EDEDED",
               "SEM ESCOPO": "D9D9D9", "NÃO ENCONTRADA": "F8CBAD"}
 # etapa da programação -> (coluna da semana programada, status, coluna de avanço)
@@ -443,8 +443,10 @@ def aba_parametros(wb, ult_cal):
         "STATUS CALCULADO - escopo RADIX e FURUI (e INTRA SKID / LOOSE ITEM com juntas no ControlTub):",
         "  EM MONTAGEM: avanço ControlTub < avanço mínimo (B4), mesmo com teste aprovado no HMSWEB.",
         "  P/TESTE: avanço ControlTub >= avanço mínimo e sem certificado de teste aprovado no HMSWEB.",
-        "  P/REMONTAGEM: teste aprovado no HMSWEB e LV de montagem e/ou remontagem pendente.",
-        "  CONCLUÍDA: teste, LV de montagem e remontagem aprovados.",
+        "  P/REMONTAGEM: teste aprovado no HMSWEB e remontagem pendente (ou reprovada).",
+        "  QUALIDADE-REMONTAGEM: teste aprovado e remontagem executada (aguardando aprovação) ou aprovada",
+        "    com outro certificado ainda pendente.",
+        "  CONCLUÍDA: todas as atividades aprovadas (LV, mapa de juntas, teste, lavagem e remontagem; N/A não conta).",
         "  SEM CTB: sem juntas no ControlTub e sem teste aprovado.",
         "STATUS CALCULADO - escopo FURUI - INTRA SKID (sem juntas no ControlTub):",
         "  PENDENTE DOCUMENTAÇÃO HMSWEB: algum certificado (exceto LV de montagem e remontagem) não aprovado.",
@@ -556,11 +558,15 @@ def f_controle(r, P, nb, lin_cab=LIN_CAB):
                "loose": ESC_LOOSE, "prev": x("JUNTAS PREVISTAS CTB"),
                "k": x("MONTAGEM HMS (LVM)"), "o": x("REMONTAGEM HMS"),
                "padrao": ('IF(AND(N(%(prev)s)>0,N(%(av)s)<%(min)s),"EM MONTAGEM",'
-                          'IF(%(th)s="APROVADA",IF(AND(%(lvm)s="APROVADA",%(rem)s="APROVADA"),"CONCLUÍDA","P/REMONTAGEM"),'
+                          # teste aprovado: todas aprovadas (ou N/A) = CONCLUÍDA; remontagem executada ou
+                          # aprovada com outro certificado pendente = QUALIDADE-REMONTAGEM; senão P/REMONTAGEM
+                          'IF(%(th)s="APROVADA",IF(COUNTIF(%(k)s:%(o)s,"APROVADA")+COUNTIF(%(k)s:%(o)s,"N/A")=5,'
+                          '"CONCLUÍDA",IF(OR(%(rem)s="EXECUTADA",%(rem)s="APROVADA"),"QUALIDADE-REMONTAGEM",'
+                          '"P/REMONTAGEM")),'
                           'IF(%(av)s="","SEM CTB","P/TESTE")))'
                           % {"prev": x("JUNTAS PREVISTAS CTB"), "av": x("AVANÇO CTB"), "min": P["min"],
-                             "th": x("CERTIFICADO TESTE HMSWEB"), "lvm": x("MONTAGEM HMS (LVM)"),
-                             "rem": x("REMONTAGEM HMS")}),
+                             "th": x("CERTIFICADO TESTE HMSWEB"), "rem": x("REMONTAGEM HMS"),
+                             "k": x("MONTAGEM HMS (LVM)"), "o": x("REMONTAGEM HMS")}),
                "intrab": ('IF(AND(OR(%(mj)s="APROVADA",%(mj)s="N/A"),%(th)s="APROVADA",OR(%(lav)s="APROVADA",'
                           '%(lav)s="N/A")),IF(AND(OR(%(lvm)s="APROVADA",%(lvm)s="N/A"),OR(%(rem)s="APROVADA",'
                           '%(rem)s="N/A")),"CONCLUÍDA","PRÉ WALKDOWN"),"PENDENTE DOCUMENTAÇÃO HMSWEB")'
