@@ -164,8 +164,8 @@ def etapas_aprovadas(b):
         "AVANÇO MONTAGEM": b["MONTAGEM (LVM)"] == "APROVADA",
         "AVANÇO TESTE": b["TESTE HIDROSTÁTICO"] == "APROVADA",
         "AVANÇO REMONTAGEM": b["REMONTAGEM"] == "APROVADA",
-        "AVANÇO PRÉ WALK": intra_sem_ctb and ok(b["MAPA JUNTAS"]) and b["TESTE HIDROSTÁTICO"] == "APROVADA"
-                           and ok(b["LAVAGEM"]),
+        "AVANÇO PRÉ WALK": intra_sem_ctb and all(b[k] in ("APROVADA", "EXECUTADA", "N/A")
+                                                 for k in ("MAPA JUNTAS", "TESTE HIDROSTÁTICO", "LAVAGEM")),
     }
 
 
@@ -449,9 +449,9 @@ def aba_parametros(wb, ult_cal):
         "  CONCLUÍDA: todas as atividades aprovadas (LV, mapa de juntas, teste, lavagem e remontagem; N/A não conta).",
         "  SEM CTB: sem juntas no ControlTub e sem teste aprovado.",
         "STATUS CALCULADO - escopo FURUI - INTRA SKID (sem juntas no ControlTub):",
-        "  PENDENTE DOCUMENTAÇÃO HMSWEB: algum certificado (exceto LV de montagem e remontagem) não aprovado.",
-        "  PRÉ WALKDOWN: demais certificados aprovados; pendente LV de montagem e/ou remontagem.",
-        "  CONCLUÍDA: todos os certificados aprovados.",
+        "  PENDENTE DOCUMENTAÇÃO HMSWEB: mapa de juntas, teste ou lavagem PENDENTE (ou reprovado).",
+        "  PRÉ WALKDOWN: mapa de juntas, teste e lavagem EXECUTADOS ou APROVADOS; LV e/ou remontagem não aprovadas.",
+        "  CONCLUÍDA: todas as atividades aprovadas.",
         "  Atividade inexistente na PCP para a pasta (N/A) não é exigida.",
         "STATUS CALCULADO - escopo FURUI - LOOSE ITEM sem juntas no ControlTub:",
         "  sem nenhum certificado executado/aprovado no HMSWEB -> EM MONTAGEM;",
@@ -508,6 +508,10 @@ def aba_base(wb, base, gerado_em):
     ws.freeze_panes = ws.cell(LIN_CAB + 1, 2)
     ws.auto_filter.ref = "A%d:%s%d" % (LIN_CAB, get_column_letter(len(BASE_COLS)), LIN_CAB + len(base))
     return LIN_CAB + len(base)
+
+
+def _ok_exec(ref):
+    return 'OR(%s="APROVADA",%s="EXECUTADA",%s="N/A")' % (ref, ref, ref)
 
 
 def f_controle(r, P, nb, lin_cab=LIN_CAB):
@@ -567,11 +571,13 @@ def f_controle(r, P, nb, lin_cab=LIN_CAB):
                           % {"prev": x("JUNTAS PREVISTAS CTB"), "av": x("AVANÇO CTB"), "min": P["min"],
                              "th": x("CERTIFICADO TESTE HMSWEB"), "rem": x("REMONTAGEM HMS"),
                              "k": x("MONTAGEM HMS (LVM)"), "o": x("REMONTAGEM HMS")}),
-               "intrab": ('IF(AND(OR(%(mj)s="APROVADA",%(mj)s="N/A"),%(th)s="APROVADA",OR(%(lav)s="APROVADA",'
-                          '%(lav)s="N/A")),IF(AND(OR(%(lvm)s="APROVADA",%(lvm)s="N/A"),OR(%(rem)s="APROVADA",'
-                          '%(rem)s="N/A")),"CONCLUÍDA","PRÉ WALKDOWN"),"PENDENTE DOCUMENTAÇÃO HMSWEB")'
-                          % {"mj": x("MAPA JUNTAS HMS"), "th": x("CERTIFICADO TESTE HMSWEB"), "lav": x("LAVAGEM HMS"),
-                             "lvm": x("MONTAGEM HMS (LVM)"), "rem": x("REMONTAGEM HMS")})}),
+               # mapa de juntas, teste e lavagem executados ou aprovados (ou N/A) = PRÉ WALKDOWN;
+               # tudo aprovado = CONCLUÍDA; algum dos três pendente/reprovado = PENDENTE DOCUMENTAÇÃO HMSWEB
+               "intrab": ('IF(AND(%(ok_mj)s,%(ok_th)s,%(ok_lav)s),IF(COUNTIF(%(k)s:%(o)s,"APROVADA")'
+                          '+COUNTIF(%(k)s:%(o)s,"N/A")=5,"CONCLUÍDA","PRÉ WALKDOWN"),"PENDENTE DOCUMENTAÇÃO HMSWEB")'
+                          % {"ok_mj": _ok_exec(x("MAPA JUNTAS HMS")), "ok_th": _ok_exec(x("CERTIFICADO TESTE HMSWEB")),
+                             "ok_lav": _ok_exec(x("LAVAGEM HMS")), "k": x("MONTAGEM HMS (LVM)"),
+                             "o": x("REMONTAGEM HMS")})}),
         "STATUS PROGRAMAÇÃO": '=IF(%s="","",%s)' % (pasta, status_prog),
         "PROGRAMAÇÃO DA SEMANA": '=IF(%s="","",IF(%s=%s,"REALIZADA","PENDENTE"))'
                                  % (x("STATUS PROGRAMAÇÃO"), realizada, P["svt"]),
