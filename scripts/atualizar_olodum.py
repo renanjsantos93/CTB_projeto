@@ -160,7 +160,7 @@ def achar_olodum():
     return nova
 
 
-def abrir_olodum(excel, tentativas=4, espera=20):
+def abrir_olodum(excel, tentativas=3, espera=15):
     """Abre a OLODUM para edição. Logo depois de fechar um Excel esquecido, a rede pode demorar a soltar o
     arquivo: tenta de novo algumas vezes antes de desistir."""
     for n in range(1, tentativas + 1):
@@ -381,6 +381,18 @@ def trava_abandonada():
     return computador == os.environ.get("COMPUTERNAME", "?") and not processo_vivo(pid)
 
 
+def quem_atualiza():
+    """Quem está com a trava, em texto: usuário, computador e há quanto tempo (a trava guarda os quatro)."""
+    try:
+        usuario, computador, pid, inicio = TRAVA.read_text(encoding="utf-8").split()[:4]
+        minutos = (datetime.datetime.now() - datetime.datetime.fromisoformat(inicio)).total_seconds() / 60
+        quem = ("a atualização automática (ou outra janela) deste computador"
+                if computador == os.environ.get("COMPUTERNAME", "?") else "%s no computador %s" % (usuario, computador))
+        return "%s, começou há %.0f min (processo %s)" % (quem, minutos, pid)
+    except (OSError, ValueError):
+        return "não sei quem (trava %s)" % TRAVA
+
+
 def pegar_trava():
     """True se ninguém mais está atualizando. Uma trava abandonada (processo morto neste computador) ou
     esquecida há mais de TRAVA_VALIDA_MINUTOS é ignorada."""
@@ -410,12 +422,17 @@ def atualizar(motivo, esperar=False):
         if not esperar:
             logging.info("Outra atualização já está rodando; pulando (%s)", motivo)
             return True
-        logging.info("Outra atualização já está rodando; esperando ela terminar (até %d min)...", TRAVA_VALIDA_MINUTOS)
+        logging.info("Outra atualização já está rodando: %s. Esperando ela terminar (até %d min)...",
+                     quem_atualiza(), TRAVA_VALIDA_MINUTOS)
         limite = time.time() + TRAVA_VALIDA_MINUTOS * 60
+        proximo_aviso = time.time() + 60
         while not pegar_trava():
             if time.time() > limite:
                 logging.error("A outra atualização não terminou em %d min", TRAVA_VALIDA_MINUTOS)
                 return False
+            if time.time() >= proximo_aviso:
+                logging.info("Ainda esperando: %s", quem_atualiza())
+                proximo_aviso = time.time() + 60
             time.sleep(10)
     logging.info("Atualizando (%s) por %s", motivo, os.environ.get("USERNAME", "?"))
     inicio = time.time()

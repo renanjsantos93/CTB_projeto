@@ -7,8 +7,9 @@ O que confere:
   1. As consultas da OLODUM (Power Query): lê no próprio arquivo de onde cada uma busca os dados
      (ex.: 01-Base de dados\04-Dataplanejamento.xlsx, aba DATAPLANEJADA) e avisa se o arquivo não existe
      (nome trocado, extensão diferente, arquivo movido para "Obsoleto").
-  2. Se cada tabela da OLODUM tem as mesmas linhas da sua base (quantidade de linhas preenchidas).
-     Diferença = a consulta não atualizou e a OLODUM ficou com os dados antigos.
+  2. Se a tabela da OLODUM tem as mesmas linhas da sua base (quantidade de linhas preenchidas).
+     Diferença = a consulta não atualizou e a OLODUM ficou com os dados antigos. Na atualização só
+     confere a DATAPLANEJADA (as outras são grandes e a leitura pela rede é lenta); rodando sozinho, todas.
   3. A data planejada de cada subsistema no painel contra a 04-Dataplanejamento (coluna D = subsistema,
      coluna E = data, a primeira linha de cada subsistema, como o PROCV da coluna DATA PLANEJADA).
 Devolve a lista de problemas (vazia = tudo confere).
@@ -94,7 +95,7 @@ def fmt(iso):
     return "%s/%s/%s" % (iso[8:10], iso[5:7], iso[:4]) if re.match(r"^\d{4}-\d{2}-\d{2}$", iso) else iso or "(vazio)"
 
 
-def verificar(planilha_olodum, painel_json=None, log=print):
+def verificar(planilha_olodum, painel_json=None, log=print, completo=False):
     problemas = []
 
     def aviso(msg):
@@ -119,6 +120,11 @@ def verificar(planilha_olodum, painel_json=None, log=print):
         if nome == CONSULTA_DATAS:
             fonte_datas = (caminho, aba)
         aba_olodum = ABA_DA_CONSULTA.get(nome, nome)
+        # Contar as linhas das bases grandes (01, 02) pela rede leva minutos; na atualização, só a das datas.
+        # Que cada consulta atualizou, o próprio Excel já conferiu (atualizar_olodum.conferir_consultas).
+        if not completo and nome != CONSULTA_DATAS:
+            log('OK  consulta "%s": %s existe (salva em %s)' % (nome, caminho.name, quando))
+            continue
         try:
             n_base = linhas_preenchidas(caminho, aba)
             n_olodum = linhas_preenchidas(planilha_olodum, aba_olodum)
@@ -171,4 +177,4 @@ if __name__ == "__main__":
         sys.path.insert(0, str(Path(__file__).resolve().parent))
         import atualizar_olodum as ao
         args = [ao.PLANILHA_OLODUM, ao.PASTA_PAINEL / ao.ARQUIVO_PAINEL]
-    sys.exit(1 if verificar(*args) else 0)
+    sys.exit(1 if verificar(*args, completo=True) else 0)
