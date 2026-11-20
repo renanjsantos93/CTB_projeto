@@ -523,17 +523,16 @@ def f_controle(r, P, nb):
         "AVANÇO CTB": '=IF(N(%s)>0,%s/%s,"")' % (x("JUNTAS PREVISTAS CTB"), x("JUNTAS LIBERADAS CTB"),
                                                x("JUNTAS PREVISTAS CTB")),
         "MONTAGEM HMS (LVM)": look("H"), "MAPA JUNTAS HMS": look("I"),
-        "CERTIFICADO TESTE HMSWEB": '=IF(%s="","",IFERROR(IF(INDEX(%s,%s)="APROVADA","SIM","NÃO"),""))'
-                                    % (pasta, b("J"), m),
+        "CERTIFICADO TESTE HMSWEB": look("J"),  # mesmo critério das demais: PENDENTE/EXECUTADA/APROVADA/...
         "LAVAGEM HMS": look("K"), "REMONTAGEM HMS": look("L"), "DATA PLANEJADA TH": look_num("M"),
         "PEND. A TUB. SUBSISTEMA": look("N", texto=False),
         "STATUS CALCULADO": (
             '=IF(%(p)s="","",IF(ISNA(%(m)s),"NÃO ENCONTRADA",'
             'IF(OR(%(e)s="%(radix)s",%(e)s="%(furui)s",AND(%(e)s="%(intra)s",N(%(prev)s)>0)),'
             'IF(AND(N(%(prev)s)>0,N(%(av)s)<%(min)s),"EM MONTAGEM",'
-            'IF(%(th)s="SIM",IF(AND(%(lvm)s="APROVADA",%(rem)s="APROVADA"),"CONCLUÍDA","P/REMONTAGEM"),'
+            'IF(%(th)s="APROVADA",IF(AND(%(lvm)s="APROVADA",%(rem)s="APROVADA"),"CONCLUÍDA","P/REMONTAGEM"),'
             'IF(%(av)s="","SEM CTB","P/TESTE"))),'
-            'IF(%(e)s="%(intra)s",IF(AND(OR(%(mj)s="APROVADA",%(mj)s="N/A"),%(th)s="SIM",'
+            'IF(%(e)s="%(intra)s",IF(AND(OR(%(mj)s="APROVADA",%(mj)s="N/A"),%(th)s="APROVADA",'
             'OR(%(lav)s="APROVADA",%(lav)s="N/A")),IF(AND(OR(%(lvm)s="APROVADA",%(lvm)s="N/A"),'
             'OR(%(rem)s="APROVADA",%(rem)s="N/A")),"CONCLUÍDA","PRÉ WALKDOWN"),"PENDENTE DOCUMENTAÇÃO HMSWEB"),'
             '"SEM ESCOPO"))))'
@@ -624,13 +623,11 @@ def aba_controle(wb, linhas, P, nb):
     ws.conditional_formatting.add(rng("RESTRIÇÕES ABERTAS"), FormulaRule(
         formula=['%s%d<>""' % (C["RESTRIÇÕES ABERTAS"], LIN_CAB + 1)],
         fill=PatternFill("solid", fgColor="F8CBAD"), font=Font(name=FONTE, size=9, bold=True, color="9C0006")))
-    for nome in ("MONTAGEM HMS (LVM)", "MAPA JUNTAS HMS", "LAVAGEM HMS", "REMONTAGEM HMS"):
+    for nome in ("MONTAGEM HMS (LVM)", "MAPA JUNTAS HMS", "CERTIFICADO TESTE HMSWEB", "LAVAGEM HMS", "REMONTAGEM HMS"):
         ws.conditional_formatting.add(rng(nome), CellIsRule(operator="equal", formula=['"APROVADA"'],
                                       font=Font(name=FONTE, size=9, color="006100")))
         ws.conditional_formatting.add(rng(nome), CellIsRule(operator="equal", formula=['"REPROVADA"'],
                                       fill=PatternFill("solid", fgColor="FFC7CE"), font=Font(name=FONTE, size=9, bold=True, color="9C0006")))
-    ws.conditional_formatting.add(rng("CERTIFICADO TESTE HMSWEB"), CellIsRule(operator="equal", formula=['"SIM"'],
-                                  fill=PatternFill("solid", fgColor="C6EFCE"), font=Font(name=FONTE, size=9, bold=True, color="006100")))
     ws.conditional_formatting.add(rng("AVANÇO CTB"), DataBarRule(start_type="num", start_value=0, end_type="num",
                                   end_value=1, color="5B9BD5"))
     ws.freeze_panes = ws.cell(LIN_CAB + 1, 3)
@@ -1366,6 +1363,10 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None):
         if hdr.get("SUBSOP HMS"):
             edits[r][hdr["SUBSOP HMS"]] = (lambda v: lambda ref, s: _cel_valor(ref, s, v))(b["SUBSISTEMA"])
     x_ctrl = _patch_linhas(x_ctrl, edits, est_ctrl)
+    if auto:  # a coluna do certificado deixou de mostrar SIM/NÃO: a cor verde passa para APROVADA
+        x_ctrl = re.sub(r'(<conditionalFormatting\b[^>]*sqref="%s\d+:%s\d+"[^>]*>(?:(?!</conditionalFormatting>).)*?<formula>)(?:"SIM"|&quot;SIM&quot;)(</formula>)'
+                        % (C["CERTIFICADO TESTE HMSWEB"], C["CERTIFICADO TESTE HMSWEB"]),
+                        r'\1"APROVADA"\2', x_ctrl, flags=re.S)
 
     arquivos[alvo["CONTROLE"]] = x_ctrl.encode("utf-8")
     arquivos[alvo["BASE_OLODUM"]] = x_base.encode("utf-8")
