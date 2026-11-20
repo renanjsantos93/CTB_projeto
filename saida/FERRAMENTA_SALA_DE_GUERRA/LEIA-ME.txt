@@ -36,6 +36,12 @@ O QUE E ATUALIZADO (e so isso)
 - Aba CONTROLE, AVANCO MONTAGEM / TESTE / REMONTAGEM / PRE WALK: semana do calendario da obra
   da DATA DA EXECUCAO na aba PCP_ATIVIDADE da OLODUM_BASEDADOS.
 - Pastas novas do painel entram no fim da lista do CONTROLE.
+- Topo do CONTROLE (quando o cabecalho esta na linha 5 ou abaixo): linha 2 = semana vigente;
+  linha 3 = titulos; linha 4 = SUBTOTAIS em amarelo (respeitam o filtro): pastas, juntas, avanco CTB,
+  aprovadas por etapa HMSWEB, programadas na semana por etapa, executadas na semana, realizadas,
+  com categoria e com restricao. As celulas X4 e Y4 (suas) nao sao alteradas.
+- Escopo: RADIX e todo escopo que comeca com FURUI (inclusive FURUI - LOOSE ITEM) seguem a regra
+  padrao; FURUI - INTRA SKID sem juntas no ControlTub segue a regra de PRE WALKDOWN.
 
 NAO E ALTERADO
 --------------

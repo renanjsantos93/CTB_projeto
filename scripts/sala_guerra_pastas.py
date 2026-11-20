@@ -428,7 +428,7 @@ def aba_parametros(wb, ult_cal):
     ws["A12"] = "REGRAS"
     ws["A12"].font = F_H2
     regras = [
-        "STATUS CALCULADO - escopo RADIX e FURUI (e INTRA SKID com juntas cadastradas no ControlTub):",
+        "STATUS CALCULADO - escopo RADIX e FURUI (inclui FURUI - LOOSE ITEM e demais FURUI; e INTRA SKID com juntas no ControlTub):",
         "  EM MONTAGEM: avanço ControlTub < avanço mínimo (B4), mesmo com teste aprovado no HMSWEB.",
         "  P/TESTE: avanço ControlTub >= avanço mínimo e sem certificado de teste aprovado no HMSWEB.",
         "  P/REMONTAGEM: teste aprovado no HMSWEB e LV de montagem e/ou remontagem pendente.",
@@ -528,7 +528,7 @@ def f_controle(r, P, nb, lin_cab=LIN_CAB):
         "PEND. A TUB. SUBSISTEMA": look("N", texto=False),
         "STATUS CALCULADO": (
             '=IF(%(p)s="","",IF(ISNA(%(m)s),"NÃO ENCONTRADA",'
-            'IF(OR(%(e)s="%(radix)s",%(e)s="%(furui)s",AND(%(e)s="%(intra)s",N(%(prev)s)>0)),'
+            'IF(OR(%(e)s="%(radix)s",AND(LEFT(%(e)s,5)="%(furui)s",%(e)s<>"%(intra)s"),AND(%(e)s="%(intra)s",N(%(prev)s)>0)),'
             'IF(AND(N(%(prev)s)>0,N(%(av)s)<%(min)s),"EM MONTAGEM",'
             'IF(%(th)s="APROVADA",IF(AND(%(lvm)s="APROVADA",%(rem)s="APROVADA"),"CONCLUÍDA","P/REMONTAGEM"),'
             'IF(%(av)s="","SEM CTB","P/TESTE"))),'
@@ -751,7 +751,7 @@ def aba_painel(wb, ult_ctrl, ult_restr, gerado_em, P):
     ws["B1"] = "PAINEL GERENCIAL - SALA DE GUERRA DE PASTAS DE TUBULAÇÃO"
     ws["B1"].font = Font(name=FONTE, size=18, bold=True, color=AZUL)
     ws["B2"] = ('="Base Painel OLODUM: %s   |   Semana vigente: "&%s&"   |   Avanço mínimo p/ teste: "&'
-                'TEXT(%s,"0%%")&"   |   Atualizado em "&TEXT(%s,"dd/mm/yyyy")' % (gerado_em, P["svt"], P["min"], P["hoje"]))
+                'TEXT(%s,"0%%")&"   |   Atualizado em "&%s' % (gerado_em, P["svt"], P["min"], _data_txt(P["hoje"])))
     ws["B2"].font = F_SUB
     ws.column_dimensions["A"].width = 2
     for col, w in zip("BCDEFGHIJKLMNOPQR", [5, 17, 20, 13, 10, 14, 16, 11, 3, 5, 17, 20, 13, 10, 14, 16, 3]):
@@ -1142,7 +1142,116 @@ def _cel_valor(ref, s, v):
     return '<c r="%s"%s t="inlineStr"><is><t xml:space="preserve">%s</t></is></c>' % (ref, s, _esc(str(v)))
 
 
-def _patch_linhas(xml, novas, estilo_col, remover_apos=None):
+def _data_txt(ref):
+    """Data dd/mm/aaaa em texto sem depender do idioma do Excel (TEXT com "yyyy" falha no Excel em português)."""
+    return 'TEXT(DAY(%s),"00")&"/"&TEXT(MONTH(%s),"00")&"/"&YEAR(%s)' % (ref, ref, ref)
+
+
+def _bloco(st, tag):
+    m = re.search(r"<%s\b[^>]*>(.*?)</%s>" % (tag, tag), st, re.S)
+    return m
+
+
+def _add_item(st, tag, item_tag, item):
+    """Acrescenta 'item' ao bloco <tag> do styles.xml (se ainda não existir) e devolve (styles, índice)."""
+    m = _bloco(st, tag)
+    itens = re.findall(r"<%s\b[^>]*?(?:/>|>.*?</%s>)" % (item_tag, item_tag), m.group(1), re.S)
+    if item in itens:
+        return st, itens.index(item)
+    ini, fim = m.start(1), m.end(1)
+    st = st[:ini] + m.group(1) + item + st[fim:]
+    st = re.sub(r'(<%s\b[^>]*\bcount=")\d+"' % tag, r'\g<1>%d"' % (len(itens) + 1), st, count=1)
+    return st, len(itens)
+
+
+def _xf(st, i):
+    m = _bloco(st, "cellXfs")
+    return re.findall(r"<xf\b[^>]*?(?:/>|>.*?</xf>)", m.group(1), re.S)[int(i)]
+
+
+def _attr_set(xml_tag, nome, valor):
+    if re.search(r'\b%s="' % nome, xml_tag):
+        return re.sub(r'\b%s="[^"]*"' % nome, '%s="%s"' % (nome, valor), xml_tag, count=1)
+    return xml_tag.replace("<xf", '<xf %s="%s"' % (nome, valor), 1)
+
+
+def _xf_pct(st, s_base):
+    xf = _attr_set(_attr_set(_xf(st, s_base), "numFmtId", "9"), "applyNumberFormat", "1")
+    return _add_item(st, "cellXfs", "xf", xf)
+
+
+def _xf_cor_fonte(st, s_base, rgb):
+    xf = _xf(st, s_base)
+    fid = int(re.search(r'fontId="(\d+)"', xf).group(1))
+    fonte = re.findall(r"<font\b[^>]*?(?:/>|>.*?</font>)", _bloco(st, "fonts").group(1), re.S)[fid]
+    if "<color" in fonte:
+        fonte = re.sub(r"<color\b[^>]*/>", '<color rgb="%s"/>' % rgb, fonte)
+    else:
+        fonte = fonte.replace("</font>", '<color rgb="%s"/></font>' % rgb) if "</font>" in fonte \
+            else '<font><color rgb="%s"/></font>' % rgb
+    st, nf = _add_item(st, "fonts", "font", fonte)
+    xf = _attr_set(_attr_set(xf, "fontId", str(nf)), "applyFont", "1")
+    return _add_item(st, "cellXfs", "xf", xf)
+
+
+def _topo_controle(x_ctrl, st, lin_hdr, ult_lin, P):
+    """Linha da semana vigente, títulos e SUBTOTAIS (respeitam o filtro) acima do cabeçalho do CONTROLE.
+    Usa o estilo amarelo da célula de subtotal da coluna B (linha acima do cabeçalho)."""
+    sub, lab, lsem = lin_hdr - 1, lin_hdr - 2, lin_hdr - 3
+    if lsem < 1:
+        return x_ctrl, st, False
+    s_sub = _estilos_linha(x_ctrl, sub).get("B")
+    s_hdr = _estilos_linha(x_ctrl, lin_hdr).get("D") or _estilos_linha(x_ctrl, lin_hdr).get("A")
+    s_tit = _estilos_linha(x_ctrl, 1).get("A")
+    s_pct = s_red = None
+    if s_sub is not None:
+        st, s_pct = _xf_pct(st, s_sub)
+    if s_tit is not None:
+        st, s_red = _xf_cor_fonte(st, s_tit, "FFC00000")
+    r1, r2 = lin_hdr + 1, max(1000, ult_lin + 200)
+    vis = "SUBTOTAL(3,OFFSET($B$%d,ROW($B$%d:$B$%d)-ROW($B$%d),0))" % (r1, r1, r2, r1)
+    rg = lambda L: "$%s$%d:$%s$%d" % (L, r1, L, r2)
+    conta = lambda L, crit: "=SUMPRODUCT(%s*(%s=%s))" % (vis, rg(L), crit)
+    svt, hoje = P["svt"], P["hoje"]
+    seg = "(%s-WEEKDAY(%s,2)+1)" % (hoje, hoje)
+    sub_f, lab_f = {}, {}
+    sub_f["B"], lab_f["B"] = "=SUBTOTAL(3,%s)" % rg("B"), "PASTAS (FILTRO)"
+    for nome, rot in (("JUNTAS PREVISTAS CTB", "JUNTAS PREV."), ("JUNTAS LIBERADAS CTB", "JUNTAS LIB."),
+                      ("SALDO DE JUNTAS", "SALDO JUNTAS")):
+        sub_f[C[nome]], lab_f[C[nome]] = "=SUBTOTAL(9,%s)" % rg(C[nome]), rot
+    G, H, J = C["JUNTAS PREVISTAS CTB"], C["JUNTAS LIBERADAS CTB"], C["AVANÇO CTB"]
+    sub_f[J], lab_f[J] = '=IF(N(%s%d)>0,%s%d/%s%d,"")' % (G, sub, H, sub, G, sub), "AVANÇO CTB"
+    for nome in ("MONTAGEM HMS (LVM)", "MAPA JUNTAS HMS", "CERTIFICADO TESTE HMSWEB", "LAVAGEM HMS", "REMONTAGEM HMS"):
+        sub_f[C[nome]], lab_f[C[nome]] = conta(C[nome], '"APROVADA"'), "APROVADAS"
+    sub_f[C["CATEGORIA DE ENTREGA"]], lab_f[C["CATEGORIA DE ENTREGA"]] = \
+        "=SUBTOTAL(3,%s)" % rg(C["CATEGORIA DE ENTREGA"]), "COM CATEGORIA"
+    for _, col_sem, stp, col_av in ETAPAS:
+        sub_f[C[col_sem]] = conta(C["STATUS PROGRAMAÇÃO"], '"%s"' % stp)
+        lab_f[C[col_sem]] = '="PROG. "&%s' % svt
+        sub_f[C[col_av]] = conta(C[col_av], svt)
+        lab_f[C[col_av]] = '="EXEC. "&%s' % svt
+    sub_f[C["RESTRIÇÕES ABERTAS"]], lab_f[C["RESTRIÇÕES ABERTAS"]] = \
+        "=SUBTOTAL(3,%s)" % rg(C["RESTRIÇÕES ABERTAS"]), "COM RESTRIÇÃO"
+    L = C["PROGRAMAÇÃO DA SEMANA"]
+    sub_f[L], lab_f[L] = conta(L, '"REALIZADA"'), '="REALIZADAS "&%s' % svt
+    tit = ('=IF(\'PARÂMETROS\'!$B$7<>"","SEMANA ANALISADA: "&%s,"SEMANA VIGENTE: "&%s&"   ("&TEXT(DAY(%s),"00")'
+           '&"/"&TEXT(MONTH(%s),"00")&" A "&TEXT(DAY(%s+6),"00")&"/"&TEXT(MONTH(%s+6),"00")&"/"&YEAR(%s+6)&")")'
+           % (svt, svt, seg, seg, seg, seg, seg))
+    est = lambda s: ' s="%s"' % s if s is not None else ""
+    ed = {sub: {}, lab: {}, lsem: {"A": (lambda ref, s: _cel_formula(ref, est(s_red), tit))}}
+    for col, f in sub_f.items():
+        sty = s_pct if col == J else s_sub
+        ed[sub][col] = (lambda f, sty: lambda ref, s: _cel_formula(ref, est(sty), f))(f, sty)
+    for col, t in lab_f.items():
+        if t.startswith("="):
+            ed[lab][col] = (lambda t: lambda ref, s: _cel_formula(ref, est(s_hdr), t))(t)
+        else:
+            ed[lab][col] = (lambda t: lambda ref, s: _cel_valor(ref, est(s_hdr), t))(t)
+    x_ctrl = _patch_linhas(x_ctrl, ed, {}, alturas={lab: 30, lsem: 22})
+    return x_ctrl, st, True
+
+
+def _patch_linhas(xml, novas, estilo_col, remover_apos=None, alturas=None):
     """novas = {linha: {coluna: função(ref, s) -> xml da célula}}. remover_apos: apaga linhas > N que não estejam
     em 'novas' (usado na BASE)."""
     ini = xml.index("<sheetData")
@@ -1166,6 +1275,8 @@ def _patch_linhas(xml, novas, estilo_col, remover_apos=None):
         raw = linhas.get(r, '<row r="%d"/>' % r)
         tag = re.match(r"<row\b[^>]*?(?=/?>)", raw).group(0)
         tag = re.sub(r'\sspans="[^"]*"', "", tag)
+        if alturas and r in alturas:
+            tag = re.sub(r'\s(ht|customHeight)="[^"]*"', "", tag) + ' ht="%s" customHeight="1"' % alturas[r]
         celulas = {}
         for c in _RE_C.findall(raw[len(tag):]):
             celulas[_ref(_RE_ATTR("r").search(c).group(1))[0]] = c
@@ -1204,15 +1315,20 @@ def _grupos_compartilhados(xml):
     return g
 
 
-def atualizar(painel, controle, pcp=None, backup=None, calendario=None):
-    painel = mais_recente(painel, ["*OLODUM*.html", "*olodum*.html"])
-    print("Painel OLODUM: %s (salvo em %s)" % (painel, _quando(painel)))
-    if pcp:
-        pcp = mais_recente(pcp, ["OLODUM_BASEDADOS*.xlsx", "OLODUM_BASEDADOS*.xlsm"])
-        print("Base PCP:      %s (salva em %s)" % (pcp, _quando(pcp)))
+def atualizar(painel, controle, pcp=None, backup=None, calendario=None, so_formulas=False):
+    """so_formulas: reescreve só as fórmulas e o topo (semana/subtotais); não mexe na BASE_OLODUM nem nos AVANÇOS."""
+    if so_formulas:
+        d, base, pcp = None, [], None
+        print("Modo só fórmulas: BASE_OLODUM e AVANÇOS ficam como estão.")
+    else:
+        painel = mais_recente(painel, ["*OLODUM*.html", "*olodum*.html"])
+        print("Painel OLODUM: %s (salvo em %s)" % (painel, _quando(painel)))
+        if pcp:
+            pcp = mais_recente(pcp, ["OLODUM_BASEDADOS*.xlsx", "OLODUM_BASEDADOS*.xlsm"])
+            print("Base PCP:      %s (salva em %s)" % (pcp, _quando(pcp)))
+        d = ler_painel(painel)
+        base = base_por_pasta(d)
     print("Controle:      %s" % controle)
-    d = ler_painel(painel)
-    base = base_por_pasta(d)
 
     # leitura (somente leitura: nada é gravado pelo openpyxl)
     import warnings
@@ -1251,7 +1367,7 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None):
         if v and "NÃO CADASTRADA" not in str(v).upper():
             pastas[r] = str(v).strip()
     avancos_ant = {}
-    if not pcp:
+    if not pcp and not so_formulas:
         for a in AVANCOS:
             L = hdr.get(_norm(a))
             if L:
@@ -1288,14 +1404,16 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None):
 
     # avanços
     linhas = [dict({"Nº DA PASTA": p}, **avancos_ant.get(r, {})) for r, p in sorted(pastas.items())]
-    if pcp:
+    if so_formulas:
+        pass
+    elif pcp:
         av = avancos_pcp(ler_pcp(pcp), base, cal)
         for l in linhas:
             for col in AVANCOS:
                 l[col] = av.get(l["Nº DA PASTA"], {}).get(col)
     else:
         gravar_avancos(linhas, base, d, cal)
-    av_por_linha = dict(zip(sorted(pastas), linhas))
+    av_por_linha = {} if so_formulas else dict(zip(sorted(pastas), linhas))
 
     # ---- edição do XML
     z = zipfile.ZipFile(controle)
@@ -1314,17 +1432,20 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None):
     x_base = arquivos[alvo["BASE_OLODUM"]].decode("utf-8")
 
     # BASE_OLODUM: substitui as linhas de dados
-    est_base = _estilos_linha(x_base, lin_b + 1) or _estilos_linha(x_base, lin_b)
-    letras_b = [get_column_letter(i) for i in range(1, len(BASE_COLS) + 1)]
-    novas_b = {}
-    for i, b in enumerate(base, lin_b + 1):
-        novas_b[i] = {L: (lambda v: lambda ref, s: _cel_valor(ref, s, v))(b[k]) for L, k in zip(letras_b, BASE_COLS)}
-    x_base = _patch_linhas(x_base, novas_b, est_base, remover_apos=lin_b)
-    ult_b = lin_b + len(base)
-    x_base = re.sub(r'<dimension ref="[^"]*"/>', '<dimension ref="A1:%s%d"/>' % (letras_b[-1], ult_b), x_base)
-    x_base = re.sub(r'(<autoFilter\b[^>]*\bref=")[^"]*"', r'\g<1>A%d:%s%d"' % (lin_b, letras_b[-1], ult_b), x_base)
-    x_base = re.sub(r"Importada do Painel OLODUM em [^.<]*", "Importada do Painel OLODUM em %s"
-                    % d["_data"].strftime("%d/%m/%Y %H:%M UTC"), x_base)
+    if so_formulas:
+        pass
+    else:
+        est_base = _estilos_linha(x_base, lin_b + 1) or _estilos_linha(x_base, lin_b)
+        letras_b = [get_column_letter(i) for i in range(1, len(BASE_COLS) + 1)]
+        novas_b = {}
+        for i, b in enumerate(base, lin_b + 1):
+            novas_b[i] = {L: (lambda v: lambda ref, s: _cel_valor(ref, s, v))(b[k]) for L, k in zip(letras_b, BASE_COLS)}
+        x_base = _patch_linhas(x_base, novas_b, est_base, remover_apos=lin_b)
+        ult_b = lin_b + len(base)
+        x_base = re.sub(r'<dimension ref="[^"]*"/>', '<dimension ref="A1:%s%d"/>' % (letras_b[-1], ult_b), x_base)
+        x_base = re.sub(r'(<autoFilter\b[^>]*\bref=")[^"]*"', r'\g<1>A%d:%s%d"' % (lin_b, letras_b[-1], ult_b), x_base)
+        x_base = re.sub(r"Importada do Painel OLODUM em [^.<]*", "Importada do Painel OLODUM em %s"
+                        % d["_data"].strftime("%d/%m/%Y %H:%M UTC"), x_base)
 
     # CONTROLE: fórmulas das colunas automáticas + avanços + pastas novas
     auto = [C[n] for n, t, _ in CTRL if t in ("auto", "progauto", "pcpauto", "aux")] if (layout_ok and param_ok) else []
@@ -1366,6 +1487,11 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None):
         if hdr.get("SUBSOP HMS"):
             edits[r][hdr["SUBSOP HMS"]] = (lambda v: lambda ref, s: _cel_valor(ref, s, v))(b["SUBSISTEMA"])
     x_ctrl = _patch_linhas(x_ctrl, edits, est_ctrl)
+    topo = False
+    if auto:  # semana vigente + subtotais acima do cabeçalho (quando há linhas livres acima dele)
+        st = arquivos["xl/styles.xml"].decode("utf-8")
+        x_ctrl, st, topo = _topo_controle(x_ctrl, st, lin_hdr, ult_lin, P)
+        arquivos["xl/styles.xml"] = st.encode("utf-8")
     if auto:  # a coluna do certificado deixou de mostrar SIM/NÃO: a cor verde passa para APROVADA
         x_ctrl = re.sub(r'(<conditionalFormatting\b[^>]*sqref="%s\d+:%s\d+"[^>]*>(?:(?!</conditionalFormatting>).)*?<formula>)(?:"SIM"|&quot;SIM&quot;)(</formula>)'
                         % (C["CERTIFICADO TESTE HMSWEB"], C["CERTIFICADO TESTE HMSWEB"]),
@@ -1378,8 +1504,12 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None):
         x = arquivos[caminho].decode("utf-8")
         x2 = re.sub(r"('?BASE_OLODUM'?!)\$([A-Z]+)\$\d+:\$\2\$\d+", r"\1$\2:$\2", x)
         if nome == "PAINEL":
-            x2 = re.sub(r"Base Painel OLODUM: \d\d/\d\d/\d{4} \d\d:\d\d UTC",
-                        "Base Painel OLODUM: %s" % d["_data"].strftime("%d/%m/%Y %H:%M UTC"), x2)
+            if d:
+                x2 = re.sub(r"Base Painel OLODUM: \d\d/\d\d/\d{4} \d\d:\d\d UTC",
+                            "Base Painel OLODUM: %s" % d["_data"].strftime("%d/%m/%Y %H:%M UTC"), x2)
+            # TEXT(data;"dd/mm/yyyy") mostra "yyyy" no Excel em português
+            x2 = re.sub(r"TEXT\(('?PARÂMETROS'?!\$B\$5),(?:\"|&quot;)dd/mm/yyyy(?:\"|&quot;)\)",
+                        lambda m: _esc(_data_txt(m.group(1))).replace("&quot;", '"'), x2)
         if x2 != x:
             arquivos[caminho] = x2.encode("utf-8")
     # recálculo completo ao abrir; descarta a cadeia de cálculo antiga
@@ -1415,13 +1545,15 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None):
         os.remove(temp)
         raise SystemExit("ERRO: não consegui gravar %s. A planilha está aberta no Excel (sua ou de outra pessoa)? "
                          "Feche e rode de novo." % controle)
-    sem = semana_da_data(d["_data"], cal)
-    cont = collections.Counter(a for l in linhas for a in AVANCOS if l.get(a))
-    print("Painel de %s (semana %s) | pastas: %d (%d novas: %s)" % (
-        d["_data"].strftime("%d/%m/%Y %H:%M UTC"), txt_semana(sem), len(pastas), len(novas),
-        ", ".join(b["PASTA"] for _, b in novas) or "-"))
-    print("Avanços: " + ", ".join("%s %d" % (a, cont[a]) for a in AVANCOS))
-    print("Fórmulas atualizadas: %d | BASE_OLODUM: %d pastas" % (n_form, len(base)))
+    if d:
+        sem = semana_da_data(d["_data"], cal)
+        cont = collections.Counter(a for l in linhas for a in AVANCOS if l.get(a))
+        print("Painel de %s (semana %s) | pastas: %d (%d novas: %s)" % (
+            d["_data"].strftime("%d/%m/%Y %H:%M UTC"), txt_semana(sem), len(pastas), len(novas),
+            ", ".join(b["PASTA"] for _, b in novas) or "-"))
+        print("Avanços: " + ", ".join("%s %d" % (a, cont[a]) for a in AVANCOS))
+    print("Fórmulas atualizadas: %d | BASE_OLODUM: %s | topo (semana e subtotais): %s"
+          % (n_form, "%d pastas" % len(base) if d else "mantida", "sim" if topo else "não"))
     print("Atualizado:", controle)
 
 
@@ -1430,6 +1562,8 @@ if __name__ == "__main__":
     ap.add_argument("painel")
     ap.add_argument("controle")
     ap.add_argument("saida", nargs="?", help="omitir com --atualizar")
+    ap.add_argument("--so-formulas", action="store_true",
+                    help="com --atualizar: reescreve só fórmulas e topo, mantendo BASE_OLODUM e AVANÇOS")
     ap.add_argument("--atualizar", action="store_true",
                     help="atualiza só as colunas automáticas e a BASE_OLODUM no próprio CONTROLE (mantém o resto)")
     ap.add_argument("--calendario")
@@ -1440,7 +1574,7 @@ if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     if a.atualizar:
-        atualizar(a.painel, a.controle, a.pcp, a.backup, a.calendario)
+        atualizar(a.painel, a.controle, a.pcp, a.backup, a.calendario, a.so_formulas)
     else:
         if not a.saida:
             ap.error("informe SAIDA ou use --atualizar")
