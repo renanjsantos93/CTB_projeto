@@ -493,7 +493,7 @@ def aba_base(wb, base, gerado_em):
     return LIN_CAB + len(base)
 
 
-def f_controle(r, P, nb):
+def f_controle(r, P, nb, lin_cab=LIN_CAB):
     b = lambda col: "'BASE_OLODUM'!$%s:$%s" % (col, col)  # coluna inteira: a base pode crescer
     pasta = "$%s%d" % (C["Nº DA PASTA"], r)
     m = "MATCH(%s,%s,0)" % (pasta, b("A"))
@@ -515,7 +515,7 @@ def f_controle(r, P, nb):
     rest = 'IF(%s="",5000,0)' % x("RESTRIÇÕES ABERTAS")
     cat = 'IF(%(c)s="PRIORIDADE",2000,IF(%(c)s="OPORTUNIDADE",1000,0))' % {"c": x("CATEGORIA DE ENTREGA")}
     return {
-        "ITEM": '=IF(%s="","",ROW()-%d)' % (pasta, LIN_CAB),
+        "ITEM": '=IF(%s="","",ROW()-%d)' % (pasta, lin_cab),
         "SISTEMA": look("B"), "ESCOPO": look("D"), "FORNECEDOR": look("E"),
         "JUNTAS PREVISTAS CTB": look_num("F"), "JUNTAS LIBERADAS CTB": look_num("G"),
         "SALDO DE JUNTAS": '=IF(ISNUMBER(%s),%s-%s,"")' % (x("JUNTAS PREVISTAS CTB"), x("JUNTAS PREVISTAS CTB"),
@@ -1237,7 +1237,7 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None):
             print("  linha %d: %s" % (r, " | ".join(v[:40] for v in vals)))
         raise SystemExit("Cabeçalho 'Nº DA PASTA' não encontrado no CONTROLE")
     if lin_hdr != LIN_CAB:
-        print("AVISO: cabeçalho na linha %d (o original é a linha %d)." % (lin_hdr, LIN_CAB))
+        print("Cabeçalho do CONTROLE na linha %d." % lin_hdr)
     hdr = {}
     for c in range(1, ws.max_column + 1):
         v = ws.cell(lin_hdr, c).value
@@ -1261,8 +1261,11 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None):
     param_ok = "SEMANA VIGENTE" in _norm(wp["A8"].value) and "MÍNIMO" in _norm(wp["A4"].value)
     alvo_nomes = {"CONTROLE": abas["CONTROLE"], "BASE_OLODUM": abas["BASE_OLODUM"]}
     wbr.close()
-    if lin_hdr != LIN_CAB:
-        param_ok = False  # fórmulas são escritas para o cabeçalho na linha 4
+    # cabeçalho da BASE_OLODUM (a primeira linha com PASTA na coluna A)
+    wsb = wbr[abas["BASE_OLODUM"]]
+    lin_b = next((r for r in range(1, 16) if _norm(wsb.cell(r, 1).value) == "PASTA"), None)
+    if lin_b is None:
+        raise SystemExit("Cabeçalho 'PASTA' não encontrado na coluna A da aba BASE_OLODUM")
 
     layout_ok = all(hdr.get(_norm(nome)) == C[nome] for nome, _, _ in CTRL)
     if not layout_ok:
@@ -1274,7 +1277,7 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None):
 
     # pastas novas do painel entram no fim
     existentes = set(pastas.values())
-    prox = max(pastas) + 1 if pastas else LIN_CAB + 1
+    prox = max(pastas) + 1 if pastas else lin_hdr + 1
     novas = []
     for b in base:
         if b["PASTA"] not in existentes:
@@ -1311,15 +1314,15 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None):
     x_base = arquivos[alvo["BASE_OLODUM"]].decode("utf-8")
 
     # BASE_OLODUM: substitui as linhas de dados
-    est_base = _estilos_linha(x_base, LIN_CAB + 1) or _estilos_linha(x_base, LIN_CAB)
+    est_base = _estilos_linha(x_base, lin_b + 1) or _estilos_linha(x_base, lin_b)
     letras_b = [get_column_letter(i) for i in range(1, len(BASE_COLS) + 1)]
     novas_b = {}
-    for i, b in enumerate(base, LIN_CAB + 1):
+    for i, b in enumerate(base, lin_b + 1):
         novas_b[i] = {L: (lambda v: lambda ref, s: _cel_valor(ref, s, v))(b[k]) for L, k in zip(letras_b, BASE_COLS)}
-    x_base = _patch_linhas(x_base, novas_b, est_base, remover_apos=LIN_CAB)
-    ult_b = LIN_CAB + len(base)
+    x_base = _patch_linhas(x_base, novas_b, est_base, remover_apos=lin_b)
+    ult_b = lin_b + len(base)
     x_base = re.sub(r'<dimension ref="[^"]*"/>', '<dimension ref="A1:%s%d"/>' % (letras_b[-1], ult_b), x_base)
-    x_base = re.sub(r'(<autoFilter\b[^>]*\bref=")[^"]*"', r'\g<1>A%d:%s%d"' % (LIN_CAB, letras_b[-1], ult_b), x_base)
+    x_base = re.sub(r'(<autoFilter\b[^>]*\bref=")[^"]*"', r'\g<1>A%d:%s%d"' % (lin_b, letras_b[-1], ult_b), x_base)
     x_base = re.sub(r"Importada do Painel OLODUM em [^.<]*", "Importada do Painel OLODUM em %s"
                     % d["_data"].strftime("%d/%m/%Y %H:%M UTC"), x_base)
 
@@ -1336,15 +1339,15 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None):
                 cel_intoc.add(_RE_ATTR("r").search(raw).group(1))
     else:
         cel_intoc = set()
-    est_ctrl = _estilos_linha(x_ctrl, LIN_CAB + 1)
+    est_ctrl = _estilos_linha(x_ctrl, lin_hdr + 1)
     P = {"min": "'PARÂMETROS'!$B$4", "hoje": "'PARÂMETROS'!$B$5", "sv": "'PARÂMETROS'!$B$8",
          "svt": "'PARÂMETROS'!$B$9"}
     nome_por_col = {C[n]: n for n, _, _ in CTRL}
     edits, n_form = {}, 0
-    for r in range(LIN_CAB + 1, ult_lin + 1):
+    for r in range(lin_hdr + 1, ult_lin + 1):
         e = {}
         if auto:
-            f = f_controle(r, P, 0)
+            f = f_controle(r, P, 0, lin_hdr)
             for L in auto:
                 if "%s%d" % (L, r) in cel_intoc:
                     continue
