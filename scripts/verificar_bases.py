@@ -132,7 +132,10 @@ def verificar(planilha_olodum, painel_json=None, log=print, completo=False):
             aviso('não consegui comparar a consulta "%s" com %s (%s)' % (nome, caminho.name, e))
             continue
         if n_base is None:
-            aviso('a consulta "%s" busca a aba "%s" em %s, mas a aba não existe lá' % (nome, aba, caminho.name))
+            abas = openpyxl.load_workbook(caminho, read_only=True).sheetnames
+            aviso('a consulta "%s" busca a aba "%s" em %s, mas a aba não existe lá (abas do arquivo: %s); '
+                  "a OLODUM fica com os dados antigos dessa consulta" % (nome, aba, caminho.name, ", ".join(abas)))
+            fonte_datas = None if nome == CONSULTA_DATAS else fonte_datas
             continue
         if n_olodum is None:
             log('Consulta "%s": %s (salvo em %s), %d linhas; aba "%s" não encontrada na OLODUM para comparar'
