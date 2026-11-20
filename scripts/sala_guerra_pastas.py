@@ -54,7 +54,19 @@ ATV_TH = "Teste Hidrostático em Tubulação"
 ATV_LAV = "Lavagem"
 ATV_REM = "Remontagem"
 PREFIXO_PASTA = "421-M-TU"
-ESC_RADIX, ESC_FURUI, ESC_INTRA = "RADIX", "FURUI", "FURUI - INTRA SKID"
+ESC_RADIX, ESC_FURUI, ESC_INTRA, ESC_LOOSE = "RADIX", "FURUI", "FURUI - INTRA SKID", "FURUI - LOOSE ITEM"
+ATV_STATUS = ("MONTAGEM (LVM)", "MAPA JUNTAS", "TESTE HIDROSTÁTICO", "LAVAGEM", "REMONTAGEM")
+
+
+def regra_intra(b):
+    """True quando a pasta segue o critério INTRA SKID (pré walkdown / documentação HMSWEB):
+    INTRA SKID sem juntas no ControlTub, ou LOOSE ITEM sem juntas no ControlTub e com algum certificado
+    executado ou aprovado no HMSWEB."""
+    if (b["JUNTAS PREVISTAS"] or 0) > 0:
+        return False
+    if b["ESCOPO"] == ESC_INTRA:
+        return True
+    return b["ESCOPO"] == ESC_LOOSE and any(b[k] in ("APROVADA", "EXECUTADA") for k in ATV_STATUS)
 
 
 def ler_painel(caminho):
@@ -147,7 +159,7 @@ def base_por_pasta(d):
 def etapas_aprovadas(b):
     """Etapas com avanço aprovado na PCP para uma linha da base (mesma regra do status calculado)."""
     ok = lambda s: s in ("APROVADA", "N/A")
-    intra_sem_ctb = b["ESCOPO"] == ESC_INTRA and not (b["JUNTAS PREVISTAS"] or 0) > 0
+    intra_sem_ctb = regra_intra(b)
     return {
         "AVANÇO MONTAGEM": b["MONTAGEM (LVM)"] == "APROVADA",
         "AVANÇO TESTE": b["TESTE HIDROSTÁTICO"] == "APROVADA",
@@ -204,7 +216,7 @@ def avancos_pcp(pcp, base, cal):
         o = {col: sem(atvs.get(a)) for col, a in mapa.items()}
         b = info.get(p)
         o["AVANÇO PRÉ WALK"] = None
-        if b and b["ESCOPO"] == ESC_INTRA and not (b["JUNTAS PREVISTAS"] or 0) > 0:
+        if b and regra_intra(b):
             datas = [atvs[a] for a in exig_pre if a in atvs]
             if datas and all(datas):
                 o["AVANÇO PRÉ WALK"] = sem(max(datas))
@@ -428,7 +440,7 @@ def aba_parametros(wb, ult_cal):
     ws["A12"] = "REGRAS"
     ws["A12"].font = F_H2
     regras = [
-        "STATUS CALCULADO - escopo RADIX e FURUI (inclui FURUI - LOOSE ITEM e demais FURUI; e INTRA SKID com juntas no ControlTub):",
+        "STATUS CALCULADO - escopo RADIX e FURUI (e INTRA SKID / LOOSE ITEM com juntas no ControlTub):",
         "  EM MONTAGEM: avanço ControlTub < avanço mínimo (B4), mesmo com teste aprovado no HMSWEB.",
         "  P/TESTE: avanço ControlTub >= avanço mínimo e sem certificado de teste aprovado no HMSWEB.",
         "  P/REMONTAGEM: teste aprovado no HMSWEB e LV de montagem e/ou remontagem pendente.",
@@ -439,6 +451,9 @@ def aba_parametros(wb, ult_cal):
         "  PRÉ WALKDOWN: demais certificados aprovados; pendente LV de montagem e/ou remontagem.",
         "  CONCLUÍDA: todos os certificados aprovados.",
         "  Atividade inexistente na PCP para a pasta (N/A) não é exigida.",
+        "STATUS CALCULADO - escopo FURUI - LOOSE ITEM sem juntas no ControlTub:",
+        "  sem nenhum certificado executado/aprovado no HMSWEB -> EM MONTAGEM;",
+        "  com algum certificado executado/aprovado -> mesmo critério da INTRA SKID.",
         "OUTROS: SEM ESCOPO (fora da lista de escopo Milplan) e NÃO ENCONTRADA (fora do Painel OLODUM).",
         "",
         "STATUS PROGRAMAÇÃO: etapa cuja SEMANA PROG é a semana vigente (B8).",
@@ -528,18 +543,29 @@ def f_controle(r, P, nb, lin_cab=LIN_CAB):
         "PEND. A TUB. SUBSISTEMA": look("N", texto=False),
         "STATUS CALCULADO": (
             '=IF(%(p)s="","",IF(ISNA(%(m)s),"NÃO ENCONTRADA",'
-            'IF(OR(%(e)s="%(radix)s",AND(LEFT(%(e)s,5)="%(furui)s",%(e)s<>"%(intra)s"),AND(%(e)s="%(intra)s",N(%(prev)s)>0)),'
-            'IF(AND(N(%(prev)s)>0,N(%(av)s)<%(min)s),"EM MONTAGEM",'
-            'IF(%(th)s="APROVADA",IF(AND(%(lvm)s="APROVADA",%(rem)s="APROVADA"),"CONCLUÍDA","P/REMONTAGEM"),'
-            'IF(%(av)s="","SEM CTB","P/TESTE"))),'
-            'IF(%(e)s="%(intra)s",IF(AND(OR(%(mj)s="APROVADA",%(mj)s="N/A"),%(th)s="APROVADA",'
-            'OR(%(lav)s="APROVADA",%(lav)s="N/A")),IF(AND(OR(%(lvm)s="APROVADA",%(lvm)s="N/A"),'
-            'OR(%(rem)s="APROVADA",%(rem)s="N/A")),"CONCLUÍDA","PRÉ WALKDOWN"),"PENDENTE DOCUMENTAÇÃO HMSWEB"),'
-            '"SEM ESCOPO"))))'
+            # critério RADIX/FURUI: RADIX, FURUI (exceto INTRA SKID e LOOSE ITEM) e INTRA/LOOSE com juntas no CTB
+            'IF(OR(%(e)s="%(radix)s",AND(LEFT(%(e)s,5)="%(furui)s",%(e)s<>"%(intra)s",%(e)s<>"%(loose)s"),'
+            'AND(OR(%(e)s="%(intra)s",%(e)s="%(loose)s"),N(%(prev)s)>0)),%(padrao)s,'
+            # INTRA SKID sem juntas no CTB
+            'IF(%(e)s="%(intra)s",%(intrab)s,'
+            # LOOSE ITEM sem juntas no CTB: sem avanço de certificado = EM MONTAGEM; com avanço = critério INTRA SKID
+            'IF(%(e)s="%(loose)s",IF(COUNTIF(%(k)s:%(o)s,"APROVADA")+COUNTIF(%(k)s:%(o)s,"EXECUTADA")>0,'
+            '%(intrab)s,"EM MONTAGEM"),'
+            '"SEM ESCOPO")))))'
             % {"p": pasta, "m": m, "e": x("ESCOPO"), "radix": ESC_RADIX, "furui": ESC_FURUI, "intra": ESC_INTRA,
-               "prev": x("JUNTAS PREVISTAS CTB"), "th": x("CERTIFICADO TESTE HMSWEB"), "rem": x("REMONTAGEM HMS"),
-               "lvm": x("MONTAGEM HMS (LVM)"), "mj": x("MAPA JUNTAS HMS"), "lav": x("LAVAGEM HMS"),
-               "av": x("AVANÇO CTB"), "min": P["min"]}),
+               "loose": ESC_LOOSE, "prev": x("JUNTAS PREVISTAS CTB"),
+               "k": x("MONTAGEM HMS (LVM)"), "o": x("REMONTAGEM HMS"),
+               "padrao": ('IF(AND(N(%(prev)s)>0,N(%(av)s)<%(min)s),"EM MONTAGEM",'
+                          'IF(%(th)s="APROVADA",IF(AND(%(lvm)s="APROVADA",%(rem)s="APROVADA"),"CONCLUÍDA","P/REMONTAGEM"),'
+                          'IF(%(av)s="","SEM CTB","P/TESTE")))'
+                          % {"prev": x("JUNTAS PREVISTAS CTB"), "av": x("AVANÇO CTB"), "min": P["min"],
+                             "th": x("CERTIFICADO TESTE HMSWEB"), "lvm": x("MONTAGEM HMS (LVM)"),
+                             "rem": x("REMONTAGEM HMS")}),
+               "intrab": ('IF(AND(OR(%(mj)s="APROVADA",%(mj)s="N/A"),%(th)s="APROVADA",OR(%(lav)s="APROVADA",'
+                          '%(lav)s="N/A")),IF(AND(OR(%(lvm)s="APROVADA",%(lvm)s="N/A"),OR(%(rem)s="APROVADA",'
+                          '%(rem)s="N/A")),"CONCLUÍDA","PRÉ WALKDOWN"),"PENDENTE DOCUMENTAÇÃO HMSWEB")'
+                          % {"mj": x("MAPA JUNTAS HMS"), "th": x("CERTIFICADO TESTE HMSWEB"), "lav": x("LAVAGEM HMS"),
+                             "lvm": x("MONTAGEM HMS (LVM)"), "rem": x("REMONTAGEM HMS")})}),
         "STATUS PROGRAMAÇÃO": '=IF(%s="","",%s)' % (pasta, status_prog),
         "PROGRAMAÇÃO DA SEMANA": '=IF(%s="","",IF(%s=%s,"REALIZADA","PENDENTE"))'
                                  % (x("STATUS PROGRAMAÇÃO"), realizada, P["svt"]),
