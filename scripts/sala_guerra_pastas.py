@@ -352,14 +352,14 @@ BORDA = Border(left=FINO, right=FINO, top=FINO, bottom=FINO)
 CENTRO = Alignment(horizontal="center", vertical="center", wrap_text=True)
 ESQ = Alignment(horizontal="left", vertical="center")
 
-STATUS_LISTA = ["EM MONTAGEM", "P/TESTE", "P/REMONTAGEM", "QUALIDADE-REMONTAGEM", "PRÉ WALKDOWN", "PENDENTE DOCUMENTAÇÃO HMSWEB",
+STATUS_LISTA = ["EM MONTAGEM", "APTA PARA TESTE", "P/REMONTAGEM", "QUALIDADE-REMONTAGEM", "PRÉ WALKDOWN", "PENDENTE DOCUMENTAÇÃO HMSWEB",
                 "CONCLUÍDA", "SEM CTB", "SEM ESCOPO", "NÃO ENCONTRADA"]
-COR_STATUS = {"EM MONTAGEM": "FFEB9C", "P/TESTE": "C6EFCE", "P/REMONTAGEM": "DDEBF7", "QUALIDADE-REMONTAGEM": "D9C3E9", "PRÉ WALKDOWN": "B4C6E7",
+COR_STATUS = {"EM MONTAGEM": "FFEB9C", "APTA PARA TESTE": "C6EFCE", "P/REMONTAGEM": "DDEBF7", "QUALIDADE-REMONTAGEM": "D9C3E9", "PRÉ WALKDOWN": "B4C6E7",
               "PENDENTE DOCUMENTAÇÃO HMSWEB": "F4B183", "CONCLUÍDA": "A9D08E", "SEM CTB": "EDEDED",
               "SEM ESCOPO": "D9D9D9", "NÃO ENCONTRADA": "F8CBAD"}
 # etapa da programação -> (coluna da semana programada, status, coluna de avanço)
 ETAPAS = [("MONTAGEM", "SEMANA PROG MONTAGEM", "EM MONTAGEM", "AVANÇO MONTAGEM"),
-          ("TESTE", "SEMANA PROG TESTE", "P/TESTE", "AVANÇO TESTE"),
+          ("TESTE", "SEMANA PROG TESTE", "APTA PARA TESTE", "AVANÇO TESTE"),
           ("REMONTAGEM", "SEMANA PROG REMONTAGEM", "P/REMONTAGEM", "AVANÇO REMONTAGEM"),
           ("PRÉ WALK", "SEMANA PROG PRÉ WALK", "PRÉ WALKDOWN", "AVANÇO PRÉ WALK")]
 CATEG_LISTA = ["PRIORIDADE 1", "PRIORIDADE 2", "OPORTUNIDADE"]
@@ -410,7 +410,7 @@ def aba_parametros(wb, ult_cal):
     titulo(ws, "PARÂMETROS E LISTAS", "Células amarelas podem ser alteradas; todas as abas usam estes valores.")
     itens = [
         (4, "Avanço mínimo do ControlTub para liberar teste", 0.8, "0%",
-         "Pasta RADIX/FURUI com avanço do CTB igual ou superior vai para P/TESTE."),
+         "Pasta RADIX/FURUI com avanço do CTB igual ou superior vai para APTA PARA TESTE."),
         (5, "Data de referência (hoje)", "=TODAY()", "dd/mm/yyyy", ""),
         (6, "Semana da data de referência (calendário da obra)",
          "=IFERROR(VALUE(SUBSTITUTE(INDEX('CALENDÁRIO'!$B$2:$B$%d,MATCH($B$5,'CALENDÁRIO'!$A$2:$A$%d,1)),\"SEM\",\"\")),\"\")"
@@ -442,7 +442,7 @@ def aba_parametros(wb, ult_cal):
     regras = [
         "STATUS CALCULADO - escopo RADIX e FURUI (e INTRA SKID / LOOSE ITEM com juntas no ControlTub):",
         "  EM MONTAGEM: avanço ControlTub < avanço mínimo (B4), mesmo com teste aprovado no HMSWEB.",
-        "  P/TESTE: avanço ControlTub >= avanço mínimo e sem certificado de teste aprovado no HMSWEB.",
+        "  APTA PARA TESTE: avanço ControlTub >= avanço mínimo e sem certificado de teste aprovado no HMSWEB.",
         "  P/REMONTAGEM: teste aprovado no HMSWEB e remontagem pendente (ou reprovada).",
         "  QUALIDADE-REMONTAGEM: teste aprovado e remontagem executada (aguardando aprovação) ou aprovada",
         "    com outro certificado ainda pendente.",
@@ -459,7 +459,7 @@ def aba_parametros(wb, ult_cal):
         "OUTROS: SEM ESCOPO (fora da lista de escopo Milplan) e NÃO ENCONTRADA (fora do Painel OLODUM).",
         "",
         "STATUS PROGRAMAÇÃO: etapa cuja SEMANA PROG é a semana vigente (B8).",
-        "  MONTAGEM -> EM MONTAGEM | TESTE -> P/TESTE | REMONTAGEM -> P/REMONTAGEM | PRÉ WALK -> PRÉ WALKDOWN.",
+        "  MONTAGEM -> EM MONTAGEM | TESTE -> APTA PARA TESTE | REMONTAGEM -> P/REMONTAGEM | PRÉ WALK -> PRÉ WALKDOWN.",
         "  Se mais de uma etapa estiver na semana vigente, vale a mais adiantada.",
         "",
         "AVANÇO (MONTAGEM/TESTE/REMONTAGEM/PRÉ WALK): semana do calendário da DATA DA EXECUÇÃO na PCP_ATIVIDADE",
@@ -568,7 +568,7 @@ def f_controle(r, P, nb, lin_cab=LIN_CAB):
                           'IF(%(th)s="APROVADA",IF(COUNTIF(%(k)s:%(o)s,"APROVADA")+COUNTIF(%(k)s:%(o)s,"N/A")=5,'
                           '"CONCLUÍDA",IF(OR(%(rem)s="EXECUTADA",%(rem)s="APROVADA"),"QUALIDADE-REMONTAGEM",'
                           '"P/REMONTAGEM")),'
-                          'IF(%(av)s="","SEM CTB","P/TESTE")))'
+                          'IF(%(av)s="","SEM CTB","APTA PARA TESTE")))'
                           % {"prev": x("JUNTAS PREVISTAS CTB"), "av": x("AVANÇO CTB"), "min": P["min"],
                              "th": x("CERTIFICADO TESTE HMSWEB"), "rem": x("REMONTAGEM HMS"),
                              "k": x("MONTAGEM HMS (LVM)"), "o": x("REMONTAGEM HMS")}),
@@ -582,7 +582,7 @@ def f_controle(r, P, nb, lin_cab=LIN_CAB):
         "STATUS PROGRAMAÇÃO": '=IF(%s="","",%s)' % (pasta, status_prog),
         "PROGRAMAÇÃO DA SEMANA": '=IF(%s="","",IF(%s=%s,"REALIZADA","PENDENTE"))'
                                  % (x("STATUS PROGRAMAÇÃO"), realizada, P["svt"]),
-        "PONTOS TESTE": '=IF(%s<>"P/TESTE",0,%s+%s+N(%s)*100+ROW()/1000000)'
+        "PONTOS TESTE": '=IF(%s<>"APTA PARA TESTE",0,%s+%s+N(%s)*100+ROW()/1000000)'
                         % (x("STATUS CALCULADO"), rest, cat, x("AVANÇO CTB")),
         "PONTOS REMONT.": '=IF(%s<>"P/REMONTAGEM",0,%s+%s+ROW()/1000000)' % (x("STATUS CALCULADO"), rest, cat),
         "PONTOS PRÉ WALK": '=IF(%s<>"PRÉ WALKDOWN",0,%s+%s+ROW()/1000000)' % (x("STATUS CALCULADO"), rest, cat),
@@ -807,7 +807,7 @@ def aba_painel(wb, ult_ctrl, ult_restr, gerado_em, P):
         ("PROGRAMADAS NA SEMANA", '=COUNTIF(%s,"?*")' % sp, "0"),
         ("REALIZADAS NA SEMANA", '=COUNTIF(%s,"REALIZADA")' % ps, "0"),
         ("ADERÊNCIA DA PROGRAMAÇÃO", '=IF(F5=0,0,H5/F5)', "0%"),
-        ("P/ TESTE (CALCULADO)", '=COUNTIF(%s,"P/TESTE")' % st, "0"),
+        ("APTA PARA TESTE (CALCULADO)", '=COUNTIF(%s,"APTA PARA TESTE")' % st, "0"),
         ("P/ REMONTAGEM (CALCULADO)", '=COUNTIF(%s,"P/REMONTAGEM")' % st, "0"),
         ("PRÉ WALKDOWN (INTRA SKID)", '=COUNTIF(%s,"PRÉ WALKDOWN")' % st, "0"),
     ]
@@ -976,7 +976,7 @@ def aba_painel(wb, ult_ctrl, ult_restr, gerado_em, P):
     base_campos = [("Nº DA PASTA", "Nº DA PASTA", None), ("SUBSOP HMS", "SUBSOP HMS", None),
                    ("CATEGORIA", "CATEGORIA DE ENTREGA", None)]
     fim = ranking(lin, 2, "MELHORES PASTAS PARA TESTE",
-                  "Status calculado P/TESTE. Ordem: sem restrição > prioridade > oportunidade > maior avanço CTB.",
+                  "Status calculado APTA PARA TESTE. Ordem: sem restrição > prioridade > oportunidade > maior avanço CTB.",
                   "PONTOS TESTE", base_campos + [("AVANÇO CTB", "AVANÇO CTB", "0%"),
                                                  ("PROGRAM. SEMANA", "STATUS PROGRAMAÇÃO", None),
                                                  ("RESTRIÇÃO", "RESTRIÇÕES ABERTAS", None)])
@@ -1365,7 +1365,7 @@ _BORDA = ('<border><left style="thin"><color rgb="FFBFC9D9"/></left><right style
           '</right><top style="thin"><color rgb="FFBFC9D9"/></top><bottom style="thin"><color rgb="FFBFC9D9"/>'
           '</bottom><diagonal/></border>')
 CAT_PAINEL = ["PRIORIDADE 1", "PRIORIDADE 2", "OPORTUNIDADE"]
-STATUS_SUB = ["EM MONTAGEM", "P/TESTE", "P/REMONTAGEM", "QUALIDADE-REMONTAGEM", "PRÉ WALKDOWN",
+STATUS_SUB = ["EM MONTAGEM", "APTA PARA TESTE", "P/REMONTAGEM", "QUALIDADE-REMONTAGEM", "PRÉ WALKDOWN",
               "PENDENTE DOCUMENTAÇÃO HMSWEB", "CONCLUÍDA"]
 
 
@@ -1445,7 +1445,7 @@ def _painel_xml(st, lin_hdr, P, subs, base_txt, ult=1000):
     # indicadores
     kpis = [("PASTAS CONTROLADAS", '=COUNTIF(%s,"?*")' % B, "kv"),
             ("SEMANA VIGENTE", "=" + P["svt"], "kr"),
-            ("PROGRAMADAS NA SEMANA", '=COUNTIF(%s,"?*")' % X, "kv"),
+            ("PASTAS CONCLUÍDAS", '=COUNTIF(%s,"CONCLUÍDA")' % R, "kv"),
             ("REALIZADO NA SEMANA", '=COUNTIF(%s,"REALIZADA")' % AG, "kv"),
             ("% AVANÇO CONCLUÍDO", '=IF(B5=0,0,COUNTIF(%s,"CONCLUÍDA")/B5)' % R, "kp")]
     for i, (rot, f, est) in enumerate(kpis):
@@ -1494,33 +1494,9 @@ def _painel_xml(st, lin_hdr, P, subs, base_txt, ult=1000):
                            "HOLD e textos contam como SEM DATA).", "nota")
     cf.append(("K%d:K%d" % (r0, rt - 1), "FF5B9BD5"))
 
-    # programação da semana (ao lado)
-    put("N7", '="PROGRAMAÇÃO DA SEMANA "&%s' % P["svt"], "h2", True)
-    for c, rot in zip(range(14, 19), ["ETAPA PROGRAMADA", "PROGRAMADAS", "REALIZADAS", "PENDENTES", "ADERÊNCIA"]):
-        put("%s8" % get_column_letter(c), rot, "cab")
-    for i, (nome, _, stp, _) in enumerate(ETAPAS):
-        r = 9 + i
-        put("N%d" % r, stp, "st:" + stp)
-        put("O%d" % r, '=COUNTIF(%s,"%s")' % (X, stp), "n", True)
-        put("P%d" % r, '=COUNTIFS(%s,"%s",%s,"REALIZADA")' % (X, stp, AG), "n", True)
-        put("Q%d" % r, "=O%d-P%d" % (r, r), "n", True)
-        put("R%d" % r, "=IF(O%d=0,0,P%d/O%d)" % (r, r, r), "p", True)
-    rp = 9 + len(ETAPAS)
-    put("N%d" % rp, "TOTAL", "tl")
-    for L in "OPQ":
-        put("%s%d" % (L, rp), "=SUM(%s9:%s%d)" % (L, L, rp - 1), "tn", True)
-    put("R%d" % rp, "=IF(O%d=0,0,P%d/O%d)" % (rp, rp, rp), "tp", True)
-    put("N%d" % (rp + 2), "PROGRAMADAS NA SEMANA POR CATEGORIA", "h2")
-    for c, rot in zip(range(14, 16), ["CATEGORIA", "PROGRAMADAS"]):
-        put("%s%d" % (get_column_letter(c), rp + 3), rot, "cab")
-    for i, cat in enumerate(CAT_PAINEL + ["SEM CATEGORIA"]):
-        r = rp + 4 + i
-        put("N%d" % r, cat, "lab")
-        crit = '""' if cat == "SEM CATEGORIA" else '"%s"' % cat
-        put("O%d" % r, '=COUNTIFS(%s,"?*",%s,%s)' % (X, S, crit), "n", True)
-
+    rp = 0
     # avanço do status calculado por subsistema
-    rs = max(rt + 3, rp + 10)
+    rs = rt + 3
     put("B%d" % rs, "AVANÇO DO STATUS CALCULADO POR SUBSISTEMA", "h2")
     put("F%d" % rs, "Pasta contada no 1º subsistema do SUBSOP HMS. OUTROS = SEM CTB, SEM ESCOPO e NÃO ENCONTRADA.", "nota")
     cab_s = ["SUBSISTEMA", "PASTAS"] + STATUS_SUB + ["OUTROS", "% CONCLUÍDA", "AVANÇO CTB"]
@@ -1569,7 +1545,7 @@ def _painel_xml(st, lin_hdr, P, subs, base_txt, ult=1000):
     larg = {1: 2, 2: 34}
     for c in range(3, 14):
         larg[c] = 11.5
-    larg[14], larg[15], larg[16], larg[17], larg[18] = 30, 14, 13, 13, 13
+    pass
     cols = "".join('<col min="%d" max="%d" width="%s" customWidth="1"/>' % (c, c, w) for c, w in sorted(larg.items()))
     cfx = "".join('<conditionalFormatting sqref="%s"><cfRule type="dataBar" priority="%d"><dataBar>'
                   '<cfvo type="num" val="0"/><cfvo type="num" val="1"/><color rgb="%s"/></dataBar></cfRule>'
@@ -1578,7 +1554,7 @@ def _painel_xml(st, lin_hdr, P, subs, base_txt, ult=1000):
            '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
            'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
            '<sheetPr><tabColor rgb="FF1F3864"/><pageSetUpPr fitToPage="1"/></sheetPr>'
-           '<dimension ref="B1:R%d"/>'
+           '<dimension ref="B1:M%d"/>'
            '<sheetViews><sheetView showGridLines="0" tabSelected="1" workbookViewId="0">'
            '<pane ySplit="5" topLeftCell="A6" activePane="bottomLeft" state="frozen"/>'
            '<selection pane="bottomLeft" activeCell="B6" sqref="B6"/></sheetView></sheetViews>'
@@ -1695,8 +1671,11 @@ def categorias_parametros(arquivos):
     x = arquivos[abas["PARÂMETROS"]].decode("utf-8")
     est = _estilos_linha(x, 13)
     s13 = est.get("F") or est.get("E")
-    ed = {13 + i: {"F": (lambda v: lambda ref, s: _cel_valor(ref, ' s="%s"' % s13 if s13 else s, v))(cat)}
-          for i, cat in enumerate(CATEG_LISTA)}
+    ed = collections.defaultdict(dict)
+    for i, cat in enumerate(CATEG_LISTA):
+        ed[13 + i]["F"] = (lambda v: lambda ref, s: _cel_valor(ref, ' s="%s"' % s13 if s13 else s, v))(cat)
+    for i, st_ in enumerate(STATUS_LISTA):
+        ed[13 + i]["E"] = (lambda v: lambda ref, s: _cel_valor(ref, ' s="%s"' % s13 if s13 else s, v))(st_)
     arquivos[abas["PARÂMETROS"]] = _patch_linhas(x, ed, {}).encode("utf-8")
     fim = 12 + len(CATEG_LISTA)
     for nome in ("CONTROLE",):
@@ -1916,6 +1895,10 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None, so_formu
     for nome, caminho in alvo.items():
         x = arquivos[caminho].decode("utf-8")
         x2 = re.sub(r"('?BASE_OLODUM'?!)\$([A-Z]+)\$\d+:\$\2\$\d+", r"\1$\2:$\2", x)
+        # status renomeado: regras de cor que testavam "P/TESTE"
+        x2 = x2.replace("<formula>\"P/TESTE\"</formula>", "<formula>\"APTA PARA TESTE\"</formula>")
+        x2 = x2.replace("<formula>&quot;P/TESTE&quot;</formula>", "<formula>&quot;APTA PARA TESTE&quot;</formula>")
+        x2 = x2.replace("<xm:f>\"P/TESTE\"</xm:f>", "<xm:f>\"APTA PARA TESTE\"</xm:f>")
         if nome == "PAINEL":
             if d:
                 x2 = re.sub(r"Base Painel OLODUM: \d\d/\d\d/\d{4} \d\d:\d\d UTC",
