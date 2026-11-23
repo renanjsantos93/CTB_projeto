@@ -1131,6 +1131,7 @@ def gerar(painel, controle, saida, calendario=None, painel_anterior=None, pcp=No
         print("Cópia de segurança: %s" % copia)
     temp = saida + ".tmp.xlsx"
     wb.save(temp)
+    _resumo_no_arquivo(temp, LIN_CAB, P)
     try:
         os.replace(temp, saida)
     except PermissionError:
@@ -1353,6 +1354,250 @@ def _grupos_compartilhados(xml):
     return g
 
 
+# ----------------------------------------------------------------------------- aba RESUMO GERENCIAL
+ABA_RESUMO = "RESUMO GERENCIAL"
+_NS_WS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
+_CT_WS = "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
+
+
+def _estilo_resumo(st, cor_fonte="FF000000", tam=11, negrito=False, italico=False, fundo=None,
+                   horiz="left", quebra=False):
+    fonte = "<font>%s%s<sz val=\"%s\"/><color rgb=\"%s\"/><name val=\"Arial\"/><family val=\"2\"/></font>" % (
+        "<b/>" if negrito else "", "<i/>" if italico else "", tam, cor_fonte)
+    st, fid = _add_item(st, "fonts", "font", fonte)
+    fill_id = 0
+    if fundo:
+        fill = ('<fill><patternFill patternType="solid"><fgColor rgb="%s"/><bgColor indexed="64"/></patternFill></fill>'
+                % fundo)
+        st, fill_id = _add_item(st, "fills", "fill", fill)
+    xf = ('<xf numFmtId="0" fontId="%d" fillId="%d" borderId="0" xfId="0" applyFont="1" applyFill="1" '
+          'applyAlignment="1"><alignment horizontal="%s" vertical="center"%s/></xf>'
+          % (fid, fill_id, horiz, ' wrapText="1"' if quebra else ""))
+    return _add_item(st, "cellXfs", "xf", xf)
+
+
+def _resumo_xml(st, lin_hdr, P):
+    """Monta o XML da aba RESUMO GERENCIAL (fórmulas sobre o CONTROLE). Devolve (xml, styles)."""
+    r1, r2 = lin_hdr + 1, 3000
+    rg = lambda nome: "'CONTROLE'!$%s$%d:$%s$%d" % (C[nome], r1, C[nome], r2)
+    R, S, Y, G, B = (rg("STATUS CALCULADO"), rg("CATEGORIA DE ENTREGA"),
+                     rg("DATA CONCLUSÃO INFORMADO RESPONSAVEL"), rg("JUNTAS PREVISTAS CTB"), rg("Nº DA PASTA"))
+    cats = [None, "PRIORIDADE", "OPORTUNIDADE", ""]  # TOTAL, PRIORIDADE, OPORTUNIDADE, SEM CATEGORIA
+
+    def cnt(conds, cat):
+        c = ['%s,"<>"' % B] + ['%s,"%s"' % (rng, crit) for rng, crit in conds]
+        if cat is not None:
+            c.append('%s,"%s"' % (S, cat))
+        return "COUNTIFS(%s)" % ",".join(c)
+
+    def linha(conds_lista):  # soma de vários COUNTIFS (um por conjunto de condições)
+        return ["=" + "+".join(cnt(cd, cat) for cd in conds_lista) for cat in cats]
+
+    E = {}
+    st, E["tit"] = _estilo_resumo(st, "FF1F3864", 16, negrito=True)
+    st, E["sub"] = _estilo_resumo(st, "FFC00000", 11, negrito=True)
+    st, E["sec"] = _estilo_resumo(st, "FFFFFFFF", 12, negrito=True, fundo="FF1F3864")
+    st, E["cab"] = _estilo_resumo(st, "FF1F3864", 10, negrito=True, fundo="FFD9E1F2", horiz="center", quebra=True)
+    st, E["lab"] = _estilo_resumo(st, "FF000000", 11)
+    st, E["labb"] = _estilo_resumo(st, "FF000000", 11, negrito=True, fundo="FFFFF2CC")
+    st, E["num"] = _estilo_resumo(st, "FF000000", 12, negrito=True, horiz="center")
+    st, E["numb"] = _estilo_resumo(st, "FF1F3864", 14, negrito=True, fundo="FFFFF2CC", horiz="center")
+    st, E["warn"] = _estilo_resumo(st, "FFC00000", 11, negrito=True)
+    st, E["nota"] = _estilo_resumo(st, "FF595959", 9, italico=True, quebra=True)
+    st, E["mail"] = _estilo_resumo(st, "FF000000", 10, quebra=True, horiz="left")
+
+    cel, merges, alturas = [], [], {}
+    hoje = "TODAY()"
+    data = _data_txt(hoje)
+
+    def put(ref, val, est, formula=False):
+        cel.append((ref, val, E[est], formula))
+
+    def secao(r, titulo):
+        put("B%d" % r, titulo, "sec")
+        for L in "CDEF":
+            put("%s%d" % (L, r), None, "sec")
+        merges.append("B%d:F%d" % (r, r))
+        alturas[r] = 22
+        for L, t in zip("BCDEF", ["", "TOTAL", "PRIORIDADE", "OPORTUNIDADE", "SEM CATEGORIA"]):
+            put("%s%d" % (L, r + 1), t, "cab")
+        alturas[r + 1] = 28
+
+    def valores(r, rotulo, formulas, destaque=False):
+        put("B%d" % r, rotulo, "labb" if destaque else "lab")
+        for L, f in zip("CDEF", formulas):
+            put("%s%d" % (L, r), f, "numb" if destaque else "num", formula=True)
+        alturas[r] = 20
+
+    put("B2", "SALA DE GUERRA – STATUS DAS PASTAS", "tit")
+    alturas[2] = 26
+    put("B3", '="Data: "&%s&"   |   Semana vigente: "&%s' % (data, P["svt"]), "sub", formula=True)
+    soma = lambda *rs: ["=" + "+".join("%s%d" % (L, r) for r in rs) for L in "CDEF"]
+    menos = lambda a, *bs: ["=%s%d-%s" % (L, a, "-".join("%s%d" % (L, b) for b in bs)) for L in "CDEF"]
+    COM_DATA, HOLD = (Y, ">0"), (Y, "HOLD")  # data = valor numérico (data); HOLD = texto HOLD
+    MONT = [(R, "EM MONTAGEM"), (G, ">0")]
+    ref = {}
+
+    # 1 - produção
+    secao(5, "1️⃣  PASTAS DE PRODUÇÃO PENDENTES")
+    ref["tot1"], ref["tes"], ref["mon"], ref["dat1"], ref["hol1"], ref["sem1"], ref["av1"] = 7, 8, 9, 10, 11, 12, 13
+    valores(8, "P/ TESTE (avanço ≥ 80% no ControlTub)", linha([[(R, "P/TESTE")]]))
+    valores(9, "Em montagem (com juntas no ControlTub)", linha([MONT]))
+    valores(7, "Total pendente", soma(8, 9), destaque=True)
+    valores(10, "– com data de conclusão informada pela produção",
+            linha([[(R, "P/TESTE"), COM_DATA], MONT + [COM_DATA]]))
+    valores(11, "– em HOLD", linha([[(R, "P/TESTE"), HOLD], MONT + [HOLD]]))
+    valores(12, "– sem data de conclusão informada", menos(7, 10, 11))
+    put("B13", '=IF(C10=0,"⚠️ Nenhuma dessas pastas teve data de conclusão informada pela produção.",'
+               'C10&" de "&C7&" pastas com data de conclusão informada pela produção ("&C11&" em HOLD).")',
+        "warn", formula=True)
+    merges.append("B13:F13")
+
+    # 2 - comissionamento
+    secao(15, "2️⃣  PENDÊNCIAS DE COMISSIONAMENTO")
+    valores(18, "Executadas, aguardando aprovação da Qualidade", linha([[(R, "QUALIDADE-REMONTAGEM")]]))
+    valores(19, "Pendentes de execução da remontagem", linha([[(R, "P/REMONTAGEM")]]))
+    valores(17, "Pastas em remontagem", soma(18, 19), destaque=True)
+    valores(20, "– pendentes de execução COM data de conclusão", linha([[(R, "P/REMONTAGEM"), COM_DATA]]))
+    valores(21, "– pendentes de execução em HOLD", linha([[(R, "P/REMONTAGEM"), HOLD]]))
+    valores(22, "– pendentes de execução SEM data de conclusão", menos(19, 20, 21))
+
+    # 3 - cadastro no CTB
+    secao(24, "3️⃣  CADASTRO NO CTB (ControlTub)")
+    valores(26, "Pastas pendentes de cadastro", linha([[(R, "SEM CTB")], [(R, "EM MONTAGEM"), (G, "")]]), destaque=True)
+    put("B27", "Pastas RADIX / FURUI / LOOSE ITEM sem juntas no ControlTub e ainda sem teste ou certificados.", "nota")
+    merges.append("B27:F27")
+
+    # 4 - pré-walkdown
+    secao(29, "4️⃣  PRÉ-WALKDOWN")
+    valores(31, "Pastas pendentes de pré-walkdown", linha([[(R, "PRÉ WALKDOWN")]]), destaque=True)
+    put("B32", "Pré-walkdown = pasta intra skid com todos os certificados avançados no HMSWEB (mapa de juntas, teste "
+               "e lavagem executados ou aprovados), pendente de execução da LV de montagem.", "nota")
+    merges.append("B32:F32")
+    alturas[32] = 30
+
+    # texto pronto para e-mail
+    put("B34", "TEXTO PARA E-MAIL (selecione a célula abaixo e copie pela barra de fórmulas)", "sec")
+    for L in "CDEF":
+        put("%s34" % L, None, "sec")
+    merges.append("B34:F34")
+    nl = "&CHAR(10)&"
+    txt = nl.join([
+        '"SALA DE GUERRA – STATUS DAS PASTAS"', '"Data: "&%s' % data, '""',
+        '"1️⃣ PASTAS DE PRODUÇÃO PENDENTES"', '"Total pendente: "&C7&" pastas"', '""',
+        '"P/ TESTE (avanço ≥ 80% no Controtub): "&C8', '"– Prioridade: "&D8', '"– Oportunidade: "&E8',
+        '"Em montagem: "&C9&" (prioridade: "&D9&", oportunidade: "&E9&")"', 'B13', '""',
+        '"2️⃣ PENDÊNCIAS DE COMISSIONAMENTO"', '"Pastas em remontagem: "&C17', '"Prioridade: "&D17',
+        '"Oportunidade: "&E17', '""', '"Executadas, aguardando aprovação da Qualidade: "&C18',
+        '"Prioridade: "&D18', '"Oportunidade: "&E18', '""', '"Pendentes de execução da remontagem: "&C19',
+        '"Prioridade: "&D19', '"Oportunidade: "&E19', '"Com data de conclusão: "&C20', '"Em HOLD: "&C21',
+        '"Sem data de conclusão: "&C22', '""', '"3️⃣ CADASTRO NO CTB"', '"Pastas pendentes de cadastro: "&C26',
+        '"Prioridade: "&D26', '""', '"4️⃣ PRÉ-WALKDOWN"', '"Pastas pendentes: "&C31', '"Prioridade: "&D31',
+        '"Pré-walkdown = pasta de intra skid com todos os certificados avançando no HMSWEB, pendente de '
+        'execução da LV de montagem."'])
+    put("B35", "=" + txt, "mail", formula=True)
+    for L in "CDEF":
+        put("%s35" % L, None, "mail")
+    merges.append("B35:F35")
+    alturas[35] = 580
+
+    # XML
+    linhas = collections.defaultdict(list)
+    for ref, val, s, formula in cel:
+        linhas[_ref(ref)[1]].append((ref, val, s, formula))
+    corpo = []
+    for r in sorted(linhas):
+        cs = []
+        for ref, val, s, formula in sorted(linhas[r], key=lambda c: _col_idx(_ref(c[0])[0])):
+            sa = ' s="%d"' % s
+            if formula:
+                cs.append(_cel_formula(ref, sa, val))
+            else:
+                cs.append(_cel_valor(ref, sa, val))
+        ht = ' ht="%s" customHeight="1"' % alturas[r] if r in alturas else ""
+        corpo.append('<row r="%d"%s>%s</row>' % (r, ht, "".join(cs)))
+    xml = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+           '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+           'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+           '<sheetPr><tabColor rgb="FFC00000"/><pageSetUpPr fitToPage="1"/></sheetPr>'
+           '<dimension ref="B2:F35"/>'
+           '<sheetViews><sheetView showGridLines="0" tabSelected="1" workbookViewId="0"/></sheetViews>'
+           '<sheetFormatPr defaultRowHeight="15"/>'
+           '<cols><col min="1" max="1" width="2" customWidth="1"/><col min="2" max="2" width="58" customWidth="1"/>'
+           '<col min="3" max="6" width="15" customWidth="1"/></cols>'
+           '<sheetData>%s</sheetData>'
+           '<mergeCells count="%d">%s</mergeCells>'
+           '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/>'
+           '<pageSetup paperSize="9" orientation="portrait" fitToHeight="0"/>'
+           '</worksheet>') % ("".join(corpo), len(merges), "".join('<mergeCell ref="%s"/>' % m for m in merges))
+    return xml, st
+
+
+def instalar_resumo(arquivos, lin_hdr, P):
+    """Cria ou refaz a aba RESUMO GERENCIAL como primeira aba (edição direta do pacote .xlsx)."""
+    st = arquivos["xl/styles.xml"].decode("utf-8")
+    xml, st = _resumo_xml(st, lin_hdr, P)
+    arquivos["xl/styles.xml"] = st.encode("utf-8")
+    wbx = arquivos["xl/workbook.xml"].decode("utf-8")
+    rels = arquivos["xl/_rels/workbook.xml.rels"].decode("utf-8")
+    m = re.search(r'<sheet\b[^>]*name="%s"[^>]*r:id="([^"]+)"' % re.escape(ABA_RESUMO), wbx)
+    if m:  # já existe: só substitui o conteúdo
+        t = re.search(r'<Relationship\b[^>]*Id="%s"[^>]*Target="([^"]+)"' % m.group(1), rels) or \
+            re.search(r'<Relationship\b[^>]*Target="([^"]+)"[^>]*Id="%s"' % m.group(1), rels)
+        caminho = "xl/" + t.group(1).lstrip("/").replace("xl/", "")
+    else:
+        n = 1
+        while "xl/worksheets/sheet%d.xml" % n in arquivos:
+            n += 1
+        caminho = "xl/worksheets/sheet%d.xml" % n
+        ids = [int(x) for x in re.findall(r'Id="rId(\d+)"', rels)]
+        rid = "rId%d" % (max(ids or [0]) + 1)
+        rels = rels.replace("</Relationships>", '<Relationship Id="%s" Type="%s" Target="worksheets/sheet%d.xml"/>'
+                            "</Relationships>" % (rid, _NS_WS, n))
+        sid = max(int(x) for x in re.findall(r'<sheet\b[^>]*sheetId="(\d+)"', wbx)) + 1
+        wbx = re.sub(r"(<sheets>)", r'\1<sheet name="%s" sheetId="%d" r:id="%s"/>' % (ABA_RESUMO, sid, rid), wbx, count=1)
+        # nomes locais (filtros, títulos de impressão) apontam para a posição das abas: desloca 1
+        wbx = re.sub(r'localSheetId="(\d+)"', lambda mm: 'localSheetId="%d"' % (int(mm.group(1)) + 1), wbx)
+        ct = arquivos["[Content_Types].xml"].decode("utf-8")
+        ct = ct.replace("</Types>", '<Override PartName="/%s" ContentType="%s"/></Types>' % (caminho, _CT_WS))
+        arquivos["[Content_Types].xml"] = ct.encode("utf-8")
+        if "docProps/app.xml" in arquivos:
+            app = arquivos["docProps/app.xml"].decode("utf-8")
+            app = re.sub(r"(<HeadingPairs>.*?<vt:i4>)(\d+)(</vt:i4>)", lambda mm: "%s%d%s" % (
+                mm.group(1), int(mm.group(2)) + 1, mm.group(3)), app, count=1, flags=re.S)
+            app = re.sub(r'(<TitlesOfParts>\s*<vt:vector size=")(\d+)("[^>]*>)', lambda mm: "%s%d%s<vt:lpstr>%s</vt:lpstr>" % (
+                mm.group(1), int(mm.group(2)) + 1, mm.group(3), ABA_RESUMO), app, count=1)
+            arquivos["docProps/app.xml"] = app.encode("utf-8")
+    # abre no RESUMO: primeira aba ativa e só ela selecionada
+    wbx = re.sub(r'\sactiveTab="\d+"', "", wbx)
+    wbx = re.sub(r'\sfirstSheet="\d+"', "", wbx)
+    wbx = re.sub(r"<workbookView\b", '<workbookView activeTab="0"', wbx, count=1)
+    for nome in [n for n in arquivos if n.startswith("xl/worksheets/sheet") and n.endswith(".xml")]:
+        x = arquivos[nome].decode("utf-8")
+        x2 = re.sub(r'\stabSelected="1"', "", x)
+        if x2 != x:
+            arquivos[nome] = x2.encode("utf-8")
+    arquivos[caminho] = xml.encode("utf-8")
+    arquivos["xl/workbook.xml"] = wbx.encode("utf-8")
+    arquivos["xl/_rels/workbook.xml.rels"] = rels.encode("utf-8")
+    return arquivos
+
+
+def _resumo_no_arquivo(caminho, lin_hdr, P):
+    z = zipfile.ZipFile(caminho)
+    arquivos = {n: z.read(n) for n in z.namelist()}
+    infos = {i.filename: i for i in z.infolist()}
+    z.close()
+    arquivos = instalar_resumo(arquivos, lin_hdr, P)
+    temp = caminho + ".res.xlsx"
+    with zipfile.ZipFile(temp, "w", zipfile.ZIP_DEFLATED) as zo:
+        for n, data in arquivos.items():
+            zi = infos.get(n) or zipfile.ZipInfo(n)
+            zi.compress_type = zipfile.ZIP_DEFLATED
+            zo.writestr(zi, data)
+    os.replace(temp, caminho)
+
+
 def atualizar(painel, controle, pcp=None, backup=None, calendario=None, so_formulas=False):
     """so_formulas: reescreve só as fórmulas e o topo (semana/subtotais); não mexe na BASE_OLODUM nem nos AVANÇOS."""
     if so_formulas:
@@ -1559,9 +1804,12 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None, so_formu
             else wbxml.index("</sheets>") + len("</sheets>")
         wbxml = wbxml[:pos] + '<calcPr fullCalcOnLoad="1"/>' + wbxml[pos:]
     arquivos["xl/workbook.xml"] = wbxml.encode("utf-8")
+    if auto:
+        arquivos = instalar_resumo(arquivos, lin_hdr, P)
     if "xl/calcChain.xml" in arquivos:
         del arquivos["xl/calcChain.xml"]
-        arquivos["xl/_rels/workbook.xml.rels"] = re.sub(r'<Relationship\b[^>]*calcChain[^>]*/>', "", rels).encode("utf-8")
+        arquivos["xl/_rels/workbook.xml.rels"] = re.sub(r'<Relationship\b[^>]*calcChain[^>]*/>', "",
+                                                        arquivos["xl/_rels/workbook.xml.rels"].decode("utf-8")).encode("utf-8")
         ct = arquivos["[Content_Types].xml"].decode("utf-8")
         arquivos["[Content_Types].xml"] = re.sub(r'<Override\b[^>]*calcChain[^>]*/>', "", ct).encode("utf-8")
 
