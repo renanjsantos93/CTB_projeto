@@ -1780,6 +1780,11 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None, so_formu
     else:
         validas = {b["PASTA"] for b in base}
     removidas = [r for r in sorted(pastas) if pastas[r] not in validas] if validas else []
+    limite = max(15, int(0.05 * len(pastas)))
+    if len(removidas) > limite:  # trava: painel provavelmente desatualizado ou errado
+        print("AVISO: %d pastas do CONTROLE não estão no Painel OLODUM (limite %d). Nenhuma foi excluída. "
+              "Confira se o Painel OLODUM usado é o mais recente." % (len(removidas), limite))
+        removidas = []
     mover = {}  # linha nova -> linha antiga (colunas manuais e de avanço); None = linha que fica vazia
     if removidas:
         rem = set(removidas)
