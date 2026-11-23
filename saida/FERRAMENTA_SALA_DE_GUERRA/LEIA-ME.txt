@@ -36,6 +36,8 @@ O QUE E ATUALIZADO (e so isso)
 - Aba CONTROLE, AVANCO MONTAGEM / TESTE / REMONTAGEM / PRE WALK: semana do calendario da obra
   da DATA DA EXECUCAO na aba PCP_ATIVIDADE da OLODUM_BASEDADOS.
 - Pastas novas do painel entram no fim da lista do CONTROLE.
+- Pastas NAO ENCONTRADAS (fora da base do Painel OLODUM) sao excluidas do CONTROLE; as linhas de
+  baixo sobem com seus dados. A lista das excluidas aparece na janela/log; a versao anterior fica no HISTORICO.
 - Topo do CONTROLE (quando o cabecalho esta na linha 5 ou abaixo): linha 2 = semana vigente;
   linha 3 = titulos; linha 4 = SUBTOTAIS em amarelo (respeitam o filtro): pastas, juntas, avanco CTB,
   aprovadas por etapa HMSWEB, programadas na semana por etapa, executadas na semana, realizadas,

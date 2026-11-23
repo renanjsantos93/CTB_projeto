@@ -1749,14 +1749,14 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None, so_formu
     col_pasta = hdr["Nº DA PASTA"]
     ult_lin = ws.max_row
     pastas = {}
-    subs = set()
+    subs, sub_linha = set(), {}
     col_sub = hdr.get("SUBSOP HMS")
     for r in range(lin_hdr + 1, ws.max_row + 1):
         v = ws["%s%d" % (col_pasta, r)].value
         if v and "NÃO CADASTRADA" not in str(v).upper():
             pastas[r] = str(v).strip()
             if col_sub:
-                subs.add(_subsistema_principal(ws["%s%d" % (col_sub, r)].value))
+                sub_linha[r] = _subsistema_principal(ws["%s%d" % (col_sub, r)].value)
     avancos_ant = {}
     if not pcp and not so_formulas:
         for a in AVANCOS:
@@ -1773,6 +1773,28 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None, so_formu
     lin_b = next((r for r in range(1, 16) if _norm(wsb.cell(r, 1).value) == "PASTA"), None)
     if lin_b is None:
         raise SystemExit("Cabeçalho 'PASTA' não encontrado na coluna A da aba BASE_OLODUM")
+
+    # pastas NÃO ENCONTRADA (fora da base do Painel OLODUM) saem do CONTROLE; as linhas de baixo sobem
+    if so_formulas:
+        validas = {str(r[0]).strip() for r in wsb.iter_rows(min_row=lin_b + 1, max_col=1, values_only=True) if r[0]}
+    else:
+        validas = {b["PASTA"] for b in base}
+    removidas = [r for r in sorted(pastas) if pastas[r] not in validas] if validas else []
+    mover = {}  # linha nova -> linha antiga (colunas manuais e de avanço); None = linha que fica vazia
+    if removidas:
+        rem = set(removidas)
+        nova = lambda r: r - sum(1 for x in removidas if x < r)
+        for r in range(removidas[0], ult_lin + 1):
+            if r not in rem:
+                mover[nova(r)] = r
+        for t in range(ult_lin - len(rem) + 1, ult_lin + 1):
+            mover.setdefault(t, None)
+        print("Pastas NÃO ENCONTRADAS excluídas do CONTROLE (%d): %s"
+              % (len(rem), ", ".join(pastas[r] for r in removidas)))
+        avancos_ant = {nova(r): v for r, v in avancos_ant.items() if r not in rem}
+        sub_linha = {nova(r): v for r, v in sub_linha.items() if r not in rem}
+        pastas = {nova(r): p for r, p in pastas.items() if r not in rem}
+    subs = set(sub_linha.values())
 
     layout_ok = all(hdr.get(_norm(nome)) == C[nome] for nome, _, _ in CTRL)
     if not layout_ok:
@@ -1878,6 +1900,29 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None, so_formu
         edits[r][col_pasta] = (lambda v: lambda ref, s: _cel_valor(ref, s, v))(b["PASTA"])
         if hdr.get("SUBSOP HMS"):
             edits[r][hdr["SUBSOP HMS"]] = (lambda v: lambda ref, s: _cel_valor(ref, s, v))(b["SUBSISTEMA"])
+    if mover:  # sobe colunas manuais e de avanço das linhas abaixo das pastas excluídas
+        cols_mov = [hdr.get(_norm(n)) for n, t, _ in CTRL if t in ("inp", "prog", "pcp")]
+        cols_mov = [c for c in cols_mov if c]
+        brutas = {}
+        sd = x_ctrl[x_ctrl.index("<sheetData"):x_ctrl.index("</sheetData>")] if "</sheetData>" in x_ctrl else ""
+        for m in _RE_ROW.finditer(sd):
+            r = int(_RE_ATTR("r").search(m.group(0)).group(1))
+            if r >= min(mover):
+                for c in _RE_C.findall(m.group(0)):
+                    col = _ref(_RE_ATTR("r").search(c).group(1))[0]
+                    if col in cols_mov:
+                        brutas.setdefault(r, {})[col] = c
+
+        def _mov(raw):
+            def f(ref, s_):
+                if not raw:
+                    return '<c r="%s"%s/>' % (ref, s_)
+                c2 = re.sub(r'\br="[A-Z]+\d+"', 'r="%s"' % ref, raw, count=1)
+                return re.sub(r"<f\b[^>]*/>|<f\b[^>]*>.*?</f>", "", c2, flags=re.S)  # fórmula manual vira valor
+            return f
+        mov_ed = {t: {col: _mov(brutas.get(s_, {}).get(col) if s_ else None) for col in cols_mov}
+                  for t, s_ in mover.items()}
+        x_ctrl = _patch_linhas(x_ctrl, mov_ed, est_ctrl)
     x_ctrl = _patch_linhas(x_ctrl, edits, est_ctrl)
     topo = False
     if auto:  # semana vigente + subtotais acima do cabeçalho (quando há linhas livres acima dele)
