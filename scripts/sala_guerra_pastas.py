@@ -1358,6 +1358,7 @@ def _grupos_compartilhados(xml):
 ABA_RESUMO = "RESUMO GERENCIAL"
 _NS_WS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
 _CT_WS = "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
+_NS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 
 
 def _estilo_resumo(st, cor_fonte="FF000000", tam=11, negrito=False, italico=False, fundo=None,
@@ -1555,7 +1556,7 @@ def instalar_resumo(arquivos, lin_hdr, P):
         rels = rels.replace("</Relationships>", '<Relationship Id="%s" Type="%s" Target="worksheets/sheet%d.xml"/>'
                             "</Relationships>" % (rid, _NS_WS, n))
         sid = max(int(x) for x in re.findall(r'<sheet\b[^>]*sheetId="(\d+)"', wbx)) + 1
-        wbx = re.sub(r"(<sheets>)", r'\1<sheet name="%s" sheetId="%d" r:id="%s"/>' % (ABA_RESUMO, sid, rid), wbx, count=1)
+        wbx = re.sub(r"(<sheets>)", r'\1<sheet xmlns:r="%s" name="%s" sheetId="%d" r:id="%s"/>' % (_NS_REL, ABA_RESUMO, sid, rid), wbx, count=1)
         # nomes locais (filtros, títulos de impressão) apontam para a posição das abas: desloca 1
         wbx = re.sub(r'localSheetId="(\d+)"', lambda mm: 'localSheetId="%d"' % (int(mm.group(1)) + 1), wbx)
         ct = arquivos["[Content_Types].xml"].decode("utf-8")
