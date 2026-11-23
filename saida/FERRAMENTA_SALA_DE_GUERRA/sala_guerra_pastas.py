@@ -362,7 +362,7 @@ ETAPAS = [("MONTAGEM", "SEMANA PROG MONTAGEM", "EM MONTAGEM", "AVANÇO MONTAGEM"
           ("TESTE", "SEMANA PROG TESTE", "P/TESTE", "AVANÇO TESTE"),
           ("REMONTAGEM", "SEMANA PROG REMONTAGEM", "P/REMONTAGEM", "AVANÇO REMONTAGEM"),
           ("PRÉ WALK", "SEMANA PROG PRÉ WALK", "PRÉ WALKDOWN", "AVANÇO PRÉ WALK")]
-CATEG_LISTA = ["PRIORIDADE", "OPORTUNIDADE"]
+CATEG_LISTA = ["PRIORIDADE 1", "PRIORIDADE 2", "OPORTUNIDADE"]
 TIPOS_RESTR = ["Material", "Suporte", "Junta reprovada / END", "Pendência A (punch)", "Documentação / Isométrico",
                "Liberação de área / PT", "Andaime / Acesso", "Equipamento de teste", "Spool / Pré-fabricação",
                "Projeto / Engenharia", "Outros"]
@@ -534,7 +534,8 @@ def f_controle(r, P, nb, lin_cab=LIN_CAB):
     for _, _, st, col_av in reversed(ETAPAS):
         realizada = 'IF(%s="%s",%s,%s)' % (x("STATUS PROGRAMAÇÃO"), st, x(col_av), realizada)
     rest = 'IF(%s="",5000,0)' % x("RESTRIÇÕES ABERTAS")
-    cat = 'IF(%(c)s="PRIORIDADE",2000,IF(%(c)s="OPORTUNIDADE",1000,0))' % {"c": x("CATEGORIA DE ENTREGA")}
+    cat = ('IF(OR(%(c)s="PRIORIDADE 1",%(c)s="PRIORIDADE"),3000,IF(%(c)s="PRIORIDADE 2",2000,'
+           'IF(%(c)s="OPORTUNIDADE",1000,0)))' % {"c": x("CATEGORIA DE ENTREGA")})
     return {
         "ITEM": '=IF(%s="","",ROW()-%d)' % (pasta, lin_cab),
         "SISTEMA": look("B"), "ESCOPO": look("D"), "FORNECEDOR": look("E"),
@@ -1131,7 +1132,8 @@ def gerar(painel, controle, saida, calendario=None, painel_anterior=None, pcp=No
         print("Cópia de segurança: %s" % copia)
     temp = saida + ".tmp.xlsx"
     wb.save(temp)
-    _resumo_no_arquivo(temp, LIN_CAB, P)
+    subs_g = sorted({_subsistema_principal(l.get("SUBSOP HMS")) for l in linhas if l.get("SUBSOP HMS")} - {""})
+    _painel_no_arquivo(temp, LIN_CAB, P, subs_g, gerado_em, ult_ctrl)
     try:
         os.replace(temp, saida)
     except PermissionError:
@@ -1354,243 +1356,365 @@ def _grupos_compartilhados(xml):
     return g
 
 
-# ----------------------------------------------------------------------------- aba RESUMO GERENCIAL
-ABA_RESUMO = "RESUMO GERENCIAL"
+# ----------------------------------------------------------------------------- PAINEL (refeito no pacote .xlsx)
+ABA_RESUMO = "RESUMO GERENCIAL"  # aba antiga: removida a cada atualização
 _NS_WS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
 _CT_WS = "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
 _NS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+_BORDA = ('<border><left style="thin"><color rgb="FFBFC9D9"/></left><right style="thin"><color rgb="FFBFC9D9"/>'
+          '</right><top style="thin"><color rgb="FFBFC9D9"/></top><bottom style="thin"><color rgb="FFBFC9D9"/>'
+          '</bottom><diagonal/></border>')
+CAT_PAINEL = ["PRIORIDADE 1", "PRIORIDADE 2", "OPORTUNIDADE"]
+STATUS_SUB = ["EM MONTAGEM", "P/TESTE", "P/REMONTAGEM", "QUALIDADE-REMONTAGEM", "PRÉ WALKDOWN",
+              "PENDENTE DOCUMENTAÇÃO HMSWEB", "CONCLUÍDA"]
 
 
-def _estilo_resumo(st, cor_fonte="FF000000", tam=11, negrito=False, italico=False, fundo=None,
-                   horiz="left", quebra=False):
-    fonte = "<font>%s%s<sz val=\"%s\"/><color rgb=\"%s\"/><name val=\"Arial\"/><family val=\"2\"/></font>" % (
-        "<b/>" if negrito else "", "<i/>" if italico else "", tam, cor_fonte)
+def _estilo(st, cor="FF000000", tam=10, negrito=False, italico=False, fundo=None, horiz="left", quebra=False,
+            numfmt=0, borda=False):
+    fonte = '<font>%s%s<sz val="%s"/><color rgb="%s"/><name val="Arial"/><family val="2"/></font>' % (
+        "<b/>" if negrito else "", "<i/>" if italico else "", tam, cor)
     st, fid = _add_item(st, "fonts", "font", fonte)
     fill_id = 0
     if fundo:
-        fill = ('<fill><patternFill patternType="solid"><fgColor rgb="%s"/><bgColor indexed="64"/></patternFill></fill>'
-                % fundo)
-        st, fill_id = _add_item(st, "fills", "fill", fill)
-    xf = ('<xf numFmtId="0" fontId="%d" fillId="%d" borderId="0" xfId="0" applyFont="1" applyFill="1" '
-          'applyAlignment="1"><alignment horizontal="%s" vertical="center"%s/></xf>'
-          % (fid, fill_id, horiz, ' wrapText="1"' if quebra else ""))
+        st, fill_id = _add_item(st, "fills", "fill", '<fill><patternFill patternType="solid"><fgColor rgb="%s"/>'
+                                                     '<bgColor indexed="64"/></patternFill></fill>' % fundo)
+    bid = 0
+    if borda:
+        st, bid = _add_item(st, "borders", "border", _BORDA)
+    xf = ('<xf numFmtId="%d" fontId="%d" fillId="%d" borderId="%d" xfId="0" applyNumberFormat="1" applyFont="1" '
+          'applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="%s" vertical="center"%s/></xf>'
+          % (numfmt, fid, fill_id, bid, horiz, ' wrapText="1"' if quebra else ""))
     return _add_item(st, "cellXfs", "xf", xf)
 
 
-def _resumo_xml(st, lin_hdr, P):
-    """Monta o XML da aba RESUMO GERENCIAL (fórmulas sobre o CONTROLE). Devolve (xml, styles)."""
+def _subsistema_principal(v):
+    """Primeiro subsistema do SUBSOP ('A /B' -> 'A')."""
+    return re.split(r"\s*/\s*", str(v or "").strip())[0].strip()
+
+
+def _painel_xml(st, lin_hdr, P, subs, base_txt, ult=1000):
     r1, r2 = lin_hdr + 1, 3000
+    q2 = max(ult + 300, r1 + 600)  # faixa menor para as fórmulas SUMPRODUCT por subsistema
+    rq = lambda nome: "'CONTROLE'!$%s$%d:$%s$%d" % (C[nome], r1, C[nome], q2)
     rg = lambda nome: "'CONTROLE'!$%s$%d:$%s$%d" % (C[nome], r1, C[nome], r2)
-    R, S, Y, G, B = (rg("STATUS CALCULADO"), rg("CATEGORIA DE ENTREGA"),
-                     rg("DATA CONCLUSÃO INFORMADO RESPONSAVEL"), rg("JUNTAS PREVISTAS CTB"), rg("Nº DA PASTA"))
-    cats = [None, "PRIORIDADE", "OPORTUNIDADE", ""]  # TOTAL, PRIORIDADE, OPORTUNIDADE, SEM CATEGORIA
-
-    def cnt(conds, cat):
-        c = ['%s,"<>"' % B] + ['%s,"%s"' % (rng, crit) for rng, crit in conds]
-        if cat is not None:
-            c.append('%s,"%s"' % (S, cat))
-        return "COUNTIFS(%s)" % ",".join(c)
-
-    def linha(conds_lista):  # soma de vários COUNTIFS (um por conjunto de condições)
-        return ["=" + "+".join(cnt(cd, cat) for cd in conds_lista) for cat in cats]
-
+    R, S, Y, G, H, B, SUB, X, AG = (rg("STATUS CALCULADO"), rg("CATEGORIA DE ENTREGA"),
+                                   rg("DATA CONCLUSÃO INFORMADO RESPONSAVEL"), rg("JUNTAS PREVISTAS CTB"),
+                                   rg("JUNTAS LIBERADAS CTB"), rg("Nº DA PASTA"), rg("SUBSOP HMS"),
+                                   rg("STATUS PROGRAMAÇÃO"), rg("PROGRAMAÇÃO DA SEMANA"))
+    AZ, CL = "FF1F3864", "FFEEF3FA"
     E = {}
-    st, E["tit"] = _estilo_resumo(st, "FF1F3864", 16, negrito=True)
-    st, E["sub"] = _estilo_resumo(st, "FFC00000", 11, negrito=True)
-    st, E["sec"] = _estilo_resumo(st, "FFFFFFFF", 12, negrito=True, fundo="FF1F3864")
-    st, E["cab"] = _estilo_resumo(st, "FF1F3864", 10, negrito=True, fundo="FFD9E1F2", horiz="center", quebra=True)
-    st, E["lab"] = _estilo_resumo(st, "FF000000", 11)
-    st, E["labb"] = _estilo_resumo(st, "FF000000", 11, negrito=True, fundo="FFFFF2CC")
-    st, E["num"] = _estilo_resumo(st, "FF000000", 12, negrito=True, horiz="center")
-    st, E["numb"] = _estilo_resumo(st, "FF1F3864", 14, negrito=True, fundo="FFFFF2CC", horiz="center")
-    st, E["warn"] = _estilo_resumo(st, "FFC00000", 11, negrito=True)
-    st, E["nota"] = _estilo_resumo(st, "FF595959", 9, italico=True, quebra=True)
-    st, E["mail"] = _estilo_resumo(st, "FF000000", 10, quebra=True, horiz="left")
+    st, E["tit"] = _estilo(st, AZ, 18, negrito=True)
+    st, E["sub"] = _estilo(st, "FF595959", 9, italico=True)
+    st, E["kl"] = _estilo(st, "FF595959", 8, negrito=True, fundo=CL, horiz="center", quebra=True)
+    st, E["kv"] = _estilo(st, AZ, 22, negrito=True, fundo=CL, horiz="center")
+    st, E["kr"] = _estilo(st, "FFC00000", 22, negrito=True, fundo=CL, horiz="center")
+    st, E["kp"] = _estilo(st, AZ, 22, negrito=True, fundo=CL, horiz="center", numfmt=9)
+    st, E["h2"] = _estilo(st, AZ, 11, negrito=True)
+    st, E["cab"] = _estilo(st, "FFFFFFFF", 9, negrito=True, fundo=AZ, horiz="center", quebra=True, borda=True)
+    st, E["n"] = _estilo(st, "FF000000", 10, horiz="center", borda=True)
+    st, E["nb"] = _estilo(st, "FF000000", 10, negrito=True, horiz="center", borda=True)
+    st, E["p"] = _estilo(st, "FF000000", 10, horiz="center", numfmt=9, borda=True)
+    st, E["lab"] = _estilo(st, "FF000000", 9, borda=True)
+    st, E["tl"] = _estilo(st, AZ, 10, negrito=True, fundo=CL, horiz="center", borda=True)
+    st, E["tn"] = _estilo(st, AZ, 10, negrito=True, fundo=CL, horiz="center", borda=True)
+    st, E["tp"] = _estilo(st, AZ, 10, negrito=True, fundo=CL, horiz="center", numfmt=9, borda=True)
+    st, E["nota"] = _estilo(st, "FF595959", 8, italico=True)
+    for s_ in STATUS_LISTA:
+        st, E["st:" + s_] = _estilo(st, "FF000000", 9, negrito=True, fundo="FF" + COR_STATUS[s_], horiz="center",
+                                    quebra=True, borda=True)
 
-    cel, merges, alturas = [], [], {}
-    hoje = "TODAY()"
-    data = _data_txt(hoje)
+    cel, merges, alt, cf = [], [], {}, []
 
-    def put(ref, val, est, formula=False):
-        cel.append((ref, val, E[est], formula))
+    def put(ref, val, est, f=False):
+        cel.append((ref, val, E[est], f))
 
-    def secao(r, titulo):
-        put("B%d" % r, titulo, "sec")
-        for L in "CDEF":
-            put("%s%d" % (L, r), None, "sec")
-        merges.append("B%d:F%d" % (r, r))
-        alturas[r] = 22
-        for L, t in zip("BCDEF", ["", "TOTAL", "PRIORIDADE", "OPORTUNIDADE", "SEM CATEGORIA"]):
-            put("%s%d" % (L, r + 1), t, "cab")
-        alturas[r + 1] = 28
+    def caixa(r, c1, c2, val, est, f=False):  # célula mesclada com estilo em todas as células
+        L1, L2 = get_column_letter(c1), get_column_letter(c2)
+        put("%s%d" % (L1, r), val, est, f)
+        for c in range(c1 + 1, c2 + 1):
+            put("%s%d" % (get_column_letter(c), r), None, est)
+        if c2 > c1:
+            merges.append("%s%d:%s%d" % (L1, r, L2, r))
 
-    def valores(r, rotulo, formulas, destaque=False):
-        put("B%d" % r, rotulo, "labb" if destaque else "lab")
-        for L, f in zip("CDEF", formulas):
-            put("%s%d" % (L, r), f, "numb" if destaque else "num", formula=True)
-        alturas[r] = 20
+    hoje = P["hoje"]
+    put("B1", "PAINEL GERENCIAL - SALA DE GUERRA DE PASTAS DE TUBULAÇÃO", "tit")
+    alt[1] = 28
+    put("B2", '="Base Painel OLODUM: %s   |   Semana vigente: "&%s&"   |   Atualizado em "&%s'
+        % (base_txt, P["svt"], _data_txt(hoje)), "sub", True)
 
-    put("B2", "SALA DE GUERRA – STATUS DAS PASTAS", "tit")
-    alturas[2] = 26
-    put("B3", '="Data: "&%s&"   |   Semana vigente: "&%s' % (data, P["svt"]), "sub", formula=True)
-    soma = lambda *rs: ["=" + "+".join("%s%d" % (L, r) for r in rs) for L in "CDEF"]
-    menos = lambda a, *bs: ["=%s%d-%s" % (L, a, "-".join("%s%d" % (L, b) for b in bs)) for L in "CDEF"]
-    COM_DATA, HOLD = (Y, ">0"), (Y, "HOLD")  # data = valor numérico (data); HOLD = texto HOLD
-    MONT = [(R, "EM MONTAGEM"), (G, ">0")]
-    ref = {}
+    # indicadores
+    kpis = [("PASTAS CONTROLADAS", '=COUNTIF(%s,"?*")' % B, "kv"),
+            ("SEMANA VIGENTE", "=" + P["svt"], "kr"),
+            ("PROGRAMADAS NA SEMANA", '=COUNTIF(%s,"?*")' % X, "kv"),
+            ("REALIZADO NA SEMANA", '=COUNTIF(%s,"REALIZADA")' % AG, "kv"),
+            ("% AVANÇO CONCLUÍDO", '=IF(B5=0,0,COUNTIF(%s,"CONCLUÍDA")/B5)' % R, "kp")]
+    for i, (rot, f, est) in enumerate(kpis):
+        c = 2 + 2 * i
+        caixa(4, c, c + 1, rot, "kl")
+        caixa(5, c, c + 1, f, est, True)
+    alt[4], alt[5] = 24, 40
 
-    # 1 - produção
-    secao(5, "1️⃣  PASTAS DE PRODUÇÃO PENDENTES")
-    ref["tot1"], ref["tes"], ref["mon"], ref["dat1"], ref["hol1"], ref["sem1"], ref["av1"] = 7, 8, 9, 10, 11, 12, 13
-    valores(8, "P/ TESTE (avanço ≥ 80% no ControlTub)", linha([[(R, "P/TESTE")]]))
-    valores(9, "Em montagem (com juntas no ControlTub)", linha([MONT]))
-    valores(7, "Total pendente", soma(8, 9), destaque=True)
-    valores(10, "– com data de conclusão informada pela produção",
-            linha([[(R, "P/TESTE"), COM_DATA], MONT + [COM_DATA]]))
-    valores(11, "– em HOLD", linha([[(R, "P/TESTE"), HOLD], MONT + [HOLD]]))
-    valores(12, "– sem data de conclusão informada", menos(7, 10, 11))
-    put("B13", '=IF(C10=0,"⚠️ Nenhuma dessas pastas teve data de conclusão informada pela produção.",'
-               'C10&" de "&C7&" pastas com data de conclusão informada pela produção ("&C11&" em HOLD).")',
-        "warn", formula=True)
-    merges.append("B13:F13")
+    # situação x categoria (com / sem data de conclusão)
+    put("B7", "SITUAÇÃO DAS PASTAS (STATUS CALCULADO) × CATEGORIA DE ENTREGA", "h2")
+    alt[7] = 20
+    caixa(8, 2, 2, "STATUS CALCULADO", "cab")
+    caixa(9, 2, 2, None, "cab")
+    merges.append("B8:B9")
+    for i, cat in enumerate(CAT_PAINEL):
+        c = 3 + 2 * i
+        caixa(8, c, c + 1, cat, "cab")
+        put("%s9" % get_column_letter(c), "COM DATA", "cab")
+        put("%s9" % get_column_letter(c + 1), "SEM DATA", "cab")
+    for c, rot in ((9, "SEM CATEGORIA"), (10, "TOTAL"), (11, "% DO TOTAL")):
+        L = get_column_letter(c)
+        put("%s8" % L, rot, "cab")
+        put("%s9" % L, None, "cab")
+        merges.append("%s8:%s9" % (L, L))
+    alt[8], alt[9] = 22, 22
+    r0 = 10
+    rt = r0 + len(STATUS_LISTA)
+    for i, s_ in enumerate(STATUS_LISTA):
+        r = r0 + i
+        put("B%d" % r, s_, "st:" + s_)
+        base = '%s,$B%d,%s,"<>"' % (R, r, B)
+        for j, cat in enumerate(CAT_PAINEL):
+            Lc, Ls = get_column_letter(3 + 2 * j), get_column_letter(4 + 2 * j)
+            put("%s%d" % (Lc, r), '=COUNTIFS(%s,%s,"%s",%s,">0")' % (base, S, cat, Y), "n", True)
+            put("%s%d" % (Ls, r), '=COUNTIFS(%s,%s,"%s")-%s%d' % (base, S, cat, Lc, r), "n", True)
+        put("I%d" % r, '=J%d-SUM(C%d:H%d)' % (r, r, r), "n", True)
+        put("J%d" % r, '=COUNTIFS(%s)' % base, "nb", True)
+        put("K%d" % r, '=IF($J$%d=0,0,J%d/$J$%d)' % (rt, r, rt), "p", True)
+        alt[r] = 18
+    put("B%d" % rt, "TOTAL", "tl")
+    for c in range(3, 11):
+        L = get_column_letter(c)
+        put("%s%d" % (L, rt), "=SUM(%s%d:%s%d)" % (L, r0, L, rt - 1), "tn", True)
+    put("K%d" % rt, "=SUM(K%d:K%d)" % (r0, rt - 1), "tp", True)
+    put("B%d" % (rt + 1), "COM DATA = data de conclusão informada pela produção (coluna DATA CONCLUSÃO, só datas; "
+                           "HOLD e textos contam como SEM DATA).", "nota")
+    cf.append(("K%d:K%d" % (r0, rt - 1), "FF5B9BD5"))
 
-    # 2 - comissionamento
-    secao(15, "2️⃣  PENDÊNCIAS DE COMISSIONAMENTO")
-    valores(18, "Executadas, aguardando aprovação da Qualidade", linha([[(R, "QUALIDADE-REMONTAGEM")]]))
-    valores(19, "Pendentes de execução da remontagem", linha([[(R, "P/REMONTAGEM")]]))
-    valores(17, "Pastas em remontagem", soma(18, 19), destaque=True)
-    valores(20, "– pendentes de execução COM data de conclusão", linha([[(R, "P/REMONTAGEM"), COM_DATA]]))
-    valores(21, "– pendentes de execução em HOLD", linha([[(R, "P/REMONTAGEM"), HOLD]]))
-    valores(22, "– pendentes de execução SEM data de conclusão", menos(19, 20, 21))
+    # programação da semana (ao lado)
+    put("N7", '="PROGRAMAÇÃO DA SEMANA "&%s' % P["svt"], "h2", True)
+    for c, rot in zip(range(14, 19), ["ETAPA PROGRAMADA", "PROGRAMADAS", "REALIZADAS", "PENDENTES", "ADERÊNCIA"]):
+        put("%s8" % get_column_letter(c), rot, "cab")
+    for i, (nome, _, stp, _) in enumerate(ETAPAS):
+        r = 9 + i
+        put("N%d" % r, stp, "st:" + stp)
+        put("O%d" % r, '=COUNTIF(%s,"%s")' % (X, stp), "n", True)
+        put("P%d" % r, '=COUNTIFS(%s,"%s",%s,"REALIZADA")' % (X, stp, AG), "n", True)
+        put("Q%d" % r, "=O%d-P%d" % (r, r), "n", True)
+        put("R%d" % r, "=IF(O%d=0,0,P%d/O%d)" % (r, r, r), "p", True)
+    rp = 9 + len(ETAPAS)
+    put("N%d" % rp, "TOTAL", "tl")
+    for L in "OPQ":
+        put("%s%d" % (L, rp), "=SUM(%s9:%s%d)" % (L, L, rp - 1), "tn", True)
+    put("R%d" % rp, "=IF(O%d=0,0,P%d/O%d)" % (rp, rp, rp), "tp", True)
+    put("N%d" % (rp + 2), "PROGRAMADAS NA SEMANA POR CATEGORIA", "h2")
+    for c, rot in zip(range(14, 16), ["CATEGORIA", "PROGRAMADAS"]):
+        put("%s%d" % (get_column_letter(c), rp + 3), rot, "cab")
+    for i, cat in enumerate(CAT_PAINEL + ["SEM CATEGORIA"]):
+        r = rp + 4 + i
+        put("N%d" % r, cat, "lab")
+        crit = '""' if cat == "SEM CATEGORIA" else '"%s"' % cat
+        put("O%d" % r, '=COUNTIFS(%s,"?*",%s,%s)' % (X, S, crit), "n", True)
 
-    # 3 - cadastro no CTB
-    secao(24, "3️⃣  CADASTRO NO CTB (ControlTub)")
-    valores(26, "Pastas pendentes de cadastro", linha([[(R, "SEM CTB")], [(R, "EM MONTAGEM"), (G, "")]]), destaque=True)
-    put("B27", "Pastas RADIX / FURUI / LOOSE ITEM sem juntas no ControlTub e ainda sem teste ou certificados.", "nota")
-    merges.append("B27:F27")
-
-    # 4 - pré-walkdown
-    secao(29, "4️⃣  PRÉ-WALKDOWN")
-    valores(31, "Pastas pendentes de pré-walkdown", linha([[(R, "PRÉ WALKDOWN")]]), destaque=True)
-    put("B32", "Pré-walkdown = pasta intra skid com todos os certificados avançados no HMSWEB (mapa de juntas, teste "
-               "e lavagem executados ou aprovados), pendente de execução da LV de montagem.", "nota")
-    merges.append("B32:F32")
-    alturas[32] = 30
-
-    # texto pronto para e-mail
-    put("B34", "TEXTO PARA E-MAIL (selecione a célula abaixo e copie pela barra de fórmulas)", "sec")
-    for L in "CDEF":
-        put("%s34" % L, None, "sec")
-    merges.append("B34:F34")
-    nl = "&CHAR(10)&"
-    txt = nl.join([
-        '"SALA DE GUERRA – STATUS DAS PASTAS"', '"Data: "&%s' % data, '""',
-        '"1️⃣ PASTAS DE PRODUÇÃO PENDENTES"', '"Total pendente: "&C7&" pastas"', '""',
-        '"P/ TESTE (avanço ≥ 80% no Controtub): "&C8', '"– Prioridade: "&D8', '"– Oportunidade: "&E8',
-        '"Em montagem: "&C9&" (prioridade: "&D9&", oportunidade: "&E9&")"', 'B13', '""',
-        '"2️⃣ PENDÊNCIAS DE COMISSIONAMENTO"', '"Pastas em remontagem: "&C17', '"Prioridade: "&D17',
-        '"Oportunidade: "&E17', '""', '"Executadas, aguardando aprovação da Qualidade: "&C18',
-        '"Prioridade: "&D18', '"Oportunidade: "&E18', '""', '"Pendentes de execução da remontagem: "&C19',
-        '"Prioridade: "&D19', '"Oportunidade: "&E19', '"Com data de conclusão: "&C20', '"Em HOLD: "&C21',
-        '"Sem data de conclusão: "&C22', '""', '"3️⃣ CADASTRO NO CTB"', '"Pastas pendentes de cadastro: "&C26',
-        '"Prioridade: "&D26', '""', '"4️⃣ PRÉ-WALKDOWN"', '"Pastas pendentes: "&C31', '"Prioridade: "&D31',
-        '"Pré-walkdown = pasta de intra skid com todos os certificados avançando no HMSWEB, pendente de '
-        'execução da LV de montagem."'])
-    put("B35", "=" + txt, "mail", formula=True)
-    for L in "CDEF":
-        put("%s35" % L, None, "mail")
-    merges.append("B35:F35")
-    alturas[35] = 580
+    # avanço do status calculado por subsistema
+    rs = max(rt + 3, rp + 10)
+    put("B%d" % rs, "AVANÇO DO STATUS CALCULADO POR SUBSISTEMA", "h2")
+    put("F%d" % rs, "Pasta contada no 1º subsistema do SUBSOP HMS. OUTROS = SEM CTB, SEM ESCOPO e NÃO ENCONTRADA.", "nota")
+    cab_s = ["SUBSISTEMA", "PASTAS"] + STATUS_SUB + ["OUTROS", "% CONCLUÍDA", "AVANÇO CTB"]
+    for c, rot in enumerate(cab_s, 2):
+        put("%s%d" % (get_column_letter(c), rs + 1), rot, "cab")
+    alt[rs + 1] = 48
+    rr = rs + 2
+    SUBq, Rq, Gq, Hq = rq("SUBSOP HMS"), rq("STATUS CALCULADO"), rq("JUNTAS PREVISTAS CTB"), rq("JUNTAS LIBERADAS CTB")
+    for sub in subs:
+        sub = sub.replace('"', "")
+        # 1º subsistema do SUBSOP, ignorando espaços antes/depois
+        eh = '--(LEFT(TRIM(%s),%d)="%s")' % (SUBq, len(sub), sub)
+        put("B%d" % rr, sub, "lab")
+        put("C%d" % rr, "=SUMPRODUCT(%s)" % eh, "nb", True)
+        for k, s_ in enumerate(STATUS_SUB):
+            put("%s%d" % (get_column_letter(4 + k), rr), '=SUMPRODUCT(%s,--(%s="%s"))' % (eh, Rq, s_), "n", True)
+        Lo, Lc = get_column_letter(4 + len(STATUS_SUB)), get_column_letter(3 + len(STATUS_SUB))
+        put("%s%d" % (Lo, rr), "=C%d-SUM(D%d:%s%d)" % (rr, rr, Lc, rr), "n", True)
+        Lp, La = get_column_letter(5 + len(STATUS_SUB)), get_column_letter(6 + len(STATUS_SUB))
+        put("%s%d" % (Lp, rr), '=IF(C%d=0,"",%s%d/C%d)' % (rr, Lc, rr, rr), "p", True)
+        put("%s%d" % (La, rr), '=IFERROR(SUMPRODUCT(%s,%s)/SUMPRODUCT(%s,%s),"")' % (eh, Hq, eh, Gq), "p", True)
+        rr += 1
+    put("B%d" % rr, "TOTAL", "tl")
+    for c in range(3, 5 + len(STATUS_SUB)):
+        L = get_column_letter(c)
+        put("%s%d" % (L, rr), "=SUM(%s%d:%s%d)" % (L, rs + 2, L, rr - 1), "tn", True)
+    Lp, La, Lc = (get_column_letter(5 + len(STATUS_SUB)), get_column_letter(6 + len(STATUS_SUB)),
+                  get_column_letter(3 + len(STATUS_SUB)))
+    put("%s%d" % (Lp, rr), '=IF(C%d=0,"",%s%d/C%d)' % (rr, Lc, rr, rr), "tp", True)
+    put("%s%d" % (La, rr), '=IFERROR(SUM(%s)/SUM(%s),"")' % (H, G), "tp", True)
+    if rr > rs + 2:
+        cf.append(("%s%d:%s%d" % (Lp, rs + 2, Lp, rr - 1), "FF00B050"))
+        cf.append(("%s%d:%s%d" % (La, rs + 2, La, rr - 1), "FF5B9BD5"))
 
     # XML
     linhas = collections.defaultdict(list)
-    for ref, val, s, formula in cel:
-        linhas[_ref(ref)[1]].append((ref, val, s, formula))
+    for ref, val, s_, f in cel:
+        linhas[_ref(ref)[1]].append((ref, val, s_, f))
     corpo = []
     for r in sorted(linhas):
         cs = []
-        for ref, val, s, formula in sorted(linhas[r], key=lambda c: _col_idx(_ref(c[0])[0])):
-            sa = ' s="%d"' % s
-            if formula:
-                cs.append(_cel_formula(ref, sa, val))
-            else:
-                cs.append(_cel_valor(ref, sa, val))
-        ht = ' ht="%s" customHeight="1"' % alturas[r] if r in alturas else ""
+        for ref, val, s_, f in sorted(linhas[r], key=lambda c: _col_idx(_ref(c[0])[0])):
+            cs.append(_cel_formula(ref, ' s="%d"' % s_, val) if f else _cel_valor(ref, ' s="%d"' % s_, val))
+        ht = ' ht="%s" customHeight="1"' % alt[r] if r in alt else ""
         corpo.append('<row r="%d"%s>%s</row>' % (r, ht, "".join(cs)))
+    larg = {1: 2, 2: 34}
+    for c in range(3, 14):
+        larg[c] = 11.5
+    larg[14], larg[15], larg[16], larg[17], larg[18] = 30, 14, 13, 13, 13
+    cols = "".join('<col min="%d" max="%d" width="%s" customWidth="1"/>' % (c, c, w) for c, w in sorted(larg.items()))
+    cfx = "".join('<conditionalFormatting sqref="%s"><cfRule type="dataBar" priority="%d"><dataBar>'
+                  '<cfvo type="num" val="0"/><cfvo type="num" val="1"/><color rgb="%s"/></dataBar></cfRule>'
+                  '</conditionalFormatting>' % (ref, i + 1, cor) for i, (ref, cor) in enumerate(cf))
     xml = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
            '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
            'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
-           '<sheetPr><tabColor rgb="FFC00000"/><pageSetUpPr fitToPage="1"/></sheetPr>'
-           '<dimension ref="B2:F35"/>'
-           '<sheetViews><sheetView showGridLines="0" tabSelected="1" workbookViewId="0"/></sheetViews>'
-           '<sheetFormatPr defaultRowHeight="15"/>'
-           '<cols><col min="1" max="1" width="2" customWidth="1"/><col min="2" max="2" width="58" customWidth="1"/>'
-           '<col min="3" max="6" width="15" customWidth="1"/></cols>'
-           '<sheetData>%s</sheetData>'
-           '<mergeCells count="%d">%s</mergeCells>'
-           '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/>'
-           '<pageSetup paperSize="9" orientation="portrait" fitToHeight="0"/>'
-           '</worksheet>') % ("".join(corpo), len(merges), "".join('<mergeCell ref="%s"/>' % m for m in merges))
+           '<sheetPr><tabColor rgb="FF1F3864"/><pageSetUpPr fitToPage="1"/></sheetPr>'
+           '<dimension ref="B1:R%d"/>'
+           '<sheetViews><sheetView showGridLines="0" tabSelected="1" workbookViewId="0">'
+           '<pane ySplit="5" topLeftCell="A6" activePane="bottomLeft" state="frozen"/>'
+           '<selection pane="bottomLeft" activeCell="B6" sqref="B6"/></sheetView></sheetViews>'
+           '<sheetFormatPr defaultRowHeight="15"/><cols>%s</cols>'
+           '<sheetData>%s</sheetData><mergeCells count="%d">%s</mergeCells>%s'
+           '<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>'
+           '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>'
+           '</worksheet>') % (rr, cols, "".join(corpo), len(merges),
+                              "".join('<mergeCell ref="%s"/>' % m for m in merges), cfx)
     return xml, st
 
 
-def instalar_resumo(arquivos, lin_hdr, P):
-    """Cria ou refaz a aba RESUMO GERENCIAL como primeira aba (edição direta do pacote .xlsx)."""
-    st = arquivos["xl/styles.xml"].decode("utf-8")
-    xml, st = _resumo_xml(st, lin_hdr, P)
-    arquivos["xl/styles.xml"] = st.encode("utf-8")
+def _mapa_abas(arquivos):
     wbx = arquivos["xl/workbook.xml"].decode("utf-8")
     rels = arquivos["xl/_rels/workbook.xml.rels"].decode("utf-8")
-    m = re.search(r'<sheet\b[^>]*name="%s"[^>]*r:id="([^"]+)"' % re.escape(ABA_RESUMO), wbx)
-    if m:  # já existe: só substitui o conteúdo
-        t = re.search(r'<Relationship\b[^>]*Id="%s"[^>]*Target="([^"]+)"' % m.group(1), rels) or \
-            re.search(r'<Relationship\b[^>]*Target="([^"]+)"[^>]*Id="%s"' % m.group(1), rels)
-        caminho = "xl/" + t.group(1).lstrip("/").replace("xl/", "")
-    else:
-        n = 1
-        while "xl/worksheets/sheet%d.xml" % n in arquivos:
-            n += 1
-        caminho = "xl/worksheets/sheet%d.xml" % n
-        ids = [int(x) for x in re.findall(r'Id="rId(\d+)"', rels)]
-        rid = "rId%d" % (max(ids or [0]) + 1)
-        rels = rels.replace("</Relationships>", '<Relationship Id="%s" Type="%s" Target="worksheets/sheet%d.xml"/>'
-                            "</Relationships>" % (rid, _NS_WS, n))
-        sid = max(int(x) for x in re.findall(r'<sheet\b[^>]*sheetId="(\d+)"', wbx)) + 1
-        wbx = re.sub(r"(<sheets>)", r'\1<sheet xmlns:r="%s" name="%s" sheetId="%d" r:id="%s"/>' % (_NS_REL, ABA_RESUMO, sid, rid), wbx, count=1)
-        # nomes locais (filtros, títulos de impressão) apontam para a posição das abas: desloca 1
-        wbx = re.sub(r'localSheetId="(\d+)"', lambda mm: 'localSheetId="%d"' % (int(mm.group(1)) + 1), wbx)
-        ct = arquivos["[Content_Types].xml"].decode("utf-8")
-        ct = ct.replace("</Types>", '<Override PartName="/%s" ContentType="%s"/></Types>' % (caminho, _CT_WS))
-        arquivos["[Content_Types].xml"] = ct.encode("utf-8")
-        if "docProps/app.xml" in arquivos:
-            app = arquivos["docProps/app.xml"].decode("utf-8")
-            app = re.sub(r"(<HeadingPairs>.*?<vt:i4>)(\d+)(</vt:i4>)", lambda mm: "%s%d%s" % (
-                mm.group(1), int(mm.group(2)) + 1, mm.group(3)), app, count=1, flags=re.S)
-            app = re.sub(r'(<TitlesOfParts>\s*<vt:vector size=")(\d+)("[^>]*>)', lambda mm: "%s%d%s<vt:lpstr>%s</vt:lpstr>" % (
-                mm.group(1), int(mm.group(2)) + 1, mm.group(3), ABA_RESUMO), app, count=1)
+    abas = []
+    for m in re.finditer(r'<sheet\b[^>]*?name="([^"]+)"[^>]*?r:id="([^"]+)"[^>]*/>', wbx):
+        t = re.search(r'<Relationship\b[^>]*Id="%s"[^>]*Target="([^"]+)"' % m.group(2), rels) or \
+            re.search(r'<Relationship\b[^>]*Target="([^"]+)"[^>]*Id="%s"' % m.group(2), rels)
+        abas.append((m.group(1).replace("&amp;", "&"), m.group(2), "xl/" + t.group(1).lstrip("/").replace("xl/", ""),
+                     m.group(0)))
+    return abas
+
+
+def _rels_da_aba(caminho):
+    pasta, nome = caminho.rsplit("/", 1)
+    return "%s/_rels/%s.rels" % (pasta, nome)
+
+
+def _apagar_partes(arquivos, partes):
+    ct = arquivos["[Content_Types].xml"].decode("utf-8")
+    for p in partes:
+        arquivos.pop(p, None)
+        ct = re.sub(r'<Override\b[^>]*PartName="/%s"[^>]*/>' % re.escape(p), "", ct)
+    arquivos["[Content_Types].xml"] = ct.encode("utf-8")
+
+
+def _desenhos_da_aba(arquivos, caminho):
+    """Partes ligadas à aba (desenhos, gráficos, impressora) para apagar junto com o conteúdo antigo."""
+    rel = _rels_da_aba(caminho)
+    partes = [rel] if rel in arquivos else []
+    if rel not in arquivos:
+        return partes
+    base = caminho.rsplit("/", 1)[0]
+    for alvo in re.findall(r'Target="([^"]+)"', arquivos[rel].decode("utf-8")):
+        p = os.path.normpath(os.path.join(base, alvo)).replace("\\", "/")
+        partes.append(p)
+        r2 = _rels_da_aba(p)
+        if r2 in arquivos:
+            partes.append(r2)
+            b2 = p.rsplit("/", 1)[0]
+            for a2 in re.findall(r'Target="([^"]+)"', arquivos[r2].decode("utf-8")):
+                partes.append(os.path.normpath(os.path.join(b2, a2)).replace("\\", "/"))
+    return partes
+
+
+def remover_aba(arquivos, nome):
+    abas = _mapa_abas(arquivos)
+    idx = next((i for i, a in enumerate(abas) if a[0] == nome), None)
+    if idx is None:
+        return arquivos, False
+    _, rid, caminho, tag = abas[idx]
+    _apagar_partes(arquivos, _desenhos_da_aba(arquivos, caminho) + [caminho])
+    wbx = arquivos["xl/workbook.xml"].decode("utf-8").replace(tag, "")
+    wbx = re.sub(r'<definedName\b[^>]*localSheetId="%d"[^>]*>.*?</definedName>' % idx, "", wbx, flags=re.S)
+    wbx = re.sub(r'localSheetId="(\d+)"', lambda m: 'localSheetId="%d"' % (int(m.group(1)) - (int(m.group(1)) > idx)), wbx)
+    wbx = re.sub(r"<definedNames>\s*</definedNames>", "", wbx)
+    arquivos["xl/workbook.xml"] = wbx.encode("utf-8")
+    rels = arquivos["xl/_rels/workbook.xml.rels"].decode("utf-8")
+    arquivos["xl/_rels/workbook.xml.rels"] = re.sub(r'<Relationship\b[^>]*Id="%s"[^>]*/>' % rid, "", rels).encode("utf-8")
+    if "docProps/app.xml" in arquivos:
+        app = arquivos["docProps/app.xml"].decode("utf-8")
+        if "<vt:lpstr>%s</vt:lpstr>" % nome in app:
+            app = app.replace("<vt:lpstr>%s</vt:lpstr>" % nome, "", 1)
+            app = re.sub(r"(<HeadingPairs>.*?<vt:i4>)(\d+)(</vt:i4>)", lambda m: "%s%d%s" % (
+                m.group(1), int(m.group(2)) - 1, m.group(3)), app, count=1, flags=re.S)
+            app = re.sub(r'(<TitlesOfParts>\s*<vt:vector size=")(\d+)"', lambda m: '%s%d"' % (
+                m.group(1), int(m.group(2)) - 1), app, count=1)
             arquivos["docProps/app.xml"] = app.encode("utf-8")
-    # abre no RESUMO: primeira aba ativa e só ela selecionada
-    wbx = re.sub(r'\sactiveTab="\d+"', "", wbx)
-    wbx = re.sub(r'\sfirstSheet="\d+"', "", wbx)
-    wbx = re.sub(r"<workbookView\b", '<workbookView activeTab="0"', wbx, count=1)
+    return arquivos, True
+
+
+def instalar_painel(arquivos, lin_hdr, P, subs, base_txt, ult=1000):
+    """Remove a aba RESUMO GERENCIAL e refaz a aba PAINEL (sem os gráficos antigos), que passa a abrir primeiro."""
+    arquivos, _ = remover_aba(arquivos, ABA_RESUMO)
+    abas = _mapa_abas(arquivos)
+    painel = next((a for a in abas if a[0] == "PAINEL"), None)
+    if painel is None:
+        return arquivos
+    st = arquivos["xl/styles.xml"].decode("utf-8")
+    xml, st = _painel_xml(st, lin_hdr, P, subs, base_txt, ult)
+    arquivos["xl/styles.xml"] = st.encode("utf-8")
+    _apagar_partes(arquivos, _desenhos_da_aba(arquivos, painel[2]))
     for nome in [n for n in arquivos if n.startswith("xl/worksheets/sheet") and n.endswith(".xml")]:
         x = arquivos[nome].decode("utf-8")
         x2 = re.sub(r'\stabSelected="1"', "", x)
         if x2 != x:
             arquivos[nome] = x2.encode("utf-8")
-    arquivos[caminho] = xml.encode("utf-8")
+    arquivos[painel[2]] = xml.encode("utf-8")
+    wbx = arquivos["xl/workbook.xml"].decode("utf-8")
+    idx = [a[0] for a in _mapa_abas(arquivos)].index("PAINEL")
+    wbx = re.sub(r'\sactiveTab="\d+"', "", wbx)
+    wbx = re.sub(r'\sfirstSheet="\d+"', "", wbx)
+    wbx = re.sub(r"<workbookView\b", '<workbookView activeTab="%d"' % idx, wbx, count=1)
     arquivos["xl/workbook.xml"] = wbx.encode("utf-8")
-    arquivos["xl/_rels/workbook.xml.rels"] = rels.encode("utf-8")
     return arquivos
 
 
-def _resumo_no_arquivo(caminho, lin_hdr, P):
+def categorias_parametros(arquivos):
+    """Lista de CATEGORIA na aba PARÂMETROS (F13...) e validação da coluna CATEGORIA no CONTROLE."""
+    abas = {a[0]: a[2] for a in _mapa_abas(arquivos)}
+    if "PARÂMETROS" not in abas:
+        return arquivos
+    x = arquivos[abas["PARÂMETROS"]].decode("utf-8")
+    est = _estilos_linha(x, 13)
+    s13 = est.get("F") or est.get("E")
+    ed = {13 + i: {"F": (lambda v: lambda ref, s: _cel_valor(ref, ' s="%s"' % s13 if s13 else s, v))(cat)}
+          for i, cat in enumerate(CATEG_LISTA)}
+    arquivos[abas["PARÂMETROS"]] = _patch_linhas(x, ed, {}).encode("utf-8")
+    fim = 12 + len(CATEG_LISTA)
+    for nome in ("CONTROLE",):
+        if nome in abas:
+            xc = arquivos[abas[nome]].decode("utf-8")
+            xc2 = re.sub(r"('?PARÂMETROS'?!\$F\$13:\$F\$)\d+", r"\g<1>%d" % fim, xc)
+            xc2 = re.sub(r"Escolha PRIORIDADE ou OPORTUNIDADE\.", "Escolha PRIORIDADE 1, PRIORIDADE 2 ou OPORTUNIDADE.", xc2)
+            arquivos[abas[nome]] = xc2.encode("utf-8")
+    return arquivos
+
+
+def _painel_no_arquivo(caminho, lin_hdr, P, subs, base_txt, ult=1000):
     z = zipfile.ZipFile(caminho)
     arquivos = {n: z.read(n) for n in z.namelist()}
     infos = {i.filename: i for i in z.infolist()}
     z.close()
-    arquivos = instalar_resumo(arquivos, lin_hdr, P)
-    temp = caminho + ".res.xlsx"
+    arquivos = instalar_painel(arquivos, lin_hdr, P, subs, base_txt, ult)
+    temp = caminho + ".pn.xlsx"
     with zipfile.ZipFile(temp, "w", zipfile.ZIP_DEFLATED) as zo:
         for n, data in arquivos.items():
             zi = infos.get(n) or zipfile.ZipInfo(n)
@@ -1646,10 +1770,14 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None, so_formu
     col_pasta = hdr["Nº DA PASTA"]
     ult_lin = ws.max_row
     pastas = {}
+    subs = set()
+    col_sub = hdr.get("SUBSOP HMS")
     for r in range(lin_hdr + 1, ws.max_row + 1):
         v = ws["%s%d" % (col_pasta, r)].value
         if v and "NÃO CADASTRADA" not in str(v).upper():
             pastas[r] = str(v).strip()
+            if col_sub:
+                subs.add(_subsistema_principal(ws["%s%d" % (col_sub, r)].value))
     avancos_ant = {}
     if not pcp and not so_formulas:
         for a in AVANCOS:
@@ -1681,6 +1809,7 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None, so_formu
     novas = []
     for b in base:
         if b["PASTA"] not in existentes:
+            subs.add(_subsistema_principal(b["SUBSISTEMA"]))
             pastas[prox] = b["PASTA"]
             novas.append((prox, b))
             prox += 1
@@ -1806,7 +1935,15 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None, so_formu
         wbxml = wbxml[:pos] + '<calcPr fullCalcOnLoad="1"/>' + wbxml[pos:]
     arquivos["xl/workbook.xml"] = wbxml.encode("utf-8")
     if auto:
-        arquivos = instalar_resumo(arquivos, lin_hdr, P)
+        base_txt = d["_data"].strftime("%d/%m/%Y %H:%M UTC") if d else None
+        if not base_txt:  # modo só fórmulas: mantém a data do painel que já estava no PAINEL
+            for a in _mapa_abas(arquivos):
+                if a[0] == "PAINEL":
+                    m = re.search(r"Base Painel OLODUM: (\d\d/\d\d/\d{4} \d\d:\d\d UTC)",
+                                  arquivos[a[2]].decode("utf-8"))
+                    base_txt = m.group(1) if m else "-"
+        arquivos = categorias_parametros(arquivos)
+        arquivos = instalar_painel(arquivos, lin_hdr, P, sorted(subs - {""}), base_txt, ult_lin)
     if "xl/calcChain.xml" in arquivos:
         del arquivos["xl/calcChain.xml"]
         arquivos["xl/_rels/workbook.xml.rels"] = re.sub(r'<Relationship\b[^>]*calcChain[^>]*/>', "",

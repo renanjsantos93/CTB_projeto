@@ -50,15 +50,15 @@ O QUE E ATUALIZADO (e so isso)
   LOOSE ITEM SEM juntas no ControlTub: sem certificado executado/aprovado = EM MONTAGEM;
   com algum certificado executado/aprovado = mesma regra da INTRA SKID.
 
-ABA RESUMO GERENCIAL (primeira aba, refeita a cada atualizacao)
---------------------------------------------------------------
-Sala de guerra - status das pastas, por categoria (prioridade / oportunidade / sem categoria):
-1) Producao pendente: P/TESTE + EM MONTAGEM com juntas no ControlTub; com data de conclusao, em HOLD, sem data.
-2) Comissionamento: QUALIDADE-REMONTAGEM (executada, aguardando Qualidade) + P/REMONTAGEM (a executar).
-3) Cadastro no CTB: SEM CTB + EM MONTAGEM sem juntas no ControlTub.
-4) Pre-walkdown: PRE WALKDOWN.
-No fim da aba ha um texto pronto para e-mail (copie pela barra de formulas).
-Nao edite esta aba: ela e recriada a cada atualizacao.
+ABA PAINEL (primeira aba, refeita a cada atualizacao - nao editar)
+------------------------------------------------------------------
+- Indicadores: pastas controladas, semana vigente, programadas e realizadas na semana, % concluido.
+- Situacao das pastas (status calculado) x categoria: PRIORIDADE 1, PRIORIDADE 2 e OPORTUNIDADE,
+  cada uma com COM DATA / SEM DATA de conclusao; sem categoria; total; % do total.
+- Programacao da semana por etapa e por categoria.
+- Avanco do status calculado por subsistema (1o subsistema do SUBSOP HMS): pastas por status,
+  % concluida e avanco do ControlTub.
+Categoria de entrega: PRIORIDADE 1, PRIORIDADE 2 ou OPORTUNIDADE (lista na aba PARAMETROS).
 
 NAO E ALTERADO
 --------------
