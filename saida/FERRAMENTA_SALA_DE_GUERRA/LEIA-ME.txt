@@ -1,74 +1,74 @@
 CONTROLE DE PASTAS - SALA DE GUERRA (tubulacao) - ATUALIZADOR
 ================================================================
 
-ONDE FICA CADA COISA
---------------------
-C:\Users\renan.jesus\OneDrive - Eneva S.A\Painel OLODUM\
-    Painel_OLODUM.html                <- painel gerado (o mais recente da pasta e subpastas e usado)
-    OLODUM_BASEDADOS_Rev1.xlsx        <- base da PCP (a mais recente da pasta e subpastas e usada)
-    PAINEL DE ATUALIZACAO\            <- descompacte o zip AQUI
-        ATUALIZAR_CONTROLE_PASTAS.bat <- de dois cliques para atualizar
-        AGENDAR_ATUALIZACAO_DIARIA.bat
+ONDE FICA CADA COISA (pasta compartilhada do OneDrive "Painel OLODUM")
+---------------------------------------------------------------------
+Painel OLODUM\
+    Painel_OLODUM.html                  <- painel gerado (o mais recente da pasta e subpastas e usado)
+    OLODUM_BASEDADOS_Rev1.xlsx          <- base da PCP (a mais recente da pasta e subpastas e usada)
+    CONTROLE SALA DE GUERRA\
+        CONTROLE_PASTAS_SALA_DE_GUERRA.xlsx   <- A PLANILHA DE CONTROLE (abra por aqui)
+    PAINEL DE ATUALIZACAO\              <- descompacte o zip AQUI
+        ATUALIZAR_CONTROLE_PASTAS.bat         <- dois cliques: atualiza agora
+        LIGAR_ATUALIZACAO_AUTOMATICA.bat      <- liga a atualizacao automatica (15 em 15 min)
+        DESLIGAR_ATUALIZACAO_AUTOMATICA.bat
+        ATUALIZAR_OCULTO.vbs                  <- usado pela tarefa automatica (nao abre janela)
         sala_guerra_pastas.py
-        LEIA-ME.txt
-        HISTORICO\                    <- copias de seguranca da planilha + ultima_atualizacao.log
+        HISTORICO\                            <- copias de seguranca e registros (logs)
 
-Planilha atualizada (na rede):
-J:\PARNAIBA - UGNL 2\04. QAQC\09. Matriz de rastreabilidade\10-CONTROLE DE PASTA\CONTROLE_PASTAS_SALA_DE_GUERRA.xlsx
+Cada pessoa ve a pasta compartilhada no proprio OneDrive (ex.: "Painel OLODUM" ou
+"Arquivos de Renan Santos - Painel OLODUM"); o atualizador acha tudo a partir da propria pasta.
 
-PYTHON
-------
-O .bat procura sozinho um Python que funcione: PATH, AppData\Local\Programs\Python, Anaconda/Miniconda,
-Arquivos de Programas e dentro da pasta Painel OLODUM. O atalho "python" da Microsoft Store e ignorado.
-O pacote openpyxl e instalado sozinho se faltar.
+ATUALIZAR AGORA
+---------------
+1. Coloque o Painel_OLODUM.html e a OLODUM_BASEDADOS_Rev1.xlsx novos na pasta Painel OLODUM.
+2. Feche a planilha de controle (no seu Excel).
+3. Dois cliques em ATUALIZAR_CONTROLE_PASTAS.bat.
 
-USO
----
-1. Gere/atualize o Painel OLODUM e a OLODUM_BASEDADOS como de costume.
-2. FECHE a CONTROLE_PASTAS_SALA_DE_GUERRA.xlsx (todos que estiverem com ela aberta).
-3. De dois cliques em PAINEL DE ATUALIZACAO\ATUALIZAR_CONTROLE_PASTAS.bat.
+ATUALIZACAO AUTOMATICA
+----------------------
+- Dois cliques em LIGAR_ATUALIZACAO_AUTOMATICA.bat (em UM computador so, que fique ligado no expediente).
+- A cada 15 minutos verifica se o Painel OLODUM ou a OLODUM_BASEDADOS mudaram desde a ultima
+  atualizacao. Se mudaram (e ja terminaram de sincronizar, ha mais de 2 minutos), atualiza sozinho.
+- Se a planilha estiver aberta no Excel desse computador, tenta de novo na proxima rodada.
+- Trava: se outra pessoa estiver atualizando, espera a proxima rodada.
+- Registro: PAINEL DE ATUALIZACAO\HISTORICO\atualizacao_automatica.log
+
+VARIAS PESSOAS NA PLANILHA
+--------------------------
+- A planilha no OneDrive pode ser aberta por varias pessoas ao mesmo tempo (Excel com Salvamento
+  Automatico ligado ou Excel Online) para preencher as colunas amarelas.
+- A atualizacao regrava o arquivo inteiro: quando chegar base nova, evitem deixar edicoes sem salvar.
+  Se o OneDrive criar uma copia "em conflito" (nome com o computador), confira e apague a copia.
 
 O QUE E ATUALIZADO (e so isso)
 ------------------------------
-- Aba BASE_OLODUM: refeita com o Painel OLODUM (juntas ControlTub, situacao HMSWEB, escopo...).
-- Aba CONTROLE, colunas automaticas: ITEM ate STATUS CALCULADO, STATUS PROGRAMACAO,
-  PROGRAMACAO DA SEMANA e as auxiliares cinza.
-- Aba CONTROLE, AVANCO MONTAGEM / TESTE / REMONTAGEM / PRE WALK: semana do calendario da obra
-  da DATA DA EXECUCAO na aba PCP_ATIVIDADE da OLODUM_BASEDADOS.
-- Pastas novas do painel entram no fim da lista do CONTROLE.
-- Pastas NAO ENCONTRADAS (fora da base do Painel OLODUM) sao excluidas do CONTROLE; as linhas de
-  baixo sobem com seus dados. A lista das excluidas aparece na janela/log; a versao anterior fica no HISTORICO.
-  Trava: se mais de 15 pastas (ou 5%) sumirem do painel de uma vez, nada e excluido e aparece um AVISO
-  (painel desatualizado?). Use sempre o Painel OLODUM mais recente.
-- Topo do CONTROLE (quando o cabecalho esta na linha 5 ou abaixo): linha 2 = semana vigente;
-  linha 3 = titulos; linha 4 = SUBTOTAIS em amarelo (respeitam o filtro): pastas, juntas, avanco CTB,
-  aprovadas por etapa HMSWEB, programadas na semana por etapa, executadas na semana, realizadas,
-  com categoria e com restricao. As celulas X4 e Y4 (suas) nao sao alteradas.
-- Escopo: RADIX e FURUI seguem a regra padrao (CTB < 80% = EM MONTAGEM, APTA PARA TESTE, P/REMONTAGEM).
-  Com teste aprovado: remontagem pendente = P/REMONTAGEM; remontagem executada (ou aprovada com outro
-  certificado pendente) = QUALIDADE-REMONTAGEM; todas as atividades aprovadas = CONCLUIDA.
-  FURUI - INTRA SKID e FURUI - LOOSE ITEM COM juntas no ControlTub tambem seguem a regra padrao.
-  INTRA SKID SEM juntas no ControlTub: mapa de juntas, teste ou lavagem PENDENTE = PENDENTE
-  DOCUMENTACAO HMSWEB; os tres EXECUTADOS ou APROVADOS (falta so LV e/ou remontagem) = PRE WALKDOWN;
-  tudo aprovado = CONCLUIDA.
-  LOOSE ITEM SEM juntas no ControlTub: sem certificado executado/aprovado = EM MONTAGEM;
-  com algum certificado executado/aprovado = mesma regra da INTRA SKID.
-
-ABA PAINEL (primeira aba, refeita a cada atualizacao - nao editar)
-------------------------------------------------------------------
-- Indicadores: pastas controladas, semana vigente, pastas concluidas, realizado na semana, % concluido.
-- Situacao das pastas (status calculado) x categoria: PRIORIDADE 1, PRIORIDADE 2 e OPORTUNIDADE,
-  cada uma com COM DATA / SEM DATA de conclusao; sem categoria; total; % do total.
-- Avanco do status calculado por subsistema (1o subsistema do SUBSOP HMS): pastas por status,
-  % concluida e avanco do ControlTub.
-Categoria de entrega: PRIORIDADE 1, PRIORIDADE 2 ou OPORTUNIDADE (lista na aba PARAMETROS).
+- Aba BASE_OLODUM: refeita com o Painel OLODUM.
+- Aba CONTROLE: colunas automaticas (ITEM ate STATUS CALCULADO, STATUS PROGRAMACAO, PROGRAMACAO DA
+  SEMANA, auxiliares cinza), semanas de AVANCO (DATA DA EXECUCAO da PCP_ATIVIDADE), topo com
+  semana vigente e subtotais. Pastas novas entram no fim; pastas NAO ENCONTRADAS saem
+  (trava: se mais de 15 sumirem de uma vez, nada e excluido e aparece um AVISO).
+- Aba PAINEL: refeita (indicadores, situacao x categoria com/sem data, avanco por subsistema).
+  Linha 2: data/hora do Painel OLODUM (horario de Brasilia) e data/hora da atualizacao do controle.
 
 NAO E ALTERADO
 --------------
-Colunas manuais, formatacao, filtros, graficos, PAINEL, PROGRAMACAO, RESTRICOES, PARAMETROS e
-CALENDARIO. Antes de gravar e feita uma copia em PAINEL DE ATUALIZACAO\HISTORICO.
+Colunas manuais (amarelas), formatacao, filtros, PROGRAMACAO, RESTRICOES, PARAMETROS e CALENDARIO.
+Antes de gravar e feita uma copia em PAINEL DE ATUALIZACAO\HISTORICO.
+
+REGRAS DO STATUS CALCULADO
+--------------------------
+- RADIX e FURUI: CTB < 80% = EM MONTAGEM; CTB >= 80% sem teste aprovado = APTA PARA TESTE;
+  teste aprovado: remontagem pendente = P/REMONTAGEM; remontagem executada (ou aprovada com outro
+  certificado pendente) = QUALIDADE-REMONTAGEM; todas as atividades aprovadas = CONCLUIDA.
+- INTRA SKID e LOOSE ITEM COM juntas no ControlTub: mesma regra acima.
+- INTRA SKID SEM juntas no ControlTub: mapa de juntas, teste ou lavagem PENDENTE = PENDENTE
+  DOCUMENTACAO HMSWEB; os tres EXECUTADOS ou APROVADOS = PRE WALKDOWN; tudo aprovado = CONCLUIDA.
+- LOOSE ITEM SEM juntas no ControlTub: sem certificado executado/aprovado = EM MONTAGEM;
+  com algum = mesma regra da INTRA SKID.
+Categoria de entrega: PRIORIDADE 1, PRIORIDADE 2 ou OPORTUNIDADE (lista na aba PARAMETROS).
 
 CUIDADOS
 --------
-- Nao mude os cabecalhos da linha 4 do CONTROLE nem a posicao das colunas automaticas.
-- Se a planilha mudar de nome ou de pasta, troque a linha CONTROLE no ATUALIZAR_CONTROLE_PASTAS.bat.
+- Nao mude a posicao das colunas do CONTROLE (renomear cabecalho nao tem problema).
+- Use sempre o Painel OLODUM mais recente.

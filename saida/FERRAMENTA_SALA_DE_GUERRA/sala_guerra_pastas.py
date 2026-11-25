@@ -54,6 +54,14 @@ ATV_TH = "Teste Hidrostático em Tubulação"
 ATV_LAV = "Lavagem"
 ATV_REM = "Remontagem"
 PREFIXO_PASTA = "421-M-TU"
+FUSO_OBRA = dt.timezone(dt.timedelta(hours=-3))  # horário de Brasília (sem horário de verão)
+
+
+def hora_obra(d=None):
+    """Data/hora no horário de Brasília: d (datetime com fuso) ou agora."""
+    return (d.astimezone(FUSO_OBRA) if d else dt.datetime.now(FUSO_OBRA)).strftime("%d/%m/%Y %H:%M")
+
+
 ESC_RADIX, ESC_FURUI, ESC_INTRA, ESC_LOOSE = "RADIX", "FURUI", "FURUI - INTRA SKID", "FURUI - LOOSE ITEM"
 ATV_STATUS = ("MONTAGEM (LVM)", "MAPA JUNTAS", "TESTE HIDROSTÁTICO", "LAVAGEM", "REMONTAGEM")
 
@@ -1133,7 +1141,7 @@ def gerar(painel, controle, saida, calendario=None, painel_anterior=None, pcp=No
     temp = saida + ".tmp.xlsx"
     wb.save(temp)
     subs_g = sorted({_subsistema_principal(l.get("SUBSOP HMS")) for l in linhas if l.get("SUBSOP HMS")} - {""})
-    _painel_no_arquivo(temp, LIN_CAB, P, subs_g, gerado_em, ult_ctrl)
+    _painel_no_arquivo(temp, LIN_CAB, P, subs_g, hora_obra(d["_data"]) if d["_data"] else "-", ult_ctrl)
     try:
         os.replace(temp, saida)
     except PermissionError:
@@ -1439,8 +1447,8 @@ def _painel_xml(st, lin_hdr, P, subs, base_txt, ult=1000):
     hoje = P["hoje"]
     put("B1", "PAINEL GERENCIAL - SALA DE GUERRA DE PASTAS DE TUBULAÇÃO", "tit")
     alt[1] = 28
-    put("B2", '="Base Painel OLODUM: %s   |   Semana vigente: "&%s&"   |   Atualizado em "&%s'
-        % (base_txt, P["svt"], _data_txt(hoje)), "sub", True)
+    put("B2", '="Base Painel OLODUM: %s (Brasília)   |   Semana vigente: "&%s&"   |   Controle atualizado em %s"'
+        % (base_txt, P["svt"], hora_obra()), "sub", True)
 
     # indicadores
     kpis = [("PASTAS CONTROLADAS", '=COUNTIF(%s,"?*")' % B, "kv"),
@@ -1801,11 +1809,20 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None, so_formu
         pastas = {nova(r): p for r, p in pastas.items() if r not in rem}
     subs = set(sub_linha.values())
 
-    layout_ok = all(hdr.get(_norm(nome)) == C[nome] for nome, _, _ in CTRL)
+    # coluna fora do lugar = cabeçalho conhecido numa coluna diferente da original; cabeçalho só renomeado
+    # (ou apagado) na posição original não impede a atualização
+    nomes_ctrl = {_norm(n) for n, _, _ in CTRL}
+    por_letra = {L: h for h, L in hdr.items()}
+    fora = [n for n, _, _ in CTRL if hdr.get(_norm(n)) and hdr[_norm(n)] != C[n]]
+    renomeadas = [n for n, _, _ in CTRL if not hdr.get(_norm(n))]
+    ocupadas = [n for n in renomeadas if por_letra.get(C[n]) in nomes_ctrl]
+    layout_ok = not fora and not ocupadas
+    if renomeadas and layout_ok:
+        print("Aviso: cabeçalho diferente do original em %s (coluna mantida na posição; seguindo normalmente)."
+              % ", ".join("%s='%s'" % (C[n], por_letra.get(C[n], "")) for n in renomeadas[:6]))
     if not layout_ok:
-        dif = [nome for nome, _, _ in CTRL if hdr.get(_norm(nome)) != C[nome]]
         print("AVISO: colunas fora da posição original (%s). As fórmulas não serão reescritas; "
-              "só a BASE_OLODUM e as colunas de AVANÇO." % ", ".join(dif[:6]))
+              "só a BASE_OLODUM e as colunas de AVANÇO." % ", ".join((fora + ocupadas)[:6]))
     if not param_ok:
         print("AVISO: aba PARÂMETROS diferente da original; as fórmulas não serão reescritas.")
 
@@ -1968,13 +1985,16 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None, so_formu
         wbxml = wbxml[:pos] + '<calcPr fullCalcOnLoad="1"/>' + wbxml[pos:]
     arquivos["xl/workbook.xml"] = wbxml.encode("utf-8")
     if auto:
-        base_txt = d["_data"].strftime("%d/%m/%Y %H:%M UTC") if d else None
+        base_txt = hora_obra(d["_data"]) if d else None
         if not base_txt:  # modo só fórmulas: mantém a data do painel que já estava no PAINEL
             for a in _mapa_abas(arquivos):
                 if a[0] == "PAINEL":
-                    m = re.search(r"Base Painel OLODUM: (\d\d/\d\d/\d{4} \d\d:\d\d UTC)",
+                    m = re.search(r"Base Painel OLODUM: (\d\d/\d\d/\d{4} \d\d:\d\d)( UTC)?",
                                   arquivos[a[2]].decode("utf-8"))
                     base_txt = m.group(1) if m else "-"
+                    if m and m.group(2):  # texto antigo em UTC -> horário de Brasília
+                        base_txt = hora_obra(dt.datetime.strptime(m.group(1), "%d/%m/%Y %H:%M")
+                                             .replace(tzinfo=dt.timezone.utc))
         arquivos = categorias_parametros(arquivos)
         arquivos = instalar_painel(arquivos, lin_hdr, P, sorted(subs - {""}), base_txt, ult_lin)
     if "xl/calcChain.xml" in arquivos:
@@ -1984,6 +2004,11 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None, so_formu
         ct = arquivos["[Content_Types].xml"].decode("utf-8")
         arquivos["[Content_Types].xml"] = re.sub(r'<Override\b[^>]*calcChain[^>]*/>', "", ct).encode("utf-8")
 
+    try:  # planilha aberta no Excel (Windows trava o arquivo): avisa antes de copiar ou gravar
+        open(controle, "r+b").close()
+    except PermissionError:
+        raise SystemExit("ERRO: a planilha %s está aberta no Excel (sua ou de outra pessoa) ou sem permissão de "
+                         "gravação. Feche e rode de novo." % controle)
     if backup:
         os.makedirs(backup, exist_ok=True)
         nome, ext = os.path.splitext(os.path.basename(controle))
@@ -2014,11 +2039,52 @@ def atualizar(painel, controle, pcp=None, backup=None, calendario=None, so_formu
     print("Atualizado:", controle)
 
 
+def automatico(painel_dir, controle, pcp_dir, backup):
+    """Atualiza só se há Painel OLODUM / OLODUM_BASEDADOS mais novos que os da última atualização.
+    Usado pela tarefa agendada. Trava (arquivo .lock) evita duas atualizações ao mesmo tempo."""
+    os.makedirs(backup, exist_ok=True)
+    pn = mais_recente(painel_dir, ["*OLODUM*.html", "*olodum*.html"])
+    pc = mais_recente(pcp_dir, ["OLODUM_BASEDADOS*.xlsx", "OLODUM_BASEDADOS*.xlsm"]) if pcp_dir else None
+    marca = os.path.join(backup, "ultima_base_processada.txt")
+    atual = "%s|%s" % (int(os.path.getmtime(pn)), int(os.path.getmtime(pc)) if pc else 0)
+    try:
+        anterior = open(marca, encoding="utf-8").read().strip()
+    except OSError:
+        anterior = ""
+    if atual == anterior:
+        print("%s - sem base nova; nada a fazer." % hora_obra())
+        return 0
+    recente = max(os.path.getmtime(pn), os.path.getmtime(pc) if pc else 0)
+    if dt.datetime.now().timestamp() - recente < 120:
+        print("%s - arquivos da base ainda chegando (salvos há menos de 2 min); tenta na próxima." % hora_obra())
+        return 0
+    trava = os.path.join(backup, "atualizando.lock")
+    if os.path.exists(trava) and dt.datetime.now().timestamp() - os.path.getmtime(trava) < 1800:
+        print("%s - outra atualização em andamento (%s); tenta na próxima."
+              % (hora_obra(), open(trava, encoding="utf-8", errors="replace").read().strip()))
+        return 0
+    with open(trava, "w", encoding="utf-8") as f:
+        f.write("%s em %s" % (os.environ.get("USERNAME") or os.environ.get("USER") or "?",
+                              os.environ.get("COMPUTERNAME") or "?"))
+    try:
+        atualizar(pn, controle, pc, backup)
+        with open(marca, "w", encoding="utf-8") as f:
+            f.write(atual)
+    finally:
+        try:
+            os.remove(trava)
+        except OSError:
+            pass
+    return 0
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("painel")
     ap.add_argument("controle")
     ap.add_argument("saida", nargs="?", help="omitir com --atualizar")
+    ap.add_argument("--automatico", action="store_true",
+                    help="com --atualizar: só atualiza se o Painel OLODUM ou a OLODUM_BASEDADOS forem novos")
     ap.add_argument("--so-formulas", action="store_true",
                     help="com --atualizar: reescreve só fórmulas e topo, mantendo BASE_OLODUM e AVANÇOS")
     ap.add_argument("--atualizar", action="store_true",
@@ -2030,8 +2096,18 @@ if __name__ == "__main__":
     a = ap.parse_args()
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if a.atualizar and a.automatico:
+        sys.exit(automatico(a.painel, a.controle, a.pcp, a.backup or os.path.join(os.path.dirname(a.controle), "HISTORICO")))
     if a.atualizar:
         atualizar(a.painel, a.controle, a.pcp, a.backup, a.calendario, a.so_formulas)
+        if a.backup and not a.so_formulas:  # registra a base usada (o modo automático não repete o trabalho)
+            try:
+                pn = mais_recente(a.painel, ["*OLODUM*.html", "*olodum*.html"])
+                pc = mais_recente(a.pcp, ["OLODUM_BASEDADOS*.xlsx", "OLODUM_BASEDADOS*.xlsm"]) if a.pcp else None
+                with open(os.path.join(a.backup, "ultima_base_processada.txt"), "w", encoding="utf-8") as f:
+                    f.write("%s|%s" % (int(os.path.getmtime(pn)), int(os.path.getmtime(pc)) if pc else 0))
+            except (OSError, SystemExit):
+                pass
     else:
         if not a.saida:
             ap.error("informe SAIDA ou use --atualizar")
